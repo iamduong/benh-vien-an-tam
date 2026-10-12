@@ -127,9 +127,10 @@ public class DBContext : DbContext
         ConfigureOneToMany<ServiceWorking, MedicalService>(modelBuilder, nameof(ServiceWorking.ServiceUuid));
         ConfigureOneToMany<ServiceWorking, TimeWorking>(modelBuilder, nameof(ServiceWorking.WorkingUuid));
         
+        // Running seed
         modelBuilder.Entity<Permission>().HasData(PermissionSeed.Permissions);
-
-        modelBuilder.Entity<Hospital>().HasData(HospitalSeed.Hospitals);
+            
+        // modelBuilder.Entity<Hospital>().HasData(HospitalSeed.Hospitals);
     }
 
     private static void ConfigureOneToMany<TDependent, TPrincipal>(
