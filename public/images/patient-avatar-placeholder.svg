@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
-  <title id="title">Ảnh đại diện người bệnh</title>
-  <desc id="desc">Hình minh họa hồ sơ người bệnh</desc>
-  <rect width="320" height="320" fill="#eef6f3"/>
-  <circle cx="160" cy="118" r="56" fill="#9fc9bb"/>
-  <path d="M62 286c8-65 45-103 98-103s90 38 98 103" fill="#5c9f89"/>
-</svg>

@@ -10,6 +10,7 @@ public class Role
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public bool IsDoctor { get; set; }
+    public AccessScope Scope { get; set; } = AccessScope.Hospital;
     public BaseStatus Status { get; set; } = BaseStatus.Active;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

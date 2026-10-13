@@ -8,16 +8,19 @@ import { useState, type FormEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { internalAuthService } from "@/lib/services/auth/InternalAuthService";
 
 export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
+    setError("");
 
     if (mode === "forgot-password") {
       window.setTimeout(() => {
@@ -27,7 +30,19 @@ export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }
       return;
     }
 
-    router.push("/noi-bo/trang-tong");
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      await internalAuthService.login(
+        String(formData.get("phone") ?? ""),
+        String(formData.get("password") ?? ""),
+      );
+      router.push("/noi-bo/trang-tong/tong-quan-he-thong");
+      router.refresh();
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "Đăng nhập không thành công.");
+      setIsSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -48,9 +63,19 @@ export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {error ? <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p> : null}
       <div className="space-y-2">
-        <Label htmlFor="internal-email">Email công việc</Label>
-        <Input id="internal-email" name="email" type="email" autoComplete="email" required placeholder="ten@benhvien.vn" className="h-11" />
+        {mode === "login" ? (
+          <>
+            <Label htmlFor="internal-phone">Số điện thoại</Label>
+            <Input id="internal-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required pattern="(?:\+84|0)(?:3|5|7|8|9)[0-9]{8}" placeholder="0900000000" className="h-11" />
+          </>
+        ) : (
+          <>
+            <Label htmlFor="internal-email">Email công việc</Label>
+            <Input id="internal-email" name="email" type="email" autoComplete="email" required placeholder="ten@benhvien.vn" className="h-11" />
+          </>
+        )}
       </div>
 
       {mode === "login" ? (

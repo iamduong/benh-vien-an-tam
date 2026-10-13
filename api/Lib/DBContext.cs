@@ -75,6 +75,15 @@ public class DBContext : DbContext
             .HasIndex(role => role.Name)
             .IsUnique();
 
+        modelBuilder.Entity<RolePermission>()
+            .HasIndex(rolePermission => new
+            {
+                rolePermission.RoleUuid,
+                rolePermission.PermissionUuid,
+                rolePermission.Action
+            })
+            .IsUnique();
+
         ConfigureOneToMany<Account, Role>(modelBuilder, nameof(Account.RoleUuid));
         ConfigureOneToMany<Account, Hospital>(modelBuilder, nameof(Account.HospitalUuid));
         ConfigureOneToOne<PatientProfile, Account>(modelBuilder, nameof(PatientProfile.AccountUuid));
@@ -127,9 +136,11 @@ public class DBContext : DbContext
         ConfigureOneToMany<ServiceWorking, MedicalService>(modelBuilder, nameof(ServiceWorking.ServiceUuid));
         ConfigureOneToMany<ServiceWorking, TimeWorking>(modelBuilder, nameof(ServiceWorking.WorkingUuid));
         
+        // Running seed
         modelBuilder.Entity<Permission>().HasData(PermissionSeed.Permissions);
-
-        modelBuilder.Entity<Hospital>().HasData(HospitalSeed.Hospitals);
+        modelBuilder.Entity<Role>().HasData(RoleSeed.Roles);
+        modelBuilder.Entity<RolePermission>().HasData(RolePermissionSeed.RolePermissions);
+        modelBuilder.Entity<Account>().HasData(AccountSeed.Accounts);
     }
 
     private static void ConfigureOneToMany<TDependent, TPrincipal>(

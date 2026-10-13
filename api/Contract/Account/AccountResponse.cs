@@ -51,7 +51,8 @@ public sealed class AccountOptionsResponse
 public sealed record AccountRoleOptionResponse(
     Guid Uuid,
     string Name,
-    bool IsDoctor);
+    bool IsDoctor,
+    AccessScope Scope);
 
 public sealed record AccountHospitalOptionResponse(
     Guid Uuid,
