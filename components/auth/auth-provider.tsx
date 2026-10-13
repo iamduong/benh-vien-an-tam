@@ -41,37 +41,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sessionRef = useRef<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
+  // useEffect(() => {
+  //   let active = true;
 
-    authService
-      .getCurrentSession()
-      .then((currentSession) => {
-        if (active) {
-          sessionRef.current = currentSession;
-          setSession(currentSession);
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          showError(
-            "Không thể kiểm tra phiên đăng nhập",
-            error instanceof AuthServiceError
-              ? error.message
-              : "Đã xảy ra lỗi. Vui lòng thử lại.",
-          );
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setIsLoading(false);
-        }
-      });
+  //   authService
+  //     .getCurrentSession()
+  //     .then((currentSession) => {
+  //       if (active) {
+  //         sessionRef.current = currentSession;
+  //         setSession(currentSession);
+  //       }
+  //     })
+  //     .catch((error: unknown) => {
+  //       if (active) {
+  //         showError(
+  //           "Không thể kiểm tra phiên đăng nhập",
+  //           error instanceof AuthServiceError
+  //             ? error.message
+  //             : "Đã xảy ra lỗi. Vui lòng thử lại.",
+  //         );
+  //       }
+  //     })
+  //     .finally(() => {
+  //       if (active) {
+  //         setIsLoading(false);
+  //       }
+  //     });
 
-    return () => {
-      active = false;
-    };
-  }, [showError]);
+  //   return () => {
+  //     active = false;
+  //   };
+  // }, [showError]);
 
   async function login(credentials: LoginRequest) {
     const nextSession = await authService.login(credentials);

@@ -82,21 +82,21 @@ const healthArticles = [
     category: "Sức khỏe tim mạch",
     title: "Những chỉ số nên theo dõi để chủ động bảo vệ trái tim",
     description: "Huyết áp, nhịp tim, đường huyết và mỡ máu là những dữ liệu quan trọng trong khám sức khỏe định kỳ.",
-    image: "/images/health-heart.svg",
+    image: "https://res.cloudinary.com/dzpgchw3n/image/upload/v1791856597/urwsaryesjkwxexiau27.jpg",
     icon: HeartPulse,
   },
   {
     category: "Chăm sóc gia đình",
     title: "Chuẩn bị gì trước khi đưa trẻ đi khám?",
     description: "Ghi lại triệu chứng, thuốc đang dùng và các mốc diễn tiến giúp buổi khám hiệu quả hơn.",
-    image: "/images/health-family.svg",
+    image: "https://res.cloudinary.com/dzpgchw3n/image/upload/v1791856598/aw9nucvlohmatsu6ti22.jpg",
     icon: Baby,
   },
   {
     category: "Phòng bệnh chủ động",
     title: "Khám sức khỏe định kỳ không chỉ dành cho người có bệnh",
     description: "Lịch kiểm tra phù hợp giúp phát hiện sớm nguy cơ và xây dựng kế hoạch chăm sóc cá nhân.",
-    image: "/images/health-checkup.svg",
+    image: "https://res.cloudinary.com/dzpgchw3n/image/upload/v1791856597/ubfkmnph8l9519zvyglz.jpg",
     icon: ClipboardCheck,
   },
 ];
@@ -344,7 +344,8 @@ function HealthLeadArticle({ article }: { article: HealthArticle }) {
   return (
     <article className="grid min-w-0 overflow-hidden border bg-card sm:grid-cols-[0.95fr_1.05fr]">
       <div className="relative min-h-64 bg-muted sm:min-h-full">
-        <Image src={article.image} alt="" fill sizes="(min-width: 1024px) 36vw, 100vw" className="object-cover" />
+        {/* <Image src={article.image} alt="" fill sizes="(min-width: 1024px) 36vw, 100vw" className="object-cover" /> */}
+        <img src={article.image} alt="" className="h-full w-full object-cover" />
       </div>
       <div className="flex flex-col justify-center p-6 sm:p-8">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
@@ -364,7 +365,8 @@ function HealthCompactArticle({ article }: { article: HealthArticle }) {
   return (
     <article className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] overflow-hidden border bg-card sm:grid-cols-1 lg:grid-cols-[9rem_minmax(0,1fr)]">
       <div className="relative min-h-36 bg-muted sm:min-h-44 lg:min-h-full">
-        <Image src={article.image} alt="" fill sizes="144px" className="object-cover" />
+        {/* <Image src={article.image} alt="" fill sizes="144px" className="object-cover" /> */}
+        <img src={article.image} alt=""className="h-full w-full object-cover" />
       </div>
       <div className="p-4 sm:p-5">
         <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">

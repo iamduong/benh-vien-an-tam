@@ -1,5 +1,0 @@
-import { CombinedPortalScreen } from "@/components/internal/combined-portal-screen";
-
-export default function Page() {
-  return <CombinedPortalScreen area="system" slug="gio-lam-viec-dich-vu" />;
-}

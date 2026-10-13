@@ -23,6 +23,14 @@ export type DepartmentRequest = {
 };
 
 class AdminDepartmentService {
+  async getIconTemplates(signal?: AbortSignal) {
+    const response = await httpClient.get<ApiResponse<string[]>>(
+      "/icon-templates",
+      { signal },
+    );
+    return response.data;
+  }
+
   async getAll(signal?: AbortSignal) {
     const response = await httpClient.get<ApiResponse<AdminDepartmentItem[]>>(
       "/admin/departments",

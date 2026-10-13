@@ -1,6 +1,6 @@
 import { httpClient } from "@/lib/http/client";
 import type { ApiResponse } from "@/lib/http/response";
-import type { BaseStatus, Gender } from "@/types/models";
+import type { AccessScope, BaseStatus, Gender } from "@/types/models";
 
 export type AdminAccountItem = {
   uuid: string;
@@ -40,7 +40,7 @@ export type AdminAccountItem = {
 };
 
 export type AdminAccountOptions = {
-  roles: Array<{ uuid: string; name: string; isDoctor: boolean }>;
+  roles: Array<{ uuid: string; name: string; isDoctor: boolean; scope: AccessScope }>;
   hospitals: Array<{ uuid: string; name: string }>;
 };
 

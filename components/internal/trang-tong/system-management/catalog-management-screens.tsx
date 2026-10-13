@@ -4,6 +4,7 @@ import {
   Activity,
   Eye,
   Hospital as HospitalIcon,
+  ImagePlus,
   PackageSearch,
   Pencil,
   Plus,
@@ -13,6 +14,7 @@ import {
   Stethoscope,
   Trash2,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
 import {
@@ -26,7 +28,7 @@ import {
   StatusPill,
 } from "@/components/internal/portal-ui";
 import { SafeMarkdown } from "@/components/shared/safe-markdown";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +63,7 @@ import {
   type AdminMedicineItem,
   type MedicineRequest,
 } from "@/lib/services/medicine/AdminMedicineService";
+import { uploadService } from "@/lib/services/upload/UploadService";
 
 type ManagedRecord = {
   Uuid: string;
@@ -84,10 +87,12 @@ type CatalogConfig<T extends ManagedRecord> = {
   renderDetail: (item: T) => ReactNode;
   renderForm: (item: T, update: <K extends keyof T>(key: K, value: T[K]) => void) => ReactNode;
   createDraft?: () => T;
+  createHref?: string;
   onCreate?: (item: T) => Promise<T>;
   onSave?: (item: T) => Promise<T>;
   onDelete?: (item:T) => Promise<void>;
   onRestore?: (item:T) => Promise<void>;
+  onFormClose?: () => void;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("vi-VN");
@@ -159,6 +164,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
 
       setDraft(null);
       setDraftMode(null);
+      config.onFormClose?.();
     } catch (error) {
       console.error("Không thể lưu bản ghi:", error);
       setMutationError(
@@ -256,7 +262,12 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
         eyebrow={config.eyebrow}
         title={config.title}
         description={config.description}
-        actions={config.createDraft ? (
+        actions={config.createHref ? (
+          <Link href={config.createHref} className={buttonVariants()}>
+            <Plus />
+            Thêm {config.singular}
+          </Link>
+        ) : config.createDraft ? (
           <Button
             type="button"
             onClick={() => {
@@ -320,7 +331,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(draft)} onOpenChange={(open) => { if (!open) { setDraft(null); setDraftMode(null); setMutationError(null); } }}>
+      <Dialog open={Boolean(draft)} onOpenChange={(open) => { if (!open) { setDraft(null); setDraftMode(null); setMutationError(null); config.onFormClose?.(); } }}>
         <DialogContent className="max-w-4xl">
           {draft ? (
             <form onSubmit={(event) => { event.preventDefault(); void saveDraft(); }}>
@@ -335,7 +346,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
               <div className="mt-5 grid gap-5 sm:grid-cols-2">{config.renderForm(draft, updateDraft)}</div>
               {mutationError ? <p className="mt-4 text-sm text-destructive">{mutationError}</p> : null}
               <DialogFooter>
-                <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => { setDraft(null); setDraftMode(null); setMutationError(null); }}>Hủy</Button>
+                <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => { setDraft(null); setDraftMode(null); setMutationError(null); config.onFormClose?.(); }}>Hủy</Button>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Đang lưu..." : draftMode === "create" ? `Thêm ${config.singular}` : "Lưu thay đổi"}
                 </Button>
@@ -432,32 +443,61 @@ function mapToHospitalRequest(hospital: Hospital): CreateHospitalRequest {
   };
 }
 
-function createEmptyHospital(): Hospital {
-  const now = new Date();
-
-  return {
-    Uuid: "",
-    Name: "",
-    Address: "",
-    Slug: "",
-    Image: "",
-    LImage: "",
-    MapUrl: "",
-    NumberOfRoom: 0,
-    Description: "",
-    DetailService: "",
-    WorkingHour: "",
-    Status: BaseStatus.Active,
-    CreatedAt: now,
-    UpdatedAt: now,
-    DeletedAt: new Date(0),
-  };
+function HospitalImagePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (file: File, preview: string) => void;
+}) {
+  return (
+    <div className="space-y-3 sm:col-span-2">
+      <Label htmlFor="hospital-edit-image">Ảnh đại diện</Label>
+      <label
+        htmlFor="hospital-edit-image"
+        className="flex min-h-64 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed bg-slate-50 transition hover:border-primary/60 hover:bg-primary/5"
+      >
+        {value ? (
+          <img src={value} alt="Ảnh cơ sở y tế xem trước" className="h-72 w-full object-cover" />
+        ) : (
+          <span className="flex flex-col items-center gap-3 p-8 text-center text-muted-foreground">
+            <ImagePlus className="size-9 text-primary" />
+            <span>Chọn ảnh từ máy</span>
+          </span>
+        )}
+      </label>
+      <Input
+        id="hospital-edit-image"
+        type="file"
+        accept="image/*"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file?.type.startsWith("image/")) {
+            onChange(file, URL.createObjectURL(file));
+          }
+        }}
+      />
+      <p className="text-xs text-muted-foreground">
+        Ảnh mới chỉ được upload khi bạn bấm lưu thay đổi.
+      </p>
+    </div>
+  );
 }
 
 export function HospitalsManagementScreen() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [pendingImage, setPendingImage] = useState<{
+    hospitalUuid: string;
+    file: File;
+    preview: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  function clearPendingImage() {
+    if (pendingImage) URL.revokeObjectURL(pendingImage.preview);
+    setPendingImage(null);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -492,31 +532,35 @@ export function HospitalsManagementScreen() {
   async function handleSaveHospital(
     hospital: Hospital
   ): Promise<Hospital> {
+    let image = hospital.Image;
+
+    if (pendingImage?.hospitalUuid === hospital.Uuid) {
+      const uploadResponse = await uploadService.uploadImage(pendingImage.file);
+      const uploadResult = uploadResponse.data ?? uploadResponse.Data;
+      image = uploadResult?.secureUri
+        ?? uploadResult?.secureUrl
+        ?? uploadResult?.uri
+        ?? uploadResult?.url
+        ?? "";
+
+      if (!image) throw new Error("API upload không trả về URI hình ảnh");
+    }
+
     const response = await adminHospitalService.update(
       hospital.Uuid,
-      mapToHospitalRequest(hospital));
+      mapToHospitalRequest({ ...hospital, Image: image }));
 
     const updatedHospital = response.data ?? response.Data;
 
     if (!updatedHospital) {
       throw new Error("Không nhận được dữ liệu cơ sở y tế sau khi cập nhật");
     }
-    return mapToHospital(updatedHospital);
-  }
-
-  async function handleCreateHospital(
-    hospital: Hospital,
-  ): Promise<Hospital> {
-    const response = await adminHospitalService.create(
-      mapToHospitalRequest(hospital),
-    );
-    const createdHospital = response.data ?? response.Data;
-
-    if (!createdHospital) {
-      throw new Error("Không nhận được dữ liệu cơ sở y tế sau khi tạo");
+    if (pendingImage?.hospitalUuid === hospital.Uuid) {
+      URL.revokeObjectURL(pendingImage.preview);
+      setPendingImage(null);
     }
 
-    return mapToHospital(createdHospital);
+    return mapToHospital(updatedHospital);
   }
 
   async function handleDeleteHospital(hospital: Hospital): Promise<void> {
@@ -547,10 +591,10 @@ export function HospitalsManagementScreen() {
       dateFormatter.format(item.UpdatedAt),
     ],
     renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="Slug" value={item.Slug} /><DetailItem label="Địa chỉ" value={item.Address} /><DetailItem label="Số phòng" value={item.NumberOfRoom} /><DetailItem label="Giờ làm việc" value={item.WorkingHour} /><DetailItem label="Ảnh đại diện" value={item.Image} /><DetailItem label="Bản đồ" value={<a className="text-primary underline" href={item.MapUrl} target="_blank" rel="noreferrer">Mở Google Maps</a>} /></CommonDetail><MarkdownDetail title="Mô tả" content={item.Description} /><MarkdownDetail title="Chi tiết dịch vụ" content={item.DetailService} /></>,
-    renderForm: (item, update) => <><Field label="Tên cơ sở"><Input required value={item.Name} onChange={(event) => update("Name", event.target.value)} /></Field><Field label="Slug"><Input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Chỉ dùng chữ thường, số và dấu gạch ngang" value={item.Slug} onChange={(event) => update("Slug", event.target.value)} /></Field><Field label="Địa chỉ" wide><Input required value={item.Address} onChange={(event) => update("Address", event.target.value)} /></Field><Field label="Số phòng"><Input required min={0} type="number" value={item.NumberOfRoom} onChange={(event) => update("NumberOfRoom", Number(event.target.value))} /></Field><Field label="Trạng thái"><StatusField value={item.Status} onChange={(value) => update("Status", value)} /></Field><Field label="Giờ làm việc" wide><Input value={item.WorkingHour} onChange={(event) => update("WorkingHour", event.target.value)} placeholder="Ví dụ: Thứ Hai - Thứ Sáu, 07:00 - 17:00" /></Field><Field label="URL ảnh đại diện" wide><Input type="text" value={item.Image} onChange={(event) => update("Image", event.target.value)} placeholder="https://..." /></Field><Field label="URL bản đồ" wide><Input type="url" value={item.MapUrl} onChange={(event) => update("MapUrl", event.target.value)} placeholder="https://..." /></Field><MarkdownField label="Mô tả (Markdown)" value={item.Description} onChange={(value) => update("Description", value)} /><MarkdownField label="Chi tiết dịch vụ (Markdown)" value={item.DetailService} onChange={(value) => update("DetailService", value)} /></>,
-    createDraft: createEmptyHospital,
-    onCreate: handleCreateHospital,
+    renderForm: (item, update) => <><HospitalImagePicker value={pendingImage?.hospitalUuid === item.Uuid ? pendingImage.preview : item.Image} onChange={(file, preview) => { if (pendingImage) URL.revokeObjectURL(pendingImage.preview); setPendingImage({ hospitalUuid: item.Uuid, file, preview }); }} /><Field label="Tên cơ sở"><Input required value={item.Name} onChange={(event) => update("Name", event.target.value)} /></Field><Field label="Slug"><Input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Chỉ dùng chữ thường, số và dấu gạch ngang" value={item.Slug} onChange={(event) => update("Slug", event.target.value)} /></Field><Field label="Địa chỉ" wide><Input required value={item.Address} onChange={(event) => update("Address", event.target.value)} /></Field><Field label="Số phòng"><Input required min={0} type="number" value={item.NumberOfRoom} onChange={(event) => update("NumberOfRoom", Number(event.target.value))} /></Field><Field label="Trạng thái"><StatusField value={item.Status} onChange={(value) => update("Status", value)} /></Field><Field label="Giờ làm việc" wide><Input value={item.WorkingHour} onChange={(event) => update("WorkingHour", event.target.value)} placeholder="Ví dụ: Thứ Hai - Thứ Sáu, 07:00 - 17:00" /></Field><Field label="URL bản đồ" wide><Input type="url" value={item.MapUrl} onChange={(event) => update("MapUrl", event.target.value)} placeholder="https://..." /></Field><MarkdownField label="Mô tả (Markdown)" value={item.Description} onChange={(value) => update("Description", value)} /><MarkdownField label="Chi tiết dịch vụ (Markdown)" value={item.DetailService} onChange={(value) => update("DetailService", value)} /></>,
+    createHref: "/noi-bo/trang-tong/co-so-y-te/tao-moi",
     onSave: handleSaveHospital,
+    onFormClose: clearPendingImage,
     onDelete: handleDeleteHospital,
     onRestore: handleRestoreHospital,
   }} />;
@@ -595,8 +639,64 @@ function createEmptyDepartment(): Department {
   };
 }
 
+function IconTemplatePicker({
+  templates,
+  value,
+  onChange,
+}: {
+  templates: string[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Field label="Biểu tượng chuyên khoa" wide>
+      <div
+        className="grid max-h-72 grid-cols-4 gap-3 overflow-y-auto rounded-md border bg-slate-50 p-3 sm:grid-cols-5 md:grid-cols-8"
+        role="radiogroup"
+        aria-label="Chọn biểu tượng chuyên khoa"
+      >
+        {templates.map((template, index) => {
+          const selected = template === value;
+
+          return (
+            <button
+              key={template}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              aria-label={`Mẫu biểu tượng ${index + 1}`}
+              onClick={() => onChange(template)}
+              className={`aspect-square rounded-lg border-2 bg-white p-2 transition hover:border-primary/60 hover:shadow-sm ${
+                selected
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-transparent"
+              }`}
+            >
+              <img
+                src={template}
+                alt=""
+                className="h-full w-full object-contain"
+              />
+            </button>
+          );
+        })}
+      </div>
+      {value ? (
+        <p className="truncate text-xs text-muted-foreground" title={value}>
+          Đã chọn: {value}
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Chọn một mẫu biểu tượng để tiếp tục.
+        </p>
+      )}
+    </Field>
+  );
+}
+
 export function DepartmentsManagementScreen() {
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [iconTemplates, setIconTemplates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -604,10 +704,14 @@ export function DepartmentsManagementScreen() {
     const controller = new AbortController();
     let active = true;
 
-    adminDepartmentService.getAll(controller.signal)
-      .then((response) => {
+    Promise.all([
+      adminDepartmentService.getAll(controller.signal),
+      adminDepartmentService.getIconTemplates(controller.signal),
+    ])
+      .then(([departmentResponse, iconTemplateResponse]) => {
         if (!active) return;
-        setDepartments((response.data ?? response.Data ?? []).map(mapToDepartment));
+        setDepartments((departmentResponse.data ?? departmentResponse.Data ?? []).map(mapToDepartment));
+        setIconTemplates(iconTemplateResponse.data ?? iconTemplateResponse.Data ?? []);
       })
       .catch((requestError) => {
         if (!active) return;
@@ -652,8 +756,11 @@ export function DepartmentsManagementScreen() {
     searchText: (item) => `${item.Name} ${item.Slug} ${item.Description}`,
     renderCells: (item) => [item.Name, item.Slug, <span key="description" className="block max-w-80 truncate">{item.Description}</span>, dateFormatter.format(item.CreatedAt), dateFormatter.format(item.UpdatedAt)],
     renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="Slug" value={item.Slug} /><DetailItem label="Biểu tượng" value={item.Icon} /></CommonDetail><MarkdownDetail title="Mô tả chuyên khoa" content={item.Description} /></>,
-    renderForm: (item, update) => <><Field label="Tên chuyên khoa"><Input required value={item.Name} onChange={(event) => update("Name", event.target.value)} /></Field><Field label="Slug"><Input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={item.Slug} onChange={(event) => update("Slug", event.target.value)} /></Field><Field label="Đường dẫn biểu tượng"><Input value={item.Icon} onChange={(event) => update("Icon", event.target.value)} /></Field><Field label="Trạng thái"><StatusField value={item.Status} onChange={(value) => update("Status", value)} /></Field><MarkdownField label="Mô tả (Markdown)" value={item.Description} onChange={(value) => update("Description", value)} /></>,
-    createDraft: createEmptyDepartment,
+    renderForm: (item, update) => <><Field label="Tên chuyên khoa"><Input required value={item.Name} onChange={(event) => update("Name", event.target.value)} /></Field><Field label="Slug"><Input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={item.Slug} onChange={(event) => update("Slug", event.target.value)} /></Field><Field label="Trạng thái"><StatusField value={item.Status} onChange={(value) => update("Status", value)} /></Field><IconTemplatePicker templates={iconTemplates} value={item.Icon} onChange={(value) => update("Icon", value)} /><MarkdownField label="Mô tả (Markdown)" value={item.Description} onChange={(value) => update("Description", value)} /></>,
+    createDraft: () => ({
+      ...createEmptyDepartment(),
+      Icon: iconTemplates[0] ?? "",
+    }),
     onCreate: createDepartment,
     onSave: saveDepartment,
     onDelete: (item) => adminDepartmentService.delete(item.Uuid),
