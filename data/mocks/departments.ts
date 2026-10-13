@@ -3,7 +3,7 @@ import { BaseStatus, type Department } from "@/types/models";
 export const mockDepartments: Department[] = [
   {
     Uuid: "09a6bb46-92d4-4d40-bda3-f7e1a466f85d",
-    Icon: "/images/department-placeholder.svg",
+    Icon: "/images/departments/internal-medicine.svg",
     Slug: "noi-tong-quat",
     Name: "Nội tổng quát",
     Description: "Khám và theo dõi các bệnh lý nội khoa thường gặp.",
@@ -14,7 +14,7 @@ export const mockDepartments: Department[] = [
   },
   {
     Uuid: "f4d6bff1-bb1d-4a0d-a4c8-19c7bdb193eb",
-    Icon: "/images/department-placeholder.svg",
+    Icon: "/images/departments/cardiology.svg",
     Slug: "tim-mach",
     Name: "Tim mạch",
     Description: "Tầm soát và điều trị các vấn đề tim mạch.",
@@ -25,7 +25,7 @@ export const mockDepartments: Department[] = [
   },
   {
     Uuid: "672bbda6-a7cc-462f-b00f-17189c00114f",
-    Icon: "/images/department-placeholder.svg",
+    Icon: "/images/departments/pediatrics.svg",
     Slug: "nhi-khoa",
     Name: "Nhi khoa",
     Description: "Chăm sóc sức khỏe và theo dõi phát triển cho trẻ.",
@@ -36,7 +36,7 @@ export const mockDepartments: Department[] = [
   },
   {
     Uuid: "cb4214bd-b85c-4694-b9e9-57fc395d2c68",
-    Icon: "/images/department-placeholder.svg",
+    Icon: "/images/departments/dermatology.svg",
     Slug: "da-lieu",
     Name: "Da liễu",
     Description: "Thăm khám các vấn đề về da, tóc và móng.",

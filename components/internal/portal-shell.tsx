@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -47,6 +47,7 @@ import type {
   PortalIconName,
   PortalNavigationItem,
 } from "@/lib/combined-internal-portal";
+import { sidebarService } from "@/lib/services/navigation/SidebarService";
 import { cn } from "@/lib/utils";
 
 const portalIcons: Record<PortalIconName, ComponentType<{ className?: string }>> = {
@@ -86,11 +87,30 @@ export type PortalNavigationGroup = {
 };
 
 export function PortalShell({ portal, children, navigationGroups }: PortalShellProps) {
+  const [groups, setGroups] = useState<PortalNavigationGroup[]>(
+    process.env.NEXT_PUBLIC_USE_MOCK_API === "false" ? [] : navigationGroups,
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    sidebarService
+      .get(controller.signal)
+      .then((response) => setGroups(response.groups))
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          console.error("Không thể tải sidebar:", error);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f3f7f9] text-[#173b57] lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]">
       <aside className="hidden h-screen flex-col border-r border-white/10 bg-[#123f5b] text-white lg:sticky lg:top-0 lg:flex">
         <PortalBrand />
-        <PortalNavigation groups={navigationGroups} />
+        <PortalNavigation groups={groups} />
         <div className="mt-auto border-t border-white/10 p-4">
           <p className="text-xs text-white/55">Phạm vi truy cập</p>
           <p className="mt-1 text-sm font-medium text-white/90">{portal.scope}</p>
@@ -100,7 +120,7 @@ export function PortalShell({ portal, children, navigationGroups }: PortalShellP
       <div className="min-w-0">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <PortalMobileNavigation portal={portal} groups={navigationGroups} />
+            <PortalMobileNavigation portal={portal} groups={groups} />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-[#173b57]">{portal.name}</p>
               <p className="truncate text-xs text-muted-foreground">{portal.context}</p>

@@ -1,6 +1,7 @@
 using api.Contract.Account;
 using api.Lib;
 using api.Model;
+using api.Model.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Service;
@@ -37,7 +38,7 @@ public sealed class AccountService(
             .AsNoTracking()
             .Where(item => item.DeletedAt == null)
             .OrderBy(item => item.Name)
-            .Select(item => new AccountRoleOptionResponse(item.Uuid, item.Name, item.IsDoctor))
+            .Select(item => new AccountRoleOptionResponse(item.Uuid, item.Name, item.IsDoctor, item.Scope))
             .ToListAsync(cancellationToken);
         var hospitals = await dbContext.Hospitals
             .AsNoTracking()
@@ -394,6 +395,16 @@ public sealed class AccountService(
         if (role is null)
         {
             throw new InvalidOperationException("Role khong ton tai");
+        }
+
+        if (role.Scope == AccessScope.Hospital && !hospitalUuid.HasValue)
+        {
+            throw new InvalidOperationException("Role theo cơ sở bắt buộc phải chọn cơ sở y tế");
+        }
+
+        if (role.Scope == AccessScope.System && hospitalUuid.HasValue)
+        {
+            throw new InvalidOperationException("Role toàn hệ thống không được gán cơ sở y tế");
         }
 
         if (hospitalUuid.HasValue && !await dbContext.Hospitals.AnyAsync(

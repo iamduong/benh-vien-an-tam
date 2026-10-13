@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Minh hoa kham suc khoe dinh ky">
-  <rect width="640" height="360" fill="#fff5d9"/>
-  <rect x="176" y="55" width="288" height="260" rx="10" fill="#fff" stroke="#d6e4ec" stroke-width="7"/>
-  <rect x="260" y="35" width="120" height="45" rx="8" fill="#087fb8"/>
-  <path d="M223 130l19 19 34-40M223 201l19 19 34-40M223 272l19 19 34-40" fill="none" stroke="#34a889" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M310 130h105M310 201h105M310 272h105" stroke="#b8cad5" stroke-width="12" stroke-linecap="round"/>
-</svg>

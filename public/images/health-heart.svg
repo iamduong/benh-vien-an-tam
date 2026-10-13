@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Minh hoa cham soc tim mach">
-  <rect width="640" height="360" fill="#e7f6fd"/>
-  <circle cx="320" cy="180" r="122" fill="#fff"/>
-  <path d="M320 265c-24-20-112-76-112-142 0-68 86-86 112-30 26-56 112-38 112 30 0 66-88 122-112 142z" fill="#e76565"/>
-  <path d="M170 185h90l25-58 47 118 32-60h106" fill="none" stroke="#087fb8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>

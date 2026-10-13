@@ -39,7 +39,6 @@ export function SystemScreens({ slug }: { slug: string }) {
     case "bao-cao": return <SystemReportsScreen />;
     case "nhat-ky-he-thong": return <SystemAuditScreen />;
     case "khung-gio-lam-viec": return <TimeWorkingCatalogScreen />;
-    case "gio-lam-viec-dich-vu": return <ServiceWorkingScreen />;
     case "phan-quyen": return <PermissionManagementScreen />;
     default: return null;
   }

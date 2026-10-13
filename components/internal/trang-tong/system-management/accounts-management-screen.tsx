@@ -36,7 +36,7 @@ import {
   type AdminAccountItem,
   type AdminAccountOptions,
 } from "@/lib/services/account/AdminAccountService";
-import { BaseStatus, Gender } from "@/types/models";
+import { AccessScope, BaseStatus, Gender } from "@/types/models";
 
 type RecordFilter = "active" | "deleted" | "all";
 
@@ -207,7 +207,7 @@ export function AccountsManagementScreen() {
       const payload = {
         phone: draft.phone.trim(),
         roleUuid: draft.roleUuid,
-        hospitalUuid: draft.hospitalUuid || null,
+        hospitalUuid: selectedRole?.scope === AccessScope.Hospital ? draft.hospitalUuid || null : null,
         status: draft.status,
       };
       const profilePayload = selectedRole?.isDoctor
@@ -382,7 +382,14 @@ export function AccountsManagementScreen() {
                   <select id="account-role" 
                     required value={draft.roleUuid} 
                     disabled={Boolean(draft.uuid)}
-                    onChange={(event) => setDraft({ ...draft, roleUuid: event.target.value })} 
+                    onChange={(event) => {
+                      const role = options.roles.find((item) => item.uuid === event.target.value);
+                      setDraft({
+                        ...draft,
+                        roleUuid: event.target.value,
+                        hospitalUuid: role?.scope === AccessScope.System ? "" : draft.hospitalUuid,
+                      });
+                    }}
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-70">
                     <option value="" disabled>Chọn role</option>
                     {options.roles.map(role => <option key={role.uuid} value={role.uuid}>{role.name}</option>)}
@@ -391,10 +398,12 @@ export function AccountsManagementScreen() {
                 <div className="space-y-2">
                   <Label htmlFor="account-hospital">Cơ sở</Label>
                   <select id="account-hospital" 
+                    required={selectedRole?.scope === AccessScope.Hospital}
+                    disabled={selectedRole?.scope === AccessScope.System}
                     value={draft.hospitalUuid} 
                     onChange={(event) => setDraft({ ...draft, hospitalUuid: event.target.value })} 
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm">
-                    <option value="">Toàn hệ thống</option>
+                    <option value="">{selectedRole?.scope === AccessScope.System ? "Toàn hệ thống" : "Chọn cơ sở y tế"}</option>
                     {options.hospitals.map((hospital) => <option key={hospital.uuid} value={hospital.uuid}>{hospital.name}</option>)}
                   </select>
                 </div>

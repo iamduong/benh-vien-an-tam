@@ -389,6 +389,11 @@ export enum PermissionAction {
   Delete = "Delete",
 }
 
+export enum AccessScope {
+  System = "System",
+  Hospital = "Hospital",
+}
+
 export type TimeWorking = {
   Uuid: Guid;
   DayOfWeek: number;
@@ -409,6 +414,7 @@ export type Role = {
   Name: string;
   Description: string;
   IsDoctor: boolean;
+  Scope: AccessScope;
   Status: BaseStatus;
   CreatedAt: Date;
   UpdatedAt: Date;
@@ -416,10 +422,12 @@ export type Role = {
 };
 
 export type Permission = {
-  Uuid: Guid;
-  Icon: string;
-  Name: string;
-  Description: string;
+  uuid: Guid;
+  slug: string;
+  icon: string;
+  name: string;
+  description: string;
+  scope: AccessScope;
 };
 
 export type RolePermission = {

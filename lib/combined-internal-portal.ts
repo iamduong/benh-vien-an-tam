@@ -66,7 +66,6 @@ export const combinedPortalSections: CombinedPortalSection[] = [
       item("bao-cao-he-thong", "bao-cao", "Báo cáo hệ thống", "Xem báo cáo tổng hợp không bao gồm nội dung lâm sàng chi tiết.", "report"),
       item("nhat-ky-he-thong", "nhat-ky-he-thong", "Nhật ký hệ thống", "Theo dõi audit log và các hành động quản trị quan trọng.", "audit"),
       item("khung-gio-lam-viec", "khung-gio-lam-viec", "Khung giờ làm việc", "Quản lý danh mục khung giờ dùng chung trong hệ thống.", "schedule"),
-      item("gio-lam-viec-dich-vu", "gio-lam-viec-dich-vu", "Giờ làm việc dịch vụ", "Gán và cập nhật lịch thực hiện cho dịch vụ.", "schedule"),
       item("phan-quyen", "phan-quyen", "Vai trò & quyền hạn", "Quản lý role và permission của cổng nội bộ.", "permission"),
     ],
   },

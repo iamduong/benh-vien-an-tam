@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title">
-  <title id="title">Biểu tượng chuyên khoa</title>
-  <rect width="160" height="160" rx="32" fill="#e2f0ed"/>
-  <path d="M80 121s-44-25-44-58c0-28 34-38 44-14 10-24 44-14 44 14 0 33-44 58-44 58Z" fill="#ffffff" stroke="#2b8074" stroke-width="8" stroke-linejoin="round"/>
-  <path d="M51 80h17l8-17 11 34 8-17h15" fill="none" stroke="#2b8074" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>

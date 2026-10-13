@@ -189,6 +189,17 @@ public sealed class AuthService(
                 doctorProfile.DeletedAt);
         }
 
+        var internalAccount = await dbContext.Accounts
+            .AsNoTracking()
+            .AnyAsync(
+                account => account.Uuid == accountUuid && account.RoleUuid != null,
+                cancellationToken);
+
+        if (internalAccount)
+        {
+            return new AuthStaffProfileResult(accountUuid);
+        }
+
         throw new AppException(401, "Không tìm thấy hồ sơ của tài khoản.");
     }
 
@@ -295,7 +306,12 @@ public sealed record AuthAccountResult(
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(AuthPatientProfileResult), "patient")]
 [JsonDerivedType(typeof(AuthDoctorProfileResult), "doctor")]
+[JsonDerivedType(typeof(AuthStaffProfileResult), "staff")]
 public abstract record AuthProfileResult;
+
+public sealed record AuthStaffProfileResult(
+    Guid AccountUuid
+) : AuthProfileResult;
 
 public sealed record AuthPatientProfileResult(
     Guid Uuid,
