@@ -34,7 +34,8 @@ public sealed class AuthService(
             errors[nameof(request.Phone)] = ["Số điện thoại đã được sử dụng"];
         }
 
-        if (await dbContext.PatientProfiles.AnyAsync(profile => profile.Email == email, cancellationToken))
+        if (await dbContext.Accounts.AnyAsync(account => account.Email == email, cancellationToken) ||
+            await dbContext.PatientProfiles.AnyAsync(profile => profile.Email == email, cancellationToken))
         {
             errors[nameof(request.Email)] = ["Email đã được sử dụng"];
         }
@@ -51,6 +52,7 @@ public sealed class AuthService(
         {
             Uuid = accountUuid,
             Phone = phone,
+            Email = email,
             Password = passwordHasher.Hash(request.Password),
             RoleUuid = null,
             Status = BaseStatus.Active,

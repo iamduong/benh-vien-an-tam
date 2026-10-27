@@ -31,9 +31,10 @@ public sealed class CreateAccountRequest
 
     public DateOnly? Birthdate { get; init; }
 
+    [Required]
     [EmailAddress]
     [StringLength(254)]
-    public string? Email { get; init; }
+    public string Email { get; init; } = string.Empty;
 
     [StringLength(160)]
     [RegularExpression(@"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
@@ -91,9 +92,10 @@ public sealed class UpdateAccountRequest
 
     public DateOnly? Birthdate { get; init; }
 
+    [Required]
     [EmailAddress]
     [StringLength(254)]
-    public string? Email { get; init; }
+    public string Email { get; init; } = string.Empty;
 
     [StringLength(160)]
     [RegularExpression(@"^[a-z0-9]+(?:-[a-z0-9]+)*$")]

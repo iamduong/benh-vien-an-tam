@@ -6,6 +6,7 @@ public sealed class AccountResponse
 {
     public Guid Uuid { get; init; }
     public string Phone { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
     public Guid? RoleUuid { get; init; }
     public string? RoleName { get; init; }
     public bool RoleIsDoctor { get; init; }

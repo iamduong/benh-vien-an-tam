@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { error: showError } = useToast();
   const [session, setSession] = useState<AuthSession | null>(null);
   const sessionRef = useRef<AuthSession | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // useEffect(() => {
   //   let active = true;
