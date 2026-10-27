@@ -46,6 +46,18 @@ export class AdminHospitalService {
         return response.data;
     }
 
+    async getById(
+        uuid: string,
+        signal?: AbortSignal
+    ): Promise<ApiResponse<AdminHospitalItem>> {
+        const response = await httpClient.get<ApiResponse<AdminHospitalItem>>(
+            `/admin/hospitals/${uuid}`,
+            { signal }
+        );
+
+        return response.data;
+    }
+
     async create(
         payload: CreateHospitalRequest
     ): Promise<ApiResponse<AdminHospitalItem>> {

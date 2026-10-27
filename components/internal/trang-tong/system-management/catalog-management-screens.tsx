@@ -4,7 +4,6 @@ import {
   Activity,
   Eye,
   Hospital as HospitalIcon,
-  ImagePlus,
   PackageSearch,
   Pencil,
   Plus,
@@ -56,14 +55,12 @@ import {
 import {
   adminHospitalService,
   type AdminHospitalItem,
-  type CreateHospitalRequest,
 } from "@/lib/services/hospital/AdminHospitalService";
 import {
   adminMedicineService,
   type AdminMedicineItem,
   type MedicineRequest,
 } from "@/lib/services/medicine/AdminMedicineService";
-import { uploadService } from "@/lib/services/upload/UploadService";
 
 type ManagedRecord = {
   Uuid: string;
@@ -88,6 +85,8 @@ type CatalogConfig<T extends ManagedRecord> = {
   renderForm: (item: T, update: <K extends keyof T>(key: K, value: T[K]) => void) => ReactNode;
   createDraft?: () => T;
   createHref?: string;
+  detailHref?: (item: T) => string;
+  editHref?: (item: T) => string;
   onCreate?: (item: T) => Promise<T>;
   onSave?: (item: T) => Promise<T>;
   onDelete?: (item:T) => Promise<void>;
@@ -244,12 +243,24 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
     ...config.renderCells(item),
     <RecordStatus key={`${item.Uuid}-status`} item={item} />,
     <div key={`${item.Uuid}-actions`} className="flex items-center justify-end gap-1">
-      <Button type="button" variant="ghost" size="icon-sm" title="Xem chi tiết" aria-label={`Xem chi tiết ${item.Name}`} onClick={() => setDetailId(item.Uuid)}>
-        <Eye />
-      </Button>
-      <Button type="button" variant="ghost" size="icon-sm" title="Chỉnh sửa" aria-label={`Chỉnh sửa ${item.Name}`} onClick={() => { setMutationError(null); setDraftMode("edit"); setDraft({ ...item }); }}>
-        <Pencil />
-      </Button>
+      {config.detailHref ? (
+        <Link href={config.detailHref(item)} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} title="Xem chi tiết" aria-label={`Xem chi tiết ${item.Name}`}>
+          <Eye />
+        </Link>
+      ) : (
+        <Button type="button" variant="ghost" size="icon-sm" title="Xem chi tiết" aria-label={`Xem chi tiết ${item.Name}`} onClick={() => setDetailId(item.Uuid)}>
+          <Eye />
+        </Button>
+      )}
+      {config.editHref ? (
+        <Link href={config.editHref(item)} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} title="Chỉnh sửa" aria-label={`Chỉnh sửa ${item.Name}`}>
+          <Pencil />
+        </Link>
+      ) : (
+        <Button type="button" variant="ghost" size="icon-sm" title="Chỉnh sửa" aria-label={`Chỉnh sửa ${item.Name}`} onClick={() => { setMutationError(null); setDraftMode("edit"); setDraft({ ...item }); }}>
+          <Pencil />
+        </Button>
+      )}
       <Button type="button" variant={isDeleted(item) ? "outline" : "destructive"} size="icon-sm" title={isDeleted(item) ? "Khôi phục" : "Xóa"} aria-label={`${isDeleted(item) ? "Khôi phục" : "Xóa"} ${item.Name}`} onClick={isDeleted(item) ? () => restoreItem(item) : () => deleteItem(item)}>
         {isDeleted(item) ? <RotateCcw /> : <Trash2 />}
       </Button>
@@ -428,76 +439,10 @@ function mapToHospital(item: AdminHospitalItem): Hospital {
   };
 }
 
-function mapToHospitalRequest(hospital: Hospital): CreateHospitalRequest {
-  return {
-    name: hospital.Name.trim(),
-    address: hospital.Address.trim(),
-    slug: hospital.Slug.trim(),
-    image: hospital.Image,
-    mapUrl: hospital.MapUrl,
-    numberOfRoom: hospital.NumberOfRoom,
-    description: hospital.Description,
-    detailService: hospital.DetailService,
-    workingHour: hospital.WorkingHour,
-    status: hospital.Status,
-  };
-}
-
-function HospitalImagePicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (file: File, preview: string) => void;
-}) {
-  return (
-    <div className="space-y-3 sm:col-span-2">
-      <Label htmlFor="hospital-edit-image">Ảnh đại diện</Label>
-      <label
-        htmlFor="hospital-edit-image"
-        className="flex min-h-64 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed bg-slate-50 transition hover:border-primary/60 hover:bg-primary/5"
-      >
-        {value ? (
-          <img src={value} alt="Ảnh cơ sở y tế xem trước" className="h-72 w-full object-cover" />
-        ) : (
-          <span className="flex flex-col items-center gap-3 p-8 text-center text-muted-foreground">
-            <ImagePlus className="size-9 text-primary" />
-            <span>Chọn ảnh từ máy</span>
-          </span>
-        )}
-      </label>
-      <Input
-        id="hospital-edit-image"
-        type="file"
-        accept="image/*"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file?.type.startsWith("image/")) {
-            onChange(file, URL.createObjectURL(file));
-          }
-        }}
-      />
-      <p className="text-xs text-muted-foreground">
-        Ảnh mới chỉ được upload khi bạn bấm lưu thay đổi.
-      </p>
-    </div>
-  );
-}
-
 export function HospitalsManagementScreen() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
-  const [pendingImage, setPendingImage] = useState<{
-    hospitalUuid: string;
-    file: File;
-    preview: string;
-  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  function clearPendingImage() {
-    if (pendingImage) URL.revokeObjectURL(pendingImage.preview);
-    setPendingImage(null);
-  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -529,40 +474,6 @@ export function HospitalsManagementScreen() {
     };
   }, []);
 
-  async function handleSaveHospital(
-    hospital: Hospital
-  ): Promise<Hospital> {
-    let image = hospital.Image;
-
-    if (pendingImage?.hospitalUuid === hospital.Uuid) {
-      const uploadResponse = await uploadService.uploadImage(pendingImage.file);
-      const uploadResult = uploadResponse.data ?? uploadResponse.Data;
-      image = uploadResult?.secureUri
-        ?? uploadResult?.secureUrl
-        ?? uploadResult?.uri
-        ?? uploadResult?.url
-        ?? "";
-
-      if (!image) throw new Error("API upload không trả về URI hình ảnh");
-    }
-
-    const response = await adminHospitalService.update(
-      hospital.Uuid,
-      mapToHospitalRequest({ ...hospital, Image: image }));
-
-    const updatedHospital = response.data ?? response.Data;
-
-    if (!updatedHospital) {
-      throw new Error("Không nhận được dữ liệu cơ sở y tế sau khi cập nhật");
-    }
-    if (pendingImage?.hospitalUuid === hospital.Uuid) {
-      URL.revokeObjectURL(pendingImage.preview);
-      setPendingImage(null);
-    }
-
-    return mapToHospital(updatedHospital);
-  }
-
   async function handleDeleteHospital(hospital: Hospital): Promise<void> {
     await adminHospitalService.delete(hospital.Uuid);
   }
@@ -591,10 +502,10 @@ export function HospitalsManagementScreen() {
       dateFormatter.format(item.UpdatedAt),
     ],
     renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="Slug" value={item.Slug} /><DetailItem label="Địa chỉ" value={item.Address} /><DetailItem label="Số phòng" value={item.NumberOfRoom} /><DetailItem label="Giờ làm việc" value={item.WorkingHour} /><DetailItem label="Ảnh đại diện" value={item.Image} /><DetailItem label="Bản đồ" value={<a className="text-primary underline" href={item.MapUrl} target="_blank" rel="noreferrer">Mở Google Maps</a>} /></CommonDetail><MarkdownDetail title="Mô tả" content={item.Description} /><MarkdownDetail title="Chi tiết dịch vụ" content={item.DetailService} /></>,
-    renderForm: (item, update) => <><HospitalImagePicker value={pendingImage?.hospitalUuid === item.Uuid ? pendingImage.preview : item.Image} onChange={(file, preview) => { if (pendingImage) URL.revokeObjectURL(pendingImage.preview); setPendingImage({ hospitalUuid: item.Uuid, file, preview }); }} /><Field label="Tên cơ sở"><Input required value={item.Name} onChange={(event) => update("Name", event.target.value)} /></Field><Field label="Slug"><Input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Chỉ dùng chữ thường, số và dấu gạch ngang" value={item.Slug} onChange={(event) => update("Slug", event.target.value)} /></Field><Field label="Địa chỉ" wide><Input required value={item.Address} onChange={(event) => update("Address", event.target.value)} /></Field><Field label="Số phòng"><Input required min={0} type="number" value={item.NumberOfRoom} onChange={(event) => update("NumberOfRoom", Number(event.target.value))} /></Field><Field label="Trạng thái"><StatusField value={item.Status} onChange={(value) => update("Status", value)} /></Field><Field label="Giờ làm việc" wide><Input value={item.WorkingHour} onChange={(event) => update("WorkingHour", event.target.value)} placeholder="Ví dụ: Thứ Hai - Thứ Sáu, 07:00 - 17:00" /></Field><Field label="URL bản đồ" wide><Input type="url" value={item.MapUrl} onChange={(event) => update("MapUrl", event.target.value)} placeholder="https://..." /></Field><MarkdownField label="Mô tả (Markdown)" value={item.Description} onChange={(value) => update("Description", value)} /><MarkdownField label="Chi tiết dịch vụ (Markdown)" value={item.DetailService} onChange={(value) => update("DetailService", value)} /></>,
+    renderForm: () => null,
     createHref: "/noi-bo/trang-tong/co-so-y-te/tao-moi",
-    onSave: handleSaveHospital,
-    onFormClose: clearPendingImage,
+    detailHref: (item) => `/noi-bo/trang-tong/co-so-y-te/${item.Uuid}`,
+    editHref: (item) => `/noi-bo/trang-tong/co-so-y-te/${item.Uuid}/chinh-sua`,
     onDelete: handleDeleteHospital,
     onRestore: handleRestoreHospital,
   }} />;

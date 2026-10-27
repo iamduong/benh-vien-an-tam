@@ -57,6 +57,7 @@ public class DBContext : DbContext
         {
             entity.HasIndex(account => account.Phone).IsUnique();
             entity.Property(account => account.Phone).HasMaxLength(20);
+            entity.Property(account => account.Email).HasMaxLength(254);
             entity.Property(account => account.Password).HasMaxLength(512);
         });
 

@@ -56,6 +56,7 @@ public sealed class AccountService(
     {
         var phone = NormalizePhone(request.Phone);
         await EnsurePhoneAvailableAsync(phone, null, cancellationToken);
+        var email = await NormalizeAndValidateEmailAsync(request.Email, null, cancellationToken);
         var role = await ValidateReferencesAsync(request.RoleUuid, request.HospitalUuid, cancellationToken);
         var name = request.Name.Trim();
 
@@ -64,12 +65,12 @@ public sealed class AccountService(
             throw new InvalidOperationException("Ho va ten la bat buoc");
         }
 
-        if (role.IsDoctor && string.IsNullOrWhiteSpace(request.Slug))
-        {
-            throw new InvalidOperationException("Slug bac si la bat buoc");
-        }
-
-        var slug = request.Slug?.Trim();
+        var accountUuid = Guid.NewGuid();
+        var slug = role.IsDoctor
+            ? string.IsNullOrWhiteSpace(request.Slug)
+                ? $"doctor-{accountUuid:N}"
+                : request.Slug.Trim()
+            : null;
         if (role.IsDoctor && await dbContext.DoctorProfiles.AnyAsync(
                 profile => profile.Slug == slug,
                 cancellationToken))
@@ -77,30 +78,18 @@ public sealed class AccountService(
             throw new InvalidOperationException("Slug bac si da ton tai");
         }
 
-        if (!role.IsDoctor &&
-            (!request.Gender.HasValue || !request.Birthdate.HasValue || string.IsNullOrWhiteSpace(request.Email)))
-        {
-            throw new InvalidOperationException("Gioi tinh, ngay sinh va email benh nhan la bat buoc");
-        }
-
-        if (!role.IsDoctor && request.Birthdate!.Value >= DateOnly.FromDateTime(DateTime.UtcNow))
+        var birthdate = request.Birthdate ?? new DateOnly(1900, 1, 1);
+        if (!role.IsDoctor && birthdate >= DateOnly.FromDateTime(DateTime.UtcNow))
         {
             throw new InvalidOperationException("Ngay sinh phai truoc ngay hien tai");
-        }
-
-        var email = request.Email?.Trim().ToLowerInvariant();
-        if (!role.IsDoctor && await dbContext.PatientProfiles.AnyAsync(
-                profile => profile.Email == email,
-                cancellationToken))
-        {
-            throw new InvalidOperationException("Email da duoc su dung");
         }
 
         var now = DateTime.UtcNow;
         var account = new Account
         {
-            Uuid = Guid.NewGuid(),
+            Uuid = accountUuid,
             Phone = phone,
+            Email = email,
             Password = passwordHasher.Hash(request.Password),
             RoleUuid = request.RoleUuid,
             HospitalUuid = request.HospitalUuid,
@@ -138,8 +127,8 @@ public sealed class AccountService(
                 Uuid = profileUuid,
                 AccountUuid = account.Uuid,
                 Name = name,
-                Gender = request.Gender!.Value,
-                Birthdate = request.Birthdate!.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                Gender = request.Gender ?? Gender.Other,
+                Birthdate = birthdate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
                 Avatar = request.Avatar?.Trim() ?? string.Empty,
                 MedicalCode = string.IsNullOrWhiteSpace(request.MedicalCode)
                     ? string.Empty
@@ -164,6 +153,7 @@ public sealed class AccountService(
 
         var phone = NormalizePhone(request.Phone);
         await EnsurePhoneAvailableAsync(phone, uuid, cancellationToken);
+        var email = await NormalizeAndValidateEmailAsync(request.Email, uuid, cancellationToken);
         if (request.RoleUuid != account.RoleUuid)
         {
             throw new InvalidOperationException("Khong the thay doi role cua tai khoan da tao");
@@ -198,14 +188,10 @@ public sealed class AccountService(
             }
         }
         var slug = request.Slug?.Trim();
-        var email = request.Email?.Trim().ToLowerInvariant();
 
         if (role.IsDoctor)
         {
-            if (string.IsNullOrWhiteSpace(slug))
-            {
-                throw new InvalidOperationException("Slug bac si la bat buoc");
-            }
+            slug = string.IsNullOrWhiteSpace(slug) ? doctorProfile!.Slug : slug;
             if (await dbContext.DoctorProfiles.AnyAsync(
                     item => item.Slug == slug &&
                             item.Uuid != doctorProfile!.Uuid,
@@ -216,24 +202,14 @@ public sealed class AccountService(
         }
         else
         {
-            if (!request.Gender.HasValue || !request.Birthdate.HasValue || string.IsNullOrWhiteSpace(email))
-            {
-                throw new InvalidOperationException("Gioi tinh, ngay sinh va email benh nhan la bat buoc");
-            }
-            if (request.Birthdate.Value >= DateOnly.FromDateTime(DateTime.UtcNow))
+            if (request.Birthdate.HasValue && request.Birthdate.Value >= DateOnly.FromDateTime(DateTime.UtcNow))
             {
                 throw new InvalidOperationException("Ngay sinh phai truoc ngay hien tai");
-            }
-            if (await dbContext.PatientProfiles.AnyAsync(
-                    item => item.Email == email &&
-                            item.Uuid != patientProfile!.Uuid,
-                    cancellationToken))
-            {
-                throw new InvalidOperationException("Email da duoc su dung");
             }
         }
 
         account.Phone = phone;
+        account.Email = email;
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
             account.Password = passwordHasher.Hash(request.Password);
@@ -260,8 +236,8 @@ public sealed class AccountService(
         {
             patientProfile!.Avatar = request.Avatar?.Trim() ?? string.Empty;
             patientProfile.Name = name;
-            patientProfile.Gender = request.Gender!.Value;
-            patientProfile.Birthdate = request.Birthdate!.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            patientProfile.Gender = request.Gender ?? patientProfile.Gender;
+            patientProfile.Birthdate = request.Birthdate?.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc) ?? patientProfile.Birthdate;
             patientProfile.MedicalCode = request.MedicalCode?.Trim() ?? string.Empty;
             patientProfile.Email = email!;
         }
@@ -336,6 +312,7 @@ public sealed class AccountService(
             {
                 Uuid = account.Uuid,
                 Phone = account.Phone,
+                Email = string.IsNullOrWhiteSpace(account.Email) ? patientProfile?.Email ?? string.Empty : account.Email,
                 RoleUuid = account.RoleUuid,
                 RoleName = role?.Name,
                 RoleIsDoctor = role?.IsDoctor ?? false,
@@ -380,6 +357,33 @@ public sealed class AccountService(
                     (!excludedUuid.HasValue || item.Uuid != excludedUuid.Value),
             cancellationToken);
         if (exists) throw new InvalidOperationException("So dien thoai da duoc su dung");
+    }
+
+    private async Task<string> NormalizeAndValidateEmailAsync(
+        string email,
+        Guid? excludedUuid,
+        CancellationToken cancellationToken)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            throw new InvalidOperationException("Email la bat buoc");
+        }
+
+        var usedByAccount = await dbContext.Accounts.AnyAsync(
+            item => item.Email == normalized &&
+                    (!excludedUuid.HasValue || item.Uuid != excludedUuid.Value),
+            cancellationToken);
+        var usedByLegacyProfile = await dbContext.PatientProfiles.AnyAsync(
+            item => item.Email == normalized &&
+                    (!excludedUuid.HasValue || item.AccountUuid != excludedUuid.Value),
+            cancellationToken);
+        if (usedByAccount || usedByLegacyProfile)
+        {
+            throw new InvalidOperationException("Email da duoc su dung");
+        }
+
+        return normalized;
     }
 
     private async Task<Role> ValidateReferencesAsync(

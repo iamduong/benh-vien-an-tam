@@ -5,6 +5,7 @@ import type { AccessScope, BaseStatus, Gender } from "@/types/models";
 export type AdminAccountItem = {
   uuid: string;
   phone: string;
+  email: string;
   roleUuid: string | null;
   roleName: string | null;
   roleIsDoctor: boolean;
@@ -53,7 +54,7 @@ export type CreateAccountRequest = {
   name: string;
   gender?: Gender;
   birthdate?: string;
-  email?: string;
+  email: string;
   slug?: string;
   avatar?: string;
   medicalCode?: string;

@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   adminAccountService,
   type AdminAccountItem,
@@ -153,8 +152,8 @@ export function AccountsManagementScreen() {
       hospitalUuid: "",
       status: BaseStatus.Active,
       name: "",
-      gender: "",
-      birthdate: "",
+      gender: Gender.Other,
+      birthdate: "1900-01-01",
       email: "",
       slug: "",
       avatar: "",
@@ -183,7 +182,7 @@ export function AccountsManagementScreen() {
       name: doctorProfile?.name ?? patientProfile?.name ?? "",
       gender: patientProfile?.gender ?? "",
       birthdate: patientProfile?.birthdate.slice(0, 10) ?? "",
-      email: patientProfile?.email ?? "",
+      email: account.email,
       slug: doctorProfile?.slug ?? "",
       avatar: doctorProfile?.avatar ?? patientProfile?.avatar ?? "",
       medicalCode: patientProfile?.medicalCode ?? "",
@@ -206,6 +205,7 @@ export function AccountsManagementScreen() {
     try {
       const payload = {
         phone: draft.phone.trim(),
+        email: draft.email.trim(),
         roleUuid: draft.roleUuid,
         hospitalUuid: selectedRole?.scope === AccessScope.Hospital ? draft.hospitalUuid || null : null,
         status: draft.status,
@@ -228,7 +228,6 @@ export function AccountsManagementScreen() {
             avatar: draft.avatar.trim(),
             gender: draft.gender as Gender,
             birthdate: draft.birthdate,
-            email: draft.email.trim(),
             medicalCode: draft.medicalCode.trim(),
           };
       const response = draft.uuid
@@ -362,7 +361,7 @@ export function AccountsManagementScreen() {
       </PortalSection>
 
       <Dialog open={Boolean(draft)} onOpenChange={(open) => { if (!open) setDraft(null); }}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-xl">
           {draft ? (
             <form onSubmit={saveAccount}>
               <DialogHeader>
@@ -370,17 +369,25 @@ export function AccountsManagementScreen() {
               </DialogHeader>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
+                  <Label htmlFor="profile-name">Họ tên</Label>
+                  <Input id="profile-name" required minLength={2} maxLength={100} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="account-email">Email</Label>
+                  <Input id="account-email" type="email" required maxLength={254} value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="account-phone">Số điện thoại</Label>
-                  <Input id="account-phone" required value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} />
+                  <Input id="account-phone" type="tel" required maxLength={20} value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="account-password">{draft.uuid ? "Mật khẩu mới (tùy chọn)" : "Mật khẩu"}</Label>
-                  <Input id="account-password" type="password" required={!draft.uuid} minLength={8} value={draft.password} onChange={(event) => setDraft({ ...draft, password: event.target.value })} />
+                  <Input id="account-password" type="password" required={!draft.uuid} minLength={8} maxLength={100} value={draft.password} onChange={(event) => setDraft({ ...draft, password: event.target.value })} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="account-role">Role</Label>
-                  <select id="account-role" 
-                    required value={draft.roleUuid} 
+                <div className={selectedRole?.scope === AccessScope.Hospital ? "space-y-2" : "space-y-2 sm:col-span-2"}>
+                  <Label htmlFor="account-role">Chọn quyền</Label>
+                  <select id="account-role"
+                    required value={draft.roleUuid}
                     disabled={Boolean(draft.uuid)}
                     onChange={(event) => {
                       const role = options.roles.find((item) => item.uuid === event.target.value);
@@ -391,96 +398,19 @@ export function AccountsManagementScreen() {
                       });
                     }}
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-70">
-                    <option value="" disabled>Chọn role</option>
-                    {options.roles.map(role => <option key={role.uuid} value={role.uuid}>{role.name}</option>)}
+                    <option value="" disabled>Chọn quyền</option>
+                    {options.roles.map((role) => <option key={role.uuid} value={role.uuid}>{role.name}</option>)}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="account-hospital">Cơ sở</Label>
-                  <select id="account-hospital" 
-                    required={selectedRole?.scope === AccessScope.Hospital}
-                    disabled={selectedRole?.scope === AccessScope.System}
-                    value={draft.hospitalUuid} 
-                    onChange={(event) => setDraft({ ...draft, hospitalUuid: event.target.value })} 
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm">
-                    <option value="">{selectedRole?.scope === AccessScope.System ? "Toàn hệ thống" : "Chọn cơ sở y tế"}</option>
-                    {options.hospitals.map((hospital) => <option key={hospital.uuid} value={hospital.uuid}>{hospital.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="account-status">Trạng thái</Label>
-                  <select id="account-status" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as BaseStatus })} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
-                    <option value={BaseStatus.Active}>Hoạt động</option><option value={BaseStatus.InActive}>Vô hiệu hóa</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="profile-name">Họ và tên</Label>
-                  <Input id="profile-name" required minLength={2} maxLength={100} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="profile-avatar">Ảnh đại diện (tùy chọn)</Label>
-                  <Input id="profile-avatar" maxLength={2048} placeholder="URL hoặc đường dẫn ảnh" value={draft.avatar} onChange={(event) => setDraft({ ...draft, avatar: event.target.value })} />
-                </div>
-                {selectedRole?.isDoctor ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="doctor-slug">Slug bác sĩ</Label>
-                      <Input id="doctor-slug" required maxLength={160} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="nguyen-van-an" value={draft.slug} onChange={(event) => setDraft({ ...draft, slug: event.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="doctor-price">Giá khám (tùy chọn)</Label>
-                      <Input id="doctor-price" type="number" min={0} step={1} value={draft.price} onChange={(event) => setDraft({ ...draft, price: event.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="doctor-department">Khoa hiển thị (tùy chọn)</Label>
-                      <Input id="doctor-department" maxLength={200} value={draft.departmentDisplay} onChange={(event) => setDraft({ ...draft, departmentDisplay: event.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="doctor-specialty">Chuyên khoa (tùy chọn)</Label>
-                      <Input id="doctor-specialty" maxLength={200} value={draft.specialty} onChange={(event) => setDraft({ ...draft, specialty: event.target.value })} />
-                    </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="doctor-workplace">Nơi công tác (tùy chọn)</Label>
-                      <Input id="doctor-workplace" maxLength={200} value={draft.workplace} onChange={(event) => setDraft({ ...draft, workplace: event.target.value })} />
-                    </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="doctor-introduction">Giới thiệu (tùy chọn)</Label>
-                      <Textarea id="doctor-introduction" value={draft.introduction} onChange={(event) => setDraft({ ...draft, introduction: event.target.value })} />
-                    </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="doctor-expertise">Kinh nghiệm chuyên môn (tùy chọn)</Label>
-                      <Textarea id="doctor-expertise" value={draft.expertise} onChange={(event) => setDraft({ ...draft, expertise: event.target.value })} />
-                    </div>
-                    <label className="flex items-center gap-2 text-sm font-medium sm:col-span-2">
-                      <input type="checkbox" checked={draft.isFeatured} onChange={(event) => setDraft({ ...draft, isFeatured: event.target.checked })} className="size-4 rounded border" />
-                      Hiển thị
-                    </label>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="patient-gender">Giới tính</Label>
-                      <select id="patient-gender" required value={draft.gender} onChange={(event) => setDraft({ ...draft, gender: event.target.value as Gender })} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
-                        <option value="" disabled>Chọn giới tính</option>
-                        <option value={Gender.Female}>Nữ</option>
-                        <option value={Gender.Male}>Nam</option>
-                        <option value={Gender.Other}>Khác</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="patient-birthdate">Ngày sinh</Label>
-                      <Input id="patient-birthdate" type="date" required value={draft.birthdate} onChange={(event) => setDraft({ ...draft, birthdate: event.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="patient-email">Email</Label>
-                      <Input id="patient-email" type="email" required maxLength={254} value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="patient-medical-code">Mã bệnh nhân (tùy chọn)</Label>
-                      <Input id="patient-medical-code" maxLength={50} placeholder="" value={draft.medicalCode} onChange={(event) => setDraft({ ...draft, medicalCode: event.target.value })} />
-                    </div>
-                  </>
-                )}
+                {selectedRole?.scope === AccessScope.Hospital ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="account-hospital">Mã bệnh viện</Label>
+                    <select id="account-hospital" required value={draft.hospitalUuid} onChange={(event) => setDraft({ ...draft, hospitalUuid: event.target.value })} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+                      <option value="" disabled>Chọn bệnh viện</option>
+                      {options.hospitals.map((hospital) => <option key={hospital.uuid} value={hospital.uuid}>{hospital.name}</option>)}
+                    </select>
+                  </div>
+                ) : null}
               </div>
               {mutationError ? <p className="mt-4 text-sm text-destructive">{mutationError}</p> : null}
               <DialogFooter>
