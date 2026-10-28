@@ -6,7 +6,9 @@ using api.Lib.Setting;
 using api.Middleware;
 using api.Service;
 using api.Service.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,6 +78,78 @@ builder.Services.AddScoped<
 builder.Services.AddDbContext<DBContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")));
+
+var jwtConfig = builder.Configuration.GetSection("Jwt").Get<JwtSetting>()
+    ?? throw new InvalidOperationException("Thiếu cấu hình Jwt.");
+
+if (string.IsNullOrWhiteSpace(jwtConfig.SecretKey))
+{
+    throw new InvalidOperationException("Jwt:SecretKey không được để trống.");
+}
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+
+        options.DefaultChallengeScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+
+        options.DefaultForbidScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+
+        options.SaveToken = false;
+
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(jwtConfig.SecretKey)),
+
+                ValidateIssuer = false,
+                ValidateAudience = false,
+
+                ValidateLifetime = true,
+                RequireExpirationTime = true,
+                ClockSkew = TimeSpan.Zero,
+
+                NameClaimType = "uuid",
+                RoleClaimType = "role"
+            };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                context.Token = context.Request.Cookies["access_token"];
+                return Task.CompletedTask;
+            },
+
+            OnTokenValidated = context =>
+            {
+                var tokenType = context.Principal?
+                    .FindFirst("token_type")?
+                    .Value;
+
+                if (tokenType != "access")
+                {
+                    context.Fail(
+                        "Token không phải access token.");
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 

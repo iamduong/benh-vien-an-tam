@@ -1,16 +1,22 @@
 using api.Contract.Account;
+using api.Lib;
 using api.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controller;
 
+// [Authorize]
 [ApiController]
 [Route("api/admin/accounts")]
 public sealed class AdminAccountsController(AccountService accountService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken) =>
-        Ok(new { Message = "Lay danh sach tai khoan thanh cong", Data = await accountService.GetAccountsAsync(cancellationToken) });
+    // [RequirePermission("Tài khoản:read")]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    {
+        return  Ok(new { Message = "Lay danh sach tai khoan thanh cong", Data = await accountService.GetAccountsAsync(cancellationToken) });
+    }
 
     [HttpGet("options")]
     public async Task<IActionResult> GetOptions(CancellationToken cancellationToken) =>

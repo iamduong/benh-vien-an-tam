@@ -102,6 +102,7 @@ public sealed class Jwt(IOptions<JwtSetting> options)
         List<Claim> claims =
         [
             new Claim("uuid", payload.Uuid.ToString()),
+            new Claim("hospital_uuid", payload.HospitalUuid.ToString()!),
             new Claim("role", payload.Role),
             new Claim("token_type", "access"),
             CreateIssuedAtClaim(issuedAt)
