@@ -124,7 +124,7 @@ export function registerDoctorPrescriptionRoutes(mock: AxiosMockAdapter) {
             cancelledCount: mockPrescriptionDetailsList.filter((x) => x.status === "Cancelled").length,
         };
 
-        return [200, { Data: metricsData, Message: "Lấy số liệu thống kê thành công." }];
+        return [200, { data: metricsData, message: "Lấy số liệu thống kê thành công." }];
     });
 
     // 2. GET /v1/prescriptions - Danh sách đơn thuốc cho Bảng
@@ -136,6 +136,7 @@ export function registerDoctorPrescriptionRoutes(mock: AxiosMockAdapter) {
             uuid: item.uuid,
             rxCode: item.rxCode,
             patientName: item.patient.name,
+            patientMedicalCode: item.patient.medicalCode,
             createdAt: item.createdAt,
             medicineCount: item.details.length,
             totalAmount: item.details
@@ -165,14 +166,14 @@ export function registerDoctorPrescriptionRoutes(mock: AxiosMockAdapter) {
         return [
             200,
             {
-                Data: {
+                data: {
                     Items: listItems.slice((p - 1) * ps, p * ps),
                     Page: p,
                     PageSize: ps,
                     TotalItems: listItems.length,
                     TotalPages: Math.ceil(listItems.length / ps) || 1,
                 },
-                Message: "Lấy danh sách đơn thuốc thành công.",
+                message: "Lấy danh sách đơn thuốc thành công.",
             },
         ];
     });
@@ -183,10 +184,10 @@ export function registerDoctorPrescriptionRoutes(mock: AxiosMockAdapter) {
         const detail = mockPrescriptionDetailsList.find((x) => x.uuid === uuid);
 
         if (!detail) {
-            return [404, { Message: "Không tìm thấy chi tiết đơn thuốc." }];
+            return [404, { message: "Không tìm thấy chi tiết đơn thuốc." }];
         }
 
-        return [200, { Data: detail, Message: "Lấy chi tiết đơn thuốc thành công." }];
+        return [200, { data: detail, message: "Lấy chi tiết đơn thuốc thành công." }];
     });
 
     // 4. POST /v1/prescriptions/:uuid/cancel - Xử lý Hủy đơn từ Modal
@@ -199,6 +200,6 @@ export function registerDoctorPrescriptionRoutes(mock: AxiosMockAdapter) {
             target.status = "Cancelled";
         }
 
-        return [200, { Message: "Hủy đơn thuốc thành công." }];
+        return [200, { message: "Hủy đơn thuốc thành công." }];
     });
 }

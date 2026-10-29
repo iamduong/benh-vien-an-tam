@@ -16,35 +16,35 @@ const updatedProfilesMap = new Map<string, Partial<DoctorProfileResponse>>();
 // In a real scenario, this would be extracted from the JWT token
 function getMockAccountUuid(): string {
   // For demo purposes, return the first doctor's account
-  return mockDoctors[0]?.AccountUuid || "2a9a4604-aa8a-4f39-84ea-f6cb613884be";
+  return mockDoctors[0]?.accountUuid || "2a9a4604-aa8a-4f39-84ea-f6cb613884be";
 }
 
 // Helper function to build a DoctorProfileResponse
 function buildDoctorProfileResponse(
   accountUuid: string
 ): DoctorProfileResponse | null {
-  const doctor = mockDoctors.find((d) => d.AccountUuid === accountUuid);
+  const doctor = mockDoctors.find((d) => d.accountUuid === accountUuid);
   if (!doctor) {
     return null;
   }
 
-  const hospital = mockHospitals.find((h) => h.Uuid === doctor.HospitalUuid);
-  const account = mockAccounts.find((a) => a.Uuid === accountUuid);
+  const hospital = mockHospitals.find((h) => h.uuid === doctor.hospitalUuid);
+  const account = mockAccounts.find((a) => a.uuid === accountUuid);
 
   // Get updated profile data if it exists
   const updatedData = updatedProfilesMap.get(accountUuid) || {};
 
   return {
-    uuid: doctor.Uuid,
-    name: updatedData.name ?? doctor.Name,
-    specialty: updatedData.specialty ?? doctor.Specialty,
-    workplace: updatedData.workplace ?? doctor.Workplace,
-    introduction: updatedData.introduction ?? doctor.Introduction,
-    expertise: updatedData.expertise ?? doctor.Expertise,
-    hospitalName: hospital?.Name ?? "Chưa phân công",
-    departmentDisplay: updatedData.departmentDisplay ?? doctor.DepartmentDisplay ?? "Chưa phân công",
-    price: doctor.Price,
-    accountStatus: account?.Status ?? "Active",
+    uuid: doctor.uuid,
+    name: updatedData.name ?? doctor.name,
+    specialty: updatedData.specialty ?? doctor.specialty,
+    workplace: updatedData.workplace ?? doctor.workplace,
+    introduction: updatedData.introduction ?? doctor.introduction,
+    expertise: updatedData.expertise ?? doctor.expertise,
+    hospitalName: hospital?.name ?? "Chưa phân công",
+    departmentDisplay: updatedData.departmentDisplay ?? doctor.departmentDisplay ?? "Chưa phân công",
+    price: doctor.price,
+    accountStatus: account?.status ?? "Active",
   };
 }
 
@@ -59,8 +59,8 @@ export function registerDoctorProfileRoutes(mock: AxiosMockAdapter) {
       return [
         404,
         {
-          Data: null,
-          Message: "Không tìm thấy hồ sơ bác sĩ.",
+          data: null,
+          message: "Không tìm thấy hồ sơ bác sĩ.",
         } as ApiResponse<null>,
       ];
     }
@@ -68,8 +68,8 @@ export function registerDoctorProfileRoutes(mock: AxiosMockAdapter) {
     return [
       200,
       {
-        Data: profileData,
-        Message: "Lấy hồ sơ bác sĩ thành công.",
+        data: profileData,
+        message: "Lấy hồ sơ bác sĩ thành công.",
       } as ApiResponse<DoctorProfileResponse>,
     ];
   });
@@ -86,8 +86,8 @@ export function registerDoctorProfileRoutes(mock: AxiosMockAdapter) {
         return [
           400,
           {
-            Data: null,
-            Message: "Họ và tên không được để trống.",
+            data: null,
+            message: "Họ và tên không được để trống.",
           } as ApiResponse<null>,
         ];
       }
@@ -96,8 +96,8 @@ export function registerDoctorProfileRoutes(mock: AxiosMockAdapter) {
         return [
           400,
           {
-            Data: null,
-            Message: "Chuyên môn không được để trống.",
+            data: null,
+            message: "Chuyên môn không được để trống.",
           } as ApiResponse<null>,
         ];
       }
@@ -106,8 +106,8 @@ export function registerDoctorProfileRoutes(mock: AxiosMockAdapter) {
         return [
           400,
           {
-            Data: null,
-            Message: "Nơi làm việc không được để trống.",
+            data: null,
+            message: "Nơi làm việc không được để trống.",
           } as ApiResponse<null>,
         ];
       }
@@ -116,8 +116,8 @@ export function registerDoctorProfileRoutes(mock: AxiosMockAdapter) {
         return [
           400,
           {
-            Data: null,
-            Message: "Giới thiệu không được để trống.",
+            data: null,
+            message: "Giới thiệu không được để trống.",
           } as ApiResponse<null>,
         ];
       }
@@ -126,8 +126,8 @@ export function registerDoctorProfileRoutes(mock: AxiosMockAdapter) {
         return [
           400,
           {
-            Data: null,
-            Message: "Kinh nghiệm và chuyên môn không được để trống.",
+            data: null,
+            message: "Kinh nghiệm và chuyên môn không được để trống.",
           } as ApiResponse<null>,
         ];
       }
@@ -138,16 +138,16 @@ export function registerDoctorProfileRoutes(mock: AxiosMockAdapter) {
       return [
         200,
         {
-          Data: { message: "Cập nhật hồ sơ bác sĩ thành công." },
-          Message: "Cập nhật thành công.",
+          data: { message: "Cập nhật hồ sơ bác sĩ thành công." },
+          message: "Cập nhật thành công.",
         } as ApiResponse<{ message: string }>,
       ];
     } catch (error) {
       return [
         400,
         {
-          Data: null,
-          Message: "Dữ liệu không hợp lệ.",
+          data: null,
+          message: "Dữ liệu không hợp lệ.",
         } as ApiResponse<null>,
       ];
     }

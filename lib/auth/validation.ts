@@ -12,12 +12,12 @@ export function normalizePhone(phone: string) {
 export function validateLogin(values: LoginRequest): AuthFieldErrors {
   const errors: AuthFieldErrors = {};
 
-  if (!phonePattern.test(normalizePhone(values.Phone))) {
-    errors.Phone = "Nhập số điện thoại Việt Nam hợp lệ.";
+  if (!phonePattern.test(normalizePhone(values.phone))) {
+    errors.phone = "Nhập số điện thoại Việt Nam hợp lệ.";
   }
 
-  if (!values.Password) {
-    errors.Password = "Nhập mật khẩu.";
+  if (!values.password) {
+    errors.password = "Nhập mật khẩu.";
   }
 
   return errors;
@@ -26,37 +26,37 @@ export function validateLogin(values: LoginRequest): AuthFieldErrors {
 export function validateRegistration(values: RegisterPatientRequest): AuthFieldErrors {
   const errors = validateLogin(values);
 
-  if (values.Password.length < 8) {
-    errors.Password = "Mật khẩu phải có ít nhất 8 ký tự.";
+  if (values.password.length < 8) {
+    errors.password = "Mật khẩu phải có ít nhất 8 ký tự.";
   } else if (
-    !/[A-Za-z]/.test(values.Password) ||
-    !/\d/.test(values.Password)
+    !/[A-Za-z]/.test(values.password) ||
+    !/\d/.test(values.password)
   ) {
-    errors.Password = "Mật khẩu phải có cả chữ và số.";
+    errors.password = "Mật khẩu phải có cả chữ và số.";
   }
 
-  if (values.ConfirmPassword !== values.Password) {
-    errors.ConfirmPassword = "Mật khẩu nhập lại chưa khớp.";
+  if (values.confirmPassword !== values.password) {
+    errors.confirmPassword = "Mật khẩu nhập lại chưa khớp.";
   }
 
-  if (values.Name.trim().length < 2) {
-    errors.Name = "Nhập họ tên có ít nhất 2 ký tự.";
+  if (values.name.trim().length < 2) {
+    errors.name = "Nhập họ tên có ít nhất 2 ký tự.";
   }
 
-  if (!values.Gender) {
-    errors.Gender = "Chọn giới tính.";
+  if (!values.gender) {
+    errors.gender = "Chọn giới tính.";
   }
 
-  const birthdate = new Date(`${values.Birthdate}T00:00:00`);
+  const birthdate = new Date(`${values.birthdate}T00:00:00`);
   if (
     Number.isNaN(birthdate.getTime()) ||
     birthdate >= new Date(new Date().setHours(0, 0, 0, 0))
   ) {
-    errors.Birthdate = "Ngày sinh phải trước ngày hiện tại.";
+    errors.birthdate = "Ngày sinh phải trước ngày hiện tại.";
   }
 
-  if (!emailPattern.test(values.Email.trim())) {
-    errors.Email = "Nhập địa chỉ email hợp lệ.";
+  if (!emailPattern.test(values.email.trim())) {
+    errors.email = "Nhập địa chỉ email hợp lệ.";
   }
 
   return errors;

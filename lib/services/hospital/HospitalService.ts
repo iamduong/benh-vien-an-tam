@@ -1,7 +1,12 @@
 import { isAxiosError } from "axios";
 
 import { httpClient } from "@/lib/http/client";
-import type { ApiResponse, PaginatedData } from "@/lib/http/response";
+import {
+  fromPublicPagination,
+  type ApiResponse,
+  type PaginatedData,
+  type PublicPaginatedData,
+} from "@/lib/http/response";
 import type { HospitalDetail } from "@/types/details";
 import type { HospitalListQuery } from "@/types/discovery";
 import type {
@@ -13,15 +18,15 @@ import type {
 
 export type HospitalUpdateRequest = Pick<
   Hospital,
-  | "Image"
-  | "MapUrl"
-  | "Slug"
-  | "Name"
-  | "Address"
-  | "NumberOfRoom"
-  | "Description"
-  | "DetailService"
-  | "WorkingHour"
+  | "image"
+  | "mapUrl"
+  | "slug"
+  | "name"
+  | "address"
+  | "numberOfRoom"
+  | "description"
+  | "detailService"
+  | "workingHour"
 >;
 
 export class HospitalService {
@@ -90,7 +95,7 @@ export class HospitalService {
   async getBySlug(slug: string): Promise<ApiResponse<HospitalDetail> | null> {
     try {
       const response = await httpClient.get<ApiResponse<HospitalDetail>>(
-        `/hospitals/${encodeURIComponent(slug)}`,
+        `/public/hospitals/${encodeURIComponent(slug)}`,
       );
       return response.data;
     } catch (error) {
@@ -103,26 +108,34 @@ export class HospitalService {
     query: HospitalListQuery = {},
     signal?: AbortSignal,
   ): Promise<ApiResponse<PaginatedData<Hospital>>> {
-    const response = await httpClient.get<ApiResponse<PaginatedData<Hospital>>>(
-      "/hospitals",
-      { params: query, signal },
+    const response = await httpClient.get<ApiResponse<PublicPaginatedData<Hospital>>>(
+      "/public/hospitals/search",
+      {
+        params: {
+          q: query.q || query.name,
+          department: query.department,
+          page: query.page,
+          pageSize: query.pageSize,
+        },
+        signal,
+      },
     );
 
-    return response.data;
+    return { ...response.data, data: fromPublicPagination(response.data.data) };
   }
 
   async getOptions(signal?: AbortSignal): Promise<ApiResponse<Hospital[]>> {
     const response = await httpClient.get<ApiResponse<Hospital[]>>(
-      "/hospitals/options",
+      "/public/hospitals",
       { signal },
     );
 
     return response.data;
   }
 
-  async getFeatured(signal?: AbortSignal): Promise<ApiResponse<Hospital[]>> {
+  async getFeaturedHospital(signal?: AbortSignal): Promise<ApiResponse<Hospital[]>> {
     const response = await httpClient.get<ApiResponse<Hospital[]>>(
-      "/hospitals/featured",
+      "/public/hospitals",
       { signal },
     );
 

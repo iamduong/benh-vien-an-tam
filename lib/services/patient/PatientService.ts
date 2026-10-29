@@ -23,9 +23,9 @@ export class PatientServiceError extends Error {
 function toPatientError(error: unknown) {
   if (axios.isAxiosError<PatientProfileErrorResponse>(error)) {
     return new PatientServiceError(
-      error.response?.data?.Message ??
+      error.response?.data?.message ??
         "Không thể kết nối đến hệ thống. Vui lòng thử lại.",
-      error.response?.data?.Errors,
+      error.response?.data?.errors,
       error.response?.status,
     );
   }
@@ -39,7 +39,7 @@ export class PatientService {
         "/patients/me",
         { signal },
       );
-      return { ...response.data, Data: hydrateView(response.data.Data) };
+      return { ...response.data, data: hydrateView(response.data.data) };
     } catch (error) {
       throw toPatientError(error);
     }
@@ -51,7 +51,7 @@ export class PatientService {
         "/patients/me",
         request,
       );
-      return { ...response.data, Data: hydrateView(response.data.Data) };
+      return { ...response.data, data: hydrateView(response.data.data) };
     } catch (error) {
       throw toPatientError(error);
     }
@@ -61,9 +61,9 @@ export class PatientService {
 function hydrateView(view: PatientProfileView): PatientProfileView {
   return {
     ...view,
-    Profile: {
-      ...view.Profile,
-      Birthdate: new Date(view.Profile.Birthdate),
+    profile: {
+      ...view.profile,
+      birthdate: new Date(view.profile.birthdate),
     },
   };
 }

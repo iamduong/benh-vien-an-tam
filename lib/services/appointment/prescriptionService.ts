@@ -6,24 +6,24 @@ export const prescriptionService = {
     async getPrescription(appointmentUuid: string, signal?: AbortSignal): Promise<Prescription | null> {
         try {
             const res = await httpClient.get<ApiResponse<Prescription>>(`/internal/clinical/appointments/${appointmentUuid}/prescription`, { signal });
-            return res.data.Data;
+            return res.data.data;
         } catch {
             return null;
         }
     },
 
     async savePrescription(appointmentUuid: string, note: string, items: Array<{
-        MedicineUuid: string;
-        Quantity: number;
-        QuantityPerDose: number;
-        DosesPerDay: number;
-        Duration: number;
-        Note: string;
+        medicineUuid: string;
+        quantity: number;
+        quantityPerDose: number;
+        dosesPerDay: number;
+        duration: number;
+        note: string;
     }>): Promise<Prescription> {
         const res = await httpClient.post<ApiResponse<Prescription>>(`/internal/clinical/appointments/${appointmentUuid}/prescription`, {
-            Note: note,
+            note: note,
             Items: items,
         });
-        return res.data.Data;
+        return res.data.data;
     }
 };

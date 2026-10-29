@@ -25,8 +25,8 @@ export const MedicineService = {
         );
 
         const resData = response.data as any;
-        if (resData && resData.Data) {
-            return resData.Data;
+        if (resData && resData.data) {
+            return resData.data;
         }
         return resData || { items: [], pageIndex: 1, pageSize: 5, totalCount: 0, totalPages: 1 };
     },
@@ -37,8 +37,8 @@ export const MedicineService = {
         );
 
         const resData = response.data as any;
-        if (resData && resData.Data && Array.isArray(resData.Data)) {
-            return resData.Data;
+        if (resData && resData.data && Array.isArray(resData.data)) {
+            return resData.data;
         }
         return Array.isArray(resData) ? resData : [];
     },
@@ -49,6 +49,6 @@ export const MedicineService = {
         );
 
         const resData = response.data as any;
-        return resData?.Data ?? resData;
+        return resData?.data ?? resData;
     },
 };

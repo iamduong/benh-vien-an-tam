@@ -8,7 +8,7 @@ export class PermissionService {
       signal,
     });
 
-    return response.data.Data;
+    return response.data.data;
   }
 }
 

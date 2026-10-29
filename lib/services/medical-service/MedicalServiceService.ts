@@ -1,7 +1,12 @@
 import { isAxiosError } from "axios";
 
 import { httpClient } from "@/lib/http/client";
-import type { ApiResponse, PaginatedData } from "@/lib/http/response";
+import {
+  fromPublicPagination,
+  type ApiResponse,
+  type PaginatedData,
+  type PublicPaginatedData,
+} from "@/lib/http/response";
 import type { MedicalServiceDetail } from "@/types/details";
 import type { MedicalServiceListQuery } from "@/types/discovery";
 import type { MedicalService } from "@/types/models";
@@ -12,7 +17,7 @@ export class MedicalServiceService {
   ): Promise<ApiResponse<MedicalServiceDetail> | null> {
     try {
       const response = await httpClient.get<ApiResponse<MedicalServiceDetail>>(
-        `/medical-services/${encodeURIComponent(slug)}`,
+        `/public/medical-services/${encodeURIComponent(slug)}`,
       );
       return response.data;
     } catch (error) {
@@ -26,17 +31,17 @@ export class MedicalServiceService {
     signal?: AbortSignal,
   ): Promise<ApiResponse<PaginatedData<MedicalService>>> {
     const response = await httpClient.get<
-      ApiResponse<PaginatedData<MedicalService>>
-    >("/medical-services", { params: query, signal });
+      ApiResponse<PublicPaginatedData<MedicalService>>
+    >("/public/medical-services/search", { params: query, signal });
 
-    return response.data;
+    return { ...response.data, data: fromPublicPagination(response.data.data) };
   }
 
   async getFeatured(
     signal?: AbortSignal,
   ): Promise<ApiResponse<MedicalService[]>> {
     const response = await httpClient.get<ApiResponse<MedicalService[]>>(
-      "/medical-services/featured",
+      "/public/medical-services",
       { signal },
     );
 

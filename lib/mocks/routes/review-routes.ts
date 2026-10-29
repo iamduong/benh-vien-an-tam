@@ -42,7 +42,7 @@ export function registerReviewRoutes(mock: AxiosMockAdapter) {
       return [
         403,
         {
-          Message:
+          message:
             "Chỉ có thể đánh giá sau khi lịch khám của bạn đã hoàn thành.",
         },
       ];
@@ -50,8 +50,8 @@ export function registerReviewRoutes(mock: AxiosMockAdapter) {
     return [
       200,
       {
-        Data: { AppointmentUuid: appointmentUuid, Targets: targets },
-        Message: "Lấy đối tượng có thể đánh giá thành công.",
+        data: { appointmentUuid: appointmentUuid, targets: targets },
+        message: "Lấy đối tượng có thể đánh giá thành công.",
       },
     ];
   });
@@ -61,25 +61,25 @@ export function registerReviewRoutes(mock: AxiosMockAdapter) {
     const type = getStringParam(config.params, "type");
     const targetUuid = getStringParam(config.params, "targetUuid");
     if (!isReviewType(type) || !targetUuid) {
-      return [422, { Message: "Đối tượng đánh giá không hợp lệ." }];
+      return [422, { message: "Đối tượng đánh giá không hợp lệ." }];
     }
     return [
       200,
       {
-        Data: getReviewStore(type)
+        data: getReviewStore(type)
           .filter(
             (item) =>
               getReviewTargetUuid(type, item) === targetUuid &&
-              item.Status === BaseStatus.Active,
+              item.status === BaseStatus.Active,
           )
-          .sort((left, right) => right.CreatedAt.getTime() - left.CreatedAt.getTime())
-          .map(({ Uuid, Content, NumberOfStar, CreatedAt }) => ({
-            Uuid,
-            Content,
-            NumberOfStar,
-            CreatedAt,
+          .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+          .map(({ uuid, content, numberOfStar, createdAt }) => ({
+            uuid,
+            content,
+            numberOfStar,
+            createdAt,
           })),
-        Message: "Lấy đánh giá công khai thành công.",
+        message: "Lấy đánh giá công khai thành công.",
       },
     ];
   });
@@ -94,60 +94,60 @@ export function registerReviewRoutes(mock: AxiosMockAdapter) {
       const type = segments.at(-2) ?? "";
       const targetUuid = decodeURIComponent(segments.at(-1) ?? "");
       if (!isReviewType(type) || !targetUuid) {
-        return [422, { Message: "Đối tượng đánh giá không hợp lệ." }];
+        return [422, { message: "Đối tượng đánh giá không hợp lệ." }];
       }
       const request = parseBody(config.data);
       const errors = validateReviewRequest(request);
       if (errors) {
-        return [422, { Message: "Vui lòng kiểm tra lại đánh giá.", Errors: errors }];
+        return [422, { message: "Vui lòng kiểm tra lại đánh giá.", errors: errors }];
       }
       const payload = request as SaveReviewRequest;
       if (!hasDoneAppointment(type, targetUuid, current.accountUuid)) {
         return [
           403,
           {
-            Message:
+            message:
               "Bạn cần hoàn thành lịch khám liên quan trước khi đánh giá.",
           },
         ];
       }
       if (!targetExists(type, targetUuid)) {
-        return [404, { Message: "Không tìm thấy đối tượng đánh giá." }];
+        return [404, { message: "Không tìm thấy đối tượng đánh giá." }];
       }
 
       const store = getReviewStore(type);
       const existing = store.find(
         (item) =>
-          item.PatientUuid === current.patientUuid &&
+          item.patientUuid === current.patientUuid &&
           getReviewTargetUuid(type, item) === targetUuid,
       );
       if (existing) {
-        existing.Content = payload.Content.trim();
-        existing.NumberOfStar = payload.NumberOfStar;
-        existing.Status = BaseStatus.Active;
-        existing.IsViewed = false;
+        existing.content = payload.content.trim();
+        existing.numberOfStar = payload.numberOfStar;
+        existing.status = BaseStatus.Active;
+        existing.isViewed = false;
         persistReviewState();
         return [
           200,
-          { Data: existing, Message: "Cập nhật đánh giá thành công." },
+          { data: existing, message: "Cập nhật đánh giá thành công." },
         ];
       }
 
       const common = {
-        Uuid: crypto.randomUUID(),
-        Content: payload.Content.trim(),
-        NumberOfStar: payload.NumberOfStar,
-        PatientUuid: current.patientUuid,
-        Status: BaseStatus.Active,
-        IsViewed: false,
-        CreatedAt: new Date(),
+        uuid: crypto.randomUUID(),
+        content: payload.content.trim(),
+        numberOfStar: payload.numberOfStar,
+        patientUuid: current.patientUuid,
+        status: BaseStatus.Active,
+        isViewed: false,
+        createdAt: new Date(),
       };
       const review = createReview(type, targetUuid, common);
       pushReview(type, review);
       persistReviewState();
       return [
         201,
-        { Data: review, Message: "Gửi đánh giá thành công." },
+        { data: review, message: "Gửi đánh giá thành công." },
       ];
     });
 }
@@ -158,56 +158,56 @@ function getAppointmentTargets(
 ): ReviewEligibilityTarget[] | null {
   const appointment = mockAppointments.find(
     (item) =>
-      item.Uuid === appointmentUuid &&
-      item.PatientUuid === patientUuid &&
-      item.Status === AppointmentStatus.Done &&
-      item.DeletedAt.getTime() === 0,
+      item.uuid === appointmentUuid &&
+      item.patientUuid === patientUuid &&
+      item.status === AppointmentStatus.Done &&
+      item.deletedAt.getTime() === 0,
   );
   if (!appointment) return null;
   const hospital = mockHospitals.find(
-    (item) => item.Uuid === appointment.HospitalUuid,
+    (item) => item.uuid === appointment.hospitalUuid,
   );
   if (!hospital) return null;
   const targets: ReviewEligibilityTarget[] = [
-    buildTarget("hospital", hospital.Uuid, hospital.Name, patientUuid),
+    buildTarget("hospital", hospital.uuid, hospital.name, patientUuid),
   ];
-  if (appointment.Type === AppointmentType.Doctor && appointment.DoctorUuid) {
+  if (appointment.type === AppointmentType.Doctor && appointment.doctorUuid) {
     const doctor = mockDoctors.find(
-      (item) => item.Uuid === appointment.DoctorUuid,
+      (item) => item.uuid === appointment.doctorUuid,
     );
     if (!doctor) return null;
-    targets.push(buildTarget("doctor", doctor.Uuid, doctor.Name, patientUuid));
+    targets.push(buildTarget("doctor", doctor.uuid, doctor.name, patientUuid));
   }
   if (
-    appointment.Type === AppointmentType.Service &&
-    appointment.MedicalServiceUuid
+    appointment.type === AppointmentType.Service &&
+    appointment.medicalServiceUuid
   ) {
     const service = mockMedicalServices.find(
-      (item) => item.Uuid === appointment.MedicalServiceUuid,
+      (item) => item.uuid === appointment.medicalServiceUuid,
     );
     if (!service) return null;
     targets.push(
-      buildTarget("medical-service", service.Uuid, service.Name, patientUuid),
+      buildTarget("medical-service", service.uuid, service.name, patientUuid),
     );
   }
   for (const relation of mockAppointmentMedicalServices.filter(
-    (item) => item.AppointmentUuid === appointment.Uuid,
+    (item) => item.appointmentUuid === appointment.uuid,
   )) {
     if (
       targets.some(
         (item) =>
-          item.Type === "medical-service" &&
-          item.TargetUuid === relation.MedicalServiceUuid,
+          item.type === "medical-service" &&
+          item.targetUuid === relation.medicalServiceUuid,
       )
     ) {
       continue;
     }
     const service = mockMedicalServices.find(
-      (item) => item.Uuid === relation.MedicalServiceUuid,
+      (item) => item.uuid === relation.medicalServiceUuid,
     );
     if (service) {
       targets.push(
-        buildTarget("medical-service", service.Uuid, service.Name, patientUuid),
+        buildTarget("medical-service", service.uuid, service.name, patientUuid),
       );
     }
   }
@@ -222,14 +222,14 @@ function buildTarget(
 ): ReviewEligibilityTarget {
   const review = getReviewStore(type).find(
     (item) =>
-      item.PatientUuid === patientUuid &&
+      item.patientUuid === patientUuid &&
       getReviewTargetUuid(type, item) === targetUuid,
   );
   return {
-    Type: type,
-    TargetUuid: targetUuid,
-    TargetName: targetName,
-    Review: review ?? null,
+    type: type,
+    targetUuid: targetUuid,
+    targetName: targetName,
+    review: review ?? null,
   };
 }
 
@@ -239,25 +239,25 @@ function hasDoneAppointment(
   accountUuid: string,
 ) {
   const patient = mockPatientProfiles.find(
-    (item) => item.AccountUuid === accountUuid,
+    (item) => item.accountUuid === accountUuid,
   );
   if (!patient) return false;
   return mockAppointments.some((item) => {
     if (
-      item.PatientUuid !== patient.Uuid ||
-      item.Status !== AppointmentStatus.Done ||
-      item.DeletedAt.getTime() !== 0
+      item.patientUuid !== patient.uuid ||
+      item.status !== AppointmentStatus.Done ||
+      item.deletedAt.getTime() !== 0
     ) {
       return false;
     }
-    if (type === "hospital") return item.HospitalUuid === targetUuid;
-    if (type === "doctor") return item.DoctorUuid === targetUuid;
+    if (type === "hospital") return item.hospitalUuid === targetUuid;
+    if (type === "doctor") return item.doctorUuid === targetUuid;
     return (
-      item.MedicalServiceUuid === targetUuid ||
+      item.medicalServiceUuid === targetUuid ||
       mockAppointmentMedicalServices.some(
         (relation) =>
-          relation.AppointmentUuid === item.Uuid &&
-          relation.MedicalServiceUuid === targetUuid,
+          relation.appointmentUuid === item.uuid &&
+          relation.medicalServiceUuid === targetUuid,
       )
     );
   });
@@ -267,15 +267,15 @@ function getCurrentPatient(headers: unknown) {
   const accountUuid = getHeader(headers, "X-Mock-Account-Uuid");
   const account = mockAccounts.find(
     (item) =>
-      item.Uuid === accountUuid &&
-      item.RoleUuid === ROLE_UUIDS.PATIENT &&
-      item.Status === BaseStatus.Active,
+      item.uuid === accountUuid &&
+      item.roleUuid === ROLE_UUIDS.PATIENT &&
+      item.status === BaseStatus.Active,
   );
   const profile = mockPatientProfiles.find(
-    (item) => item.AccountUuid === account?.Uuid,
+    (item) => item.accountUuid === account?.uuid,
   );
   return account && profile
-    ? { accountUuid: account.Uuid, patientUuid: profile.Uuid }
+    ? { accountUuid: account.uuid, patientUuid: profile.uuid }
     : null;
 }
 
@@ -286,44 +286,44 @@ function getReviewStore(type: ReviewTargetType): PatientReview[] {
 }
 
 function getReviewTargetUuid(type: ReviewTargetType, review: PatientReview) {
-  if (type === "hospital" && "HospitalUuid" in review) {
-    return review.HospitalUuid;
+  if (type === "hospital" && "hospitalUuid" in review) {
+    return review.hospitalUuid;
   }
-  if (type === "doctor" && "DoctorUuid" in review) {
-    return review.DoctorUuid;
+  if (type === "doctor" && "doctorUuid" in review) {
+    return review.doctorUuid;
   }
-  if (type === "medical-service" && "MedicalServiceUuid" in review) {
-    return review.MedicalServiceUuid;
+  if (type === "medical-service" && "medicalServiceUuid" in review) {
+    return review.medicalServiceUuid;
   }
   return "";
 }
 
 function targetExists(type: ReviewTargetType, targetUuid: string) {
   if (type === "hospital") {
-    return mockHospitals.some((item) => item.Uuid === targetUuid);
+    return mockHospitals.some((item) => item.uuid === targetUuid);
   }
   if (type === "doctor") {
-    return mockDoctors.some((item) => item.Uuid === targetUuid);
+    return mockDoctors.some((item) => item.uuid === targetUuid);
   }
-  return mockMedicalServices.some((item) => item.Uuid === targetUuid);
+  return mockMedicalServices.some((item) => item.uuid === targetUuid);
 }
 
 function createReview(
   type: ReviewTargetType,
   targetUuid: string,
-  common: Omit<ReviewHospital, "HospitalUuid">,
+  common: Omit<ReviewHospital, "hospitalUuid">,
 ): PatientReview {
-  if (type === "hospital") return { ...common, HospitalUuid: targetUuid };
-  if (type === "doctor") return { ...common, DoctorUuid: targetUuid };
-  return { ...common, MedicalServiceUuid: targetUuid };
+  if (type === "hospital") return { ...common, hospitalUuid: targetUuid };
+  if (type === "doctor") return { ...common, doctorUuid: targetUuid };
+  return { ...common, medicalServiceUuid: targetUuid };
 }
 
 function pushReview(type: ReviewTargetType, review: PatientReview) {
-  if (type === "hospital" && "HospitalUuid" in review) {
+  if (type === "hospital" && "hospitalUuid" in review) {
     mockReviewHospitals.push(review);
-  } else if (type === "doctor" && "DoctorUuid" in review) {
+  } else if (type === "doctor" && "doctorUuid" in review) {
     mockReviewDoctors.push(review);
-  } else if (type === "medical-service" && "MedicalServiceUuid" in review) {
+  } else if (type === "medical-service" && "medicalServiceUuid" in review) {
     mockReviewMedicalServices.push(review);
   }
 }
@@ -355,20 +355,20 @@ function restoreReviewState() {
         }
         const existing = store.find(
           (item) =>
-            item.PatientUuid === review.PatientUuid &&
+            item.patientUuid === review.patientUuid &&
             getReviewTargetUuid(type, item) === getReviewTargetUuid(type, review),
         );
-        if (store.some((item) => item.Uuid === review.Uuid && item !== existing)) {
+        if (store.some((item) => item.uuid === review.uuid && item !== existing)) {
           continue;
         }
         if (existing) {
-          existing.Content = review.Content;
-          existing.NumberOfStar = review.NumberOfStar;
-          existing.Status = BaseStatus.Active;
-          existing.IsViewed = false;
+          existing.content = review.content;
+          existing.numberOfStar = review.numberOfStar;
+          existing.status = BaseStatus.Active;
+          existing.isViewed = false;
         } else {
-          review.Status = BaseStatus.Active;
-          review.IsViewed = false;
+          review.status = BaseStatus.Active;
+          review.isViewed = false;
           pushReview(type, review);
         }
       }
@@ -402,28 +402,28 @@ function hydratePersistedReview(
   const review = value as Record<string, unknown>;
   const targetField =
     type === "hospital"
-      ? "HospitalUuid"
+      ? "hospitalUuid"
       : type === "doctor"
-        ? "DoctorUuid"
-        : "MedicalServiceUuid";
-  const createdAt = new Date(String(review.CreatedAt));
+        ? "doctorUuid"
+        : "medicalServiceUuid";
+  const createdAt = new Date(String(review.createdAt));
   if (
-    typeof review.Uuid !== "string" ||
-    typeof review.PatientUuid !== "string" ||
+    typeof review.uuid !== "string" ||
+    typeof review.patientUuid !== "string" ||
     typeof review[targetField] !== "string" ||
-    typeof review.Content !== "string" ||
-    review.Content.trim().length < 10 ||
-    review.Content.trim().length > 1000 ||
-    !Number.isInteger(review.NumberOfStar) ||
-    Number(review.NumberOfStar) < 1 ||
-    Number(review.NumberOfStar) > 5 ||
-    (review.Status !== BaseStatus.Active && review.Status !== BaseStatus.InActive) ||
-    typeof review.IsViewed !== "boolean" ||
+    typeof review.content !== "string" ||
+    review.content.trim().length < 10 ||
+    review.content.trim().length > 1000 ||
+    !Number.isInteger(review.numberOfStar) ||
+    Number(review.numberOfStar) < 1 ||
+    Number(review.numberOfStar) > 5 ||
+    (review.status !== BaseStatus.Active && review.status !== BaseStatus.InActive) ||
+    typeof review.isViewed !== "boolean" ||
     Number.isNaN(createdAt.getTime())
   ) {
     return null;
   }
-  return { ...review, CreatedAt: createdAt } as PatientReview;
+  return { ...review, createdAt: createdAt } as PatientReview;
 }
 
 function hasDoneAppointmentForPatient(
@@ -431,41 +431,41 @@ function hasDoneAppointmentForPatient(
   review: PatientReview,
 ) {
   const profile = mockPatientProfiles.find(
-    (item) => item.Uuid === review.PatientUuid,
+    (item) => item.uuid === review.patientUuid,
   );
   const account = mockAccounts.find(
     (item) =>
-      item.Uuid === profile?.AccountUuid &&
-      item.RoleUuid === ROLE_UUIDS.PATIENT &&
-      item.Status === BaseStatus.Active,
+      item.uuid === profile?.accountUuid &&
+      item.roleUuid === ROLE_UUIDS.PATIENT &&
+      item.status === BaseStatus.Active,
   );
   return Boolean(
     account &&
       hasDoneAppointment(
         type,
         getReviewTargetUuid(type, review),
-        account.Uuid,
+        account.uuid,
       ),
   );
 }
 
 function validateReviewRequest(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return { Content: "Nội dung đánh giá không hợp lệ." };
+    return { content: "Nội dung đánh giá không hợp lệ." };
   }
   const body = value as Record<string, unknown>;
   const errors: Partial<Record<keyof SaveReviewRequest, string>> = {};
   if (
-    !Number.isInteger(body.NumberOfStar) ||
-    Number(body.NumberOfStar) < 1 ||
-    Number(body.NumberOfStar) > 5
+    !Number.isInteger(body.numberOfStar) ||
+    Number(body.numberOfStar) < 1 ||
+    Number(body.numberOfStar) > 5
   ) {
-    errors.NumberOfStar = "Chọn số sao từ 1 đến 5.";
+    errors.numberOfStar = "Chọn số sao từ 1 đến 5.";
   }
-  if (typeof body.Content !== "string" || body.Content.trim().length < 10) {
-    errors.Content = "Nội dung đánh giá cần ít nhất 10 ký tự.";
-  } else if (body.Content.trim().length > 1000) {
-    errors.Content = "Nội dung đánh giá tối đa 1000 ký tự.";
+  if (typeof body.content !== "string" || body.content.trim().length < 10) {
+    errors.content = "Nội dung đánh giá cần ít nhất 10 ký tự.";
+  } else if (body.content.trim().length > 1000) {
+    errors.content = "Nội dung đánh giá tối đa 1000 ký tự.";
   }
   return Object.keys(errors).length ? errors : null;
 }
@@ -493,5 +493,5 @@ function getHeader(headers: unknown, name: string) {
 }
 
 function unauthorizedResponse(): [number, unknown] {
-  return [403, { Message: "Phiên đăng nhập không hợp lệ." }];
+  return [403, { message: "Phiên đăng nhập không hợp lệ." }];
 }

@@ -69,8 +69,8 @@ export function HospitalDirectory() {
             status: "success",
             key,
             data: {
-              result: hospitalResponse.Data,
-              departments: departmentResponse.Data,
+              result: hospitalResponse.data,
+              departments: departmentResponse.data,
             },
           });
         }
@@ -94,18 +94,18 @@ export function HospitalDirectory() {
   const data = state.status === "success" && isCurrent ? state.data : null;
   const hospitals = data?.result.Items ?? [];
   const selectedHospital =
-    hospitals.find((item) => item.Uuid === selectedUuid) ??
+    hospitals.find((item) => item.uuid === selectedUuid) ??
     hospitals[0] ??
     null;
 
   useEffect(() => {
-    if (!data || !selectedHospital || selectedUuid === selectedHospital.Uuid) {
+    if (!data || !selectedHospital || selectedUuid === selectedHospital.uuid) {
       return;
     }
     router.replace(
       getCanonicalSelectionHref(
         currentParams,
-        selectedHospital.Uuid,
+        selectedHospital.uuid,
         data.result.Page,
       ),
       { scroll: false },
@@ -172,10 +172,10 @@ export function HospitalDirectory() {
               />
               {data.departments.map((item) => (
                 <DepartmentChip
-                  key={item.Uuid}
-                  label={item.Name}
-                  href={getDepartmentHref(currentParams, item.Uuid)}
-                  active={department === item.Uuid}
+                  key={item.uuid}
+                  label={item.name}
+                  href={getDepartmentHref(currentParams, item.uuid)}
+                  active={department === item.uuid}
                 />
               ))}
             </div>
@@ -197,10 +197,10 @@ export function HospitalDirectory() {
                   <div className="space-y-4">
                     {hospitals.map((hospital) => (
                       <HospitalSelectionCard
-                        key={hospital.Uuid}
+                        key={hospital.uuid}
                         hospital={hospital}
-                        href={getHospitalHref(currentParams, hospital.Uuid)}
-                        selected={hospital.Uuid === selectedHospital.Uuid}
+                        href={getHospitalHref(currentParams, hospital.uuid)}
+                        selected={hospital.uuid === selectedHospital.uuid}
                       />
                     ))}
                   </div>
@@ -248,20 +248,20 @@ function HospitalSelectionCard({ hospital, href, selected }: { hospital: Hospita
     <article className={cn("overflow-hidden rounded-2xl border bg-card transition-colors", selected ? "border-primary ring-2 ring-primary/15" : "hover:border-primary/35")}>
       <Link href={href} scroll className="grid min-w-0 gap-4 p-4 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:p-5">
         <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted sm:aspect-square">
-          <Image src={hospital.Image} alt={`Hình minh họa ${hospital.Name}`} fill sizes="120px" className="object-cover" />
+          <Image src={hospital.image} alt={`Hình minh họa ${hospital.name}`} fill sizes="120px" className="object-cover" />
         </div>
         <div className="min-w-0 self-center">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="break-words text-lg font-bold leading-7">{hospital.Name}</h3>
+            <h3 className="break-words text-lg font-bold leading-7">{hospital.name}</h3>
             {selected ? <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">Đang chọn</span> : null}
           </div>
-          <HospitalFact icon={MapPin} value={hospital.Address} />
-          <HospitalFact icon={Clock3} value={hospital.WorkingHour} />
+          <HospitalFact icon={MapPin} value={hospital.address} />
+          <HospitalFact icon={Clock3} value={hospital.workingHour} />
         </div>
       </Link>
       <div className="grid gap-2 border-t px-4 py-3 sm:grid-cols-2 sm:px-5">
-        <Link href={`/co-so-y-te/${hospital.Slug}`} className={cn(buttonVariants({ variant: "outline" }), "w-full")}>Xem chi tiết</Link>
-        <Link href={`/dat-lich/co-so-y-te?hospital=${hospital.Uuid}`} className={cn(buttonVariants(), "w-full")}><CalendarPlus aria-hidden="true" />Đặt lịch khám</Link>
+        <Link href={`/co-so-y-te/${hospital.slug}`} className={cn(buttonVariants({ variant: "outline" }), "w-full")}>Xem chi tiết</Link>
+        <Link href={`/dat-lich/co-so-y-te?hospital=${hospital.uuid}`} className={cn(buttonVariants(), "w-full")}><CalendarPlus aria-hidden="true" />Đặt lịch khám</Link>
       </div>
     </article>
   );
@@ -271,20 +271,20 @@ function HospitalPreview({ hospital }: { hospital: Hospital }) {
   return (
     <aside id="hospital-detail" className="scroll-mt-24 self-start overflow-hidden rounded-2xl border bg-card lg:sticky lg:top-24">
       <div className="relative aspect-[16/9] bg-muted">
-        <Image src={hospital.Image} alt={`Không gian ${hospital.Name}`} fill sizes="(min-width: 1024px) 34vw, 100vw" className="object-cover" />
+        <Image src={hospital.image} alt={`Không gian ${hospital.name}`} fill sizes="(min-width: 1024px) 34vw, 100vw" className="object-cover" />
       </div>
       <div className="p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">Cơ sở đang chọn</p>
-        <h2 className="mt-2 text-2xl font-bold leading-8">{hospital.Name}</h2>
-        <HospitalFact icon={MapPin} value={hospital.Address} />
-        <HospitalFact icon={Clock3} value={hospital.WorkingHour} />
-        <HospitalFact icon={DoorOpen} value={`${hospital.NumberOfRoom} phòng theo thông tin cơ sở`} />
+        <h2 className="mt-2 text-2xl font-bold leading-8">{hospital.name}</h2>
+        <HospitalFact icon={MapPin} value={hospital.address} />
+        <HospitalFact icon={Clock3} value={hospital.workingHour} />
+        <HospitalFact icon={DoorOpen} value={`${hospital.numberOfRoom} phòng theo thông tin cơ sở`} />
         <div className="mt-5 border-t pt-5 text-sm">
-          <SafeMarkdown content={hospital.Description} showImages={false} />
+          <SafeMarkdown content={hospital.description} showImages={false} />
         </div>
         <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          <Link href={`/co-so-y-te/${hospital.Slug}`} className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}>Xem chi tiết</Link>
-          <Link href={`/dat-lich/co-so-y-te?hospital=${hospital.Uuid}`} className={cn(buttonVariants({ size: "lg" }), "w-full")}><CalendarPlus aria-hidden="true" />Đặt lịch khám</Link>
+          <Link href={`/co-so-y-te/${hospital.slug}`} className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}>Xem chi tiết</Link>
+          <Link href={`/dat-lich/co-so-y-te?hospital=${hospital.uuid}`} className={cn(buttonVariants({ size: "lg" }), "w-full")}><CalendarPlus aria-hidden="true" />Đặt lịch khám</Link>
         </div>
       </div>
     </aside>

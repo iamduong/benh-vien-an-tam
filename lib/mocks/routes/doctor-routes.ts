@@ -11,13 +11,39 @@ import {
   getStringParam,
   matchesKeyword,
   paginate,
+  paginatePublic,
 } from "@/lib/mocks/query-utils";
 import { BaseStatus } from "@/types/models";
 
 export function registerDoctorRoutes(mock: AxiosMockAdapter) {
   mock.onGet("/doctors/featured").reply(200, {
-    Data: featuredDoctors,
-    Message: "Lấy danh sách bác sĩ nổi bật thành công.",
+    data: featuredDoctors,
+    message: "Lấy danh sách bác sĩ nổi bật thành công.",
+  });
+
+  mock.onGet("/public/doctors").reply(200, {
+    data: featuredDoctors,
+    message: "Lấy danh sách bác sĩ nổi bật thành công.",
+  });
+
+  mock.onGet("/public/doctors/search").reply((config) => {
+    const keyword = getStringParam(config.params, "q");
+    const hospital = getStringParam(config.params, "hospital");
+    const department = getStringParam(config.params, "department");
+    const items = mockDoctors.filter((doctor) =>
+      matchesKeyword(keyword, doctor.name, doctor.specialty, doctor.workplace) &&
+      (!hospital || doctor.hospitalUuid === hospital) &&
+      (!department || mockDoctorDepartments.some((relation) =>
+        relation.doctorUuid === doctor.uuid && relation.departmentUuid === department)),
+    );
+    return [200, {
+      data: paginatePublic(
+        items,
+        getPositiveIntegerParam(config.params, "page", 1),
+        getPositiveIntegerParam(config.params, "pageSize", 8),
+      ),
+      message: "Lấy danh sách bác sĩ thành công.",
+    }];
   });
 
   mock.onGet("/doctors").reply((config) => {
@@ -28,22 +54,22 @@ export function registerDoctorRoutes(mock: AxiosMockAdapter) {
     const pageSize = getPositiveIntegerParam(config.params, "pageSize", 6);
     const items = mockDoctors.filter((doctor) => {
       const account = mockAccounts.find(
-        (candidate) => candidate.Uuid === doctor.AccountUuid,
+        (candidate) => candidate.uuid === doctor.accountUuid,
       );
       const workplace = mockHospitals.find(
-        (candidate) => candidate.Uuid === doctor.HospitalUuid,
+        (candidate) => candidate.uuid === doctor.hospitalUuid,
       );
 
       return (
-        account?.Status === BaseStatus.Active &&
-        workplace?.Status === BaseStatus.Active &&
-        matchesKeyword(q, doctor.Name, doctor.Specialty, doctor.Workplace) &&
-        (!hospital || doctor.HospitalUuid === hospital) &&
+        account?.status === BaseStatus.Active &&
+        workplace?.status === BaseStatus.Active &&
+        matchesKeyword(q, doctor.name, doctor.specialty, doctor.workplace) &&
+        (!hospital || doctor.hospitalUuid === hospital) &&
         (!department ||
           mockDoctorDepartments.some(
             (relation) =>
-              relation.DoctorUuid === doctor.Uuid &&
-              relation.DepartmentUuid === department,
+              relation.doctorUuid === doctor.uuid &&
+              relation.departmentUuid === department,
           ))
       );
     });
@@ -51,55 +77,64 @@ export function registerDoctorRoutes(mock: AxiosMockAdapter) {
     return [
       200,
       {
-        Data: paginate(items, page, pageSize),
-        Message: "Lấy danh sách bác sĩ thành công.",
+        data: paginate(items, page, pageSize),
+        message: "Lấy danh sách bác sĩ thành công.",
       },
     ];
   });
 
-  mock.onGet(/^\/doctors\/(?!featured$)[^/]+$/).reply((config) => {
+  mock.onGet(/^\/(?:public\/)?doctors\/(?!featured$)[^/]+$/).reply((config) => {
     const slug = decodeURIComponent(config.url?.split("/").pop() ?? "");
-    const doctor = mockDoctors.find((item) => item.Slug === slug);
+    const normalizedUuid = slug.replace(
+      /^(........)(....)(....)(....)(............)$/,
+      "$1-$2-$3-$4-$5",
+    );
+    const doctor = mockDoctors.find(
+      (item) =>
+        item.slug === slug ||
+        item.slug.endsWith(slug) ||
+        item.uuid === normalizedUuid,
+    );
     const account = mockAccounts.find(
-      (item) => item.Uuid === doctor?.AccountUuid,
+      (item) => item.uuid === doctor?.accountUuid,
     );
     const hospital = mockHospitals.find(
-      (item) => item.Uuid === doctor?.HospitalUuid,
+      (item) => item.uuid === doctor?.hospitalUuid,
     );
 
     if (
       !doctor ||
-      account?.Status !== BaseStatus.Active ||
-      hospital?.Status !== BaseStatus.Active
+      account?.status !== BaseStatus.Active ||
+      hospital?.status !== BaseStatus.Active
     ) {
-      return [404, { Data: null, Message: "Không tìm thấy bác sĩ." }];
+      return [404, { data: null, message: "Không tìm thấy bác sĩ." }];
     }
 
     const departmentUuids = new Set(
       mockDoctorDepartments
-        .filter((relation) => relation.DoctorUuid === doctor.Uuid)
-        .map((relation) => relation.DepartmentUuid),
+        .filter((relation) => relation.doctorUuid === doctor.uuid)
+        .map((relation) => relation.departmentUuid),
     );
 
     return [
       200,
       {
-        Data: {
-          Doctor: doctor,
-          Departments: mockDepartments.filter(
+        data: {
+          doctor: doctor,
+          departments: mockDepartments.filter(
             (item) =>
-              item.Status === BaseStatus.Active && departmentUuids.has(item.Uuid),
+              item.status === BaseStatus.Active && departmentUuids.has(item.uuid),
           ),
-          Hospital: hospital,
-          Reviews: mockReviewDoctors
+          hospital: hospital,
+          reviews: mockReviewDoctors
             .filter(
               (review) =>
-                review.DoctorUuid === doctor.Uuid &&
-                review.Status === BaseStatus.Active,
+                review.doctorUuid === doctor.uuid &&
+                review.status === BaseStatus.Active,
             )
-            .sort((a, b) => b.CreatedAt.getTime() - a.CreatedAt.getTime()),
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
         },
-        Message: "Lấy chi tiết bác sĩ thành công.",
+        message: "Lấy chi tiết bác sĩ thành công.",
       },
     ];
   });

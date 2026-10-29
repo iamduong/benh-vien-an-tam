@@ -11,18 +11,18 @@ export function getHospitalAssignments(
   const savedSelection = saved?.[hospitalUuid];
   if (savedSelection) {
     return {
-      DepartmentUuids: [...savedSelection.DepartmentUuids],
-      MedicalServiceUuids: [...savedSelection.MedicalServiceUuids],
+      departmentUuids: [...savedSelection.departmentUuids],
+      medicalServiceUuids: [...savedSelection.medicalServiceUuids],
     };
   }
 
   return {
-    DepartmentUuids: mockHospitalDepartments
-      .filter((item) => item.HospitalUuid === hospitalUuid)
-      .map((item) => item.DepartmentUuid),
-    MedicalServiceUuids: mockHospitalMedicalServices
-      .filter((item) => item.HospitalUuid === hospitalUuid)
-      .map((item) => item.MedicalServiceUuid),
+    departmentUuids: mockHospitalDepartments
+      .filter((item) => item.hospitalUuid === hospitalUuid)
+      .map((item) => item.departmentUuid),
+    medicalServiceUuids: mockHospitalMedicalServices
+      .filter((item) => item.hospitalUuid === hospitalUuid)
+      .map((item) => item.medicalServiceUuid),
   };
 }
 
@@ -34,8 +34,8 @@ export function saveHospitalAssignments(
 
   const saved = readSavedAssignments() ?? {};
   saved[hospitalUuid] = {
-    DepartmentUuids: [...selection.DepartmentUuids],
-    MedicalServiceUuids: [...selection.MedicalServiceUuids],
+    departmentUuids: [...selection.departmentUuids],
+    medicalServiceUuids: [...selection.medicalServiceUuids],
   };
   window.localStorage.setItem(storageKey, JSON.stringify(saved));
 }
@@ -58,17 +58,17 @@ function readSavedAssignments(): Record<
     if (
       !selection ||
       typeof selection !== "object" ||
-      !("DepartmentUuids" in selection) ||
-      !("MedicalServiceUuids" in selection) ||
-      !isStringArray(selection.DepartmentUuids) ||
-      !isStringArray(selection.MedicalServiceUuids)
+      !("departmentUuids" in selection) ||
+      !("medicalServiceUuids" in selection) ||
+      !isStringArray(selection.departmentUuids) ||
+      !isStringArray(selection.medicalServiceUuids)
     ) {
       throw new Error("Dữ liệu phân bổ mock đã lưu không hợp lệ.");
     }
 
     assignments[hospitalUuid] = {
-      DepartmentUuids: selection.DepartmentUuids,
-      MedicalServiceUuids: selection.MedicalServiceUuids,
+      departmentUuids: selection.departmentUuids,
+      medicalServiceUuids: selection.medicalServiceUuids,
     };
   }
 

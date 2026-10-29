@@ -52,9 +52,9 @@ export function AppointmentDetail({ uuid }: { uuid: string }) {
     const controller = new AbortController();
     let active = true;
     appointmentService
-      .getDetail(uuid, session.Account.Uuid, controller.signal)
+      .getDetail(uuid, session.account.uuid, controller.signal)
       .then((response) => {
-        if (active) setState({ status: "success", data: response.Data });
+        if (active) setState({ status: "success", data: response.data });
       })
       .catch((error) => {
         if (!active) return;
@@ -89,7 +89,7 @@ export function AppointmentDetail({ uuid }: { uuid: string }) {
       {state.status === "success" ? (
         <DetailContent
           item={state.data}
-          accountUuid={session.Account.Uuid}
+          accountUuid={session.account.uuid}
           feedback={feedback}
           onFeedback={setFeedback}
           onUpdate={(item) => setState({ status: "success", data: item })}
@@ -113,12 +113,12 @@ function DetailContent({
   onUpdate: (item: AppointmentPresentation) => void;
 }) {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
-  const appointment = item.Appointment;
+  const appointment = item.appointment;
   const canChange = canChangeAppointment(item, currentTime);
   const targetUuid = getTargetUuid(item);
 
   useEffect(() => {
-    const deadline = appointment.AppointmentAt.getTime() - 86_400_000;
+    const deadline = appointment.appointmentAt.getTime() - 86_400_000;
     const delay = deadline - Date.now();
     if (delay <= 0) return;
     const timer = window.setTimeout(
@@ -126,30 +126,30 @@ function DetailContent({
       Math.min(delay + 100, 2_147_483_647),
     );
     return () => window.clearTimeout(timer);
-  }, [appointment.AppointmentAt, currentTime]);
+  }, [appointment.appointmentAt, currentTime]);
 
   return (
     <>
       <div className="mt-6 rounded-2xl border bg-card p-5 sm:p-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-primary">{getAppointmentTypeLabel(item.Type)}</p>
-            <h1 className="mt-2 break-words text-2xl font-bold tracking-tight sm:text-3xl">{item.TargetName}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Mã lịch: {appointment.Uuid}</p>
+            <p className="text-sm font-semibold text-primary">{getAppointmentTypeLabel(item.type)}</p>
+            <h1 className="mt-2 break-words text-2xl font-bold tracking-tight sm:text-3xl">{item.targetName}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Mã lịch: {appointment.uuid}</p>
           </div>
-          <AppointmentStatusBadge status={appointment.Status} />
+          <AppointmentStatusBadge status={appointment.status} />
         </div>
         <div className="mt-6 rounded-xl border-l-4 border-l-primary bg-muted/40 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Thời gian khám</p>
-          <p className="mt-1 text-lg font-bold">{formatAppointmentDateTime(appointment.AppointmentAt)}</p>
+          <p className="mt-1 text-lg font-bold">{formatAppointmentDateTime(appointment.appointmentAt)}</p>
         </div>
         {feedback ? <p role="status" className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{feedback}</p> : null}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
           <Link href={getPublicTargetHref(item)} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>
-            Xem {getAppointmentTargetLabel(item.Type).toLocaleLowerCase("vi-VN")}
+            Xem {getAppointmentTargetLabel(item.type).toLocaleLowerCase("vi-VN")}
           </Link>
-          {item.Type !== "hospital" ? (
-            <Link href={`/co-so-y-te/${item.HospitalSlug}`} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>Xem cơ sở</Link>
+          {item.type !== "hospital" ? (
+            <Link href={`/co-so-y-te/${item.hospitalSlug}`} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>Xem cơ sở</Link>
           ) : null}
           {canChange ? (
             <AppointmentActions
@@ -161,7 +161,7 @@ function DetailContent({
             />
           ) : null}
         </div>
-        {!canChange && appointment.Status !== "Done" ? (
+        {!canChange && appointment.status !== "Done" ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Lịch đã kết thúc, đã hủy hoặc còn dưới 24 giờ nên chỉ có thể xem.
           </p>
@@ -170,31 +170,31 @@ function DetailContent({
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <DetailSection title="Thông tin khám">
-          <DetailField label="Người khám" value={appointment.PatientName} />
-          <DetailField label="Giới tính" value={getGenderLabel(appointment.Gender)} />
-          <DetailField label="Mã y tế" value={appointment.MedicalCode} />
-          <DetailField label="Ghi chú" value={displayText(appointment.Note)} />
+          <DetailField label="Người khám" value={appointment.patientName} />
+          <DetailField label="Giới tính" value={getGenderLabel(appointment.gender)} />
+          <DetailField label="Mã y tế" value={appointment.medicalCode} />
+          <DetailField label="Ghi chú" value={displayText(appointment.note)} />
         </DetailSection>
         <DetailSection title="Địa điểm và trạng thái">
-          <DetailField label="Cơ sở y tế" value={item.HospitalName} />
-          <DetailField label="Phòng" value={item.RoomName || "Chưa phân phòng"} />
-          <DetailField label="Ngày tạo" value={formatAppointmentDateTime(appointment.CreatedAt)} />
-          <DetailField label="Cập nhật lần cuối" value={formatAppointmentDateTime(appointment.UpdatedAt)} />
+          <DetailField label="Cơ sở y tế" value={item.hospitalName} />
+          <DetailField label="Phòng" value={item.roomName || "Chưa phân phòng"} />
+          <DetailField label="Ngày tạo" value={formatAppointmentDateTime(appointment.createdAt)} />
+          <DetailField label="Cập nhật lần cuối" value={formatAppointmentDateTime(appointment.updatedAt)} />
         </DetailSection>
       </div>
 
-      {appointment.Status === "Done" ? (
-        <AppointmentReviewSection appointmentUuid={appointment.Uuid} />
+      {appointment.status === "Done" ? (
+        <AppointmentReviewSection appointmentUuid={appointment.uuid} />
       ) : null}
 
       <details className="mt-6 rounded-xl border bg-card p-5 text-sm">
         <summary className="cursor-pointer font-semibold">Thông tin định danh</summary>
         <dl className="mt-4 grid gap-3 break-all text-muted-foreground sm:grid-cols-2">
-          <DetailField label="AccountUuid" value={appointment.AccountUuid} />
-          <DetailField label="HospitalUuid" value={appointment.HospitalUuid} />
-          <DetailField label="RoomUuid" value={appointment.RoomUuid} />
-          {"DoctorUuid" in appointment ? <DetailField label="DoctorUuid" value={appointment.DoctorUuid} /> : null}
-          {"MedicalServiceUuid" in appointment ? <DetailField label="MedicalServiceUuid" value={appointment.MedicalServiceUuid} /> : null}
+          <DetailField label="accountUuid" value={appointment.accountUuid} />
+          <DetailField label="hospitalUuid" value={appointment.hospitalUuid} />
+          <DetailField label="roomUuid" value={appointment.roomUuid} />
+          {typeof (appointment as { doctorUuid?: unknown }).doctorUuid === "string" ? <DetailField label="doctorUuid" value={(appointment as { doctorUuid: string }).doctorUuid} /> : null}
+          {typeof (appointment as { medicalServiceUuid?: unknown }).medicalServiceUuid === "string" ? <DetailField label="medicalServiceUuid" value={(appointment as { medicalServiceUuid: string }).medicalServiceUuid} /> : null}
         </dl>
       </details>
     </>
@@ -232,9 +232,9 @@ function AppointmentActions({
     appointmentService
       .getAvailability(
         {
-          type: item.Type,
+          type: item.type,
           targetUuid,
-          hospitalUuid: item.Appointment.HospitalUuid,
+          hospitalUuid: item.appointment.hospitalUuid,
           accountUuid,
           date,
         },
@@ -246,12 +246,12 @@ function AppointmentActions({
             status: "success",
             key,
             data: {
-              ...response.Data,
-              Slots: response.Data.Slots.map((slot) => ({
+              ...response.data,
+              slots: response.data.slots.map((slot) => ({
                 ...slot,
-                IsAvailable:
-                  slot.IsAvailable &&
-                  new Date(slot.AppointmentAt).getTime() >= minimumTimestamp,
+                isAvailable:
+                  slot.isAvailable &&
+                  new Date(slot.appointmentAt).getTime() >= minimumTimestamp,
               })),
             },
           });
@@ -264,7 +264,7 @@ function AppointmentActions({
       active = false;
       controller.abort();
     };
-  }, [accountUuid, date, item.Appointment.HospitalUuid, item.Type, rescheduleOpen, targetUuid]);
+  }, [accountUuid, date, item.appointment.hospitalUuid, item.type, rescheduleOpen, targetUuid]);
 
   async function reschedule() {
     if (!date || !time || actionLock.current) return;
@@ -272,11 +272,11 @@ function AppointmentActions({
     setIsSubmitting(true);
     setActionError("");
     try {
-      const response = await appointmentService.reschedule(item.Appointment.Uuid, {
-        AccountUuid: accountUuid,
-        AppointmentAt: toAppointmentIso(date, time),
+      const response = await appointmentService.reschedule(item.appointment.uuid, {
+        accountUuid: accountUuid,
+        appointmentAt: toAppointmentIso(date, time),
       });
-      onUpdate(response.Data);
+      onUpdate(response.data);
       onFeedback("Đã đổi thời gian lịch hẹn thành công.");
       setRescheduleOpen(false);
     } catch (error) {
@@ -293,8 +293,8 @@ function AppointmentActions({
     setIsSubmitting(true);
     setActionError("");
     try {
-      const response = await appointmentService.cancel(item.Appointment.Uuid, accountUuid);
-      onUpdate(response.Data);
+      const response = await appointmentService.cancel(item.appointment.uuid, accountUuid);
+      onUpdate(response.data);
       onFeedback("Đã hủy lịch hẹn thành công.");
       setCancelOpen(false);
     } catch (error) {
@@ -306,8 +306,8 @@ function AppointmentActions({
   }
 
   const availableSlots = availability.status === "success" && availability.key === date
-    ? availability.data.Slots.filter(
-        (slot) => slot.IsAvailable,
+    ? availability.data.slots.filter(
+        (slot) => slot.isAvailable,
       )
     : [];
 
@@ -337,7 +337,7 @@ function AppointmentActions({
                   <p className="text-sm font-medium">Chọn giờ</p>
                   <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {availableSlots.map((slot) => (
-                      <Button key={slot.AppointmentAt} type="button" variant={time === slot.Time ? "default" : "outline"} onClick={() => setTime(slot.Time)}>{slot.Time}</Button>
+                      <Button key={slot.appointmentAt} type="button" variant={time === slot.time ? "default" : "outline"} onClick={() => setTime(slot.time)}>{slot.time}</Button>
                     ))}
                   </div>
                 </div>
@@ -360,7 +360,7 @@ function AppointmentActions({
             <DialogTitle>Xác nhận hủy lịch</DialogTitle>
             <DialogDescription>Lịch sau khi hủy sẽ chuyển sang trạng thái kết thúc và không thể khôi phục.</DialogDescription>
           </DialogHeader>
-          <p className="mt-5 rounded-lg bg-muted p-4 text-sm font-medium">{formatAppointmentDateTime(item.Appointment.AppointmentAt)} · {item.TargetName}</p>
+          <p className="mt-5 rounded-lg bg-muted p-4 text-sm font-medium">{formatAppointmentDateTime(item.appointment.appointmentAt)} · {item.targetName}</p>
           {actionError ? <p role="alert" className="mt-4 text-sm text-destructive">{actionError}</p> : null}
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>Giữ lịch</DialogClose>
@@ -383,10 +383,14 @@ function DetailField({ label, value }: { label: string; value: string }) {
 }
 
 function getTargetUuid(item: AppointmentPresentation) {
-  const appointment = item.Appointment;
-  if ("DoctorUuid" in appointment) return appointment.DoctorUuid;
-  if ("MedicalServiceUuid" in appointment) return appointment.MedicalServiceUuid;
-  return appointment.HospitalUuid;
+  const appointment = item.appointment;
+  if (typeof (appointment as { doctorUuid?: unknown }).doctorUuid === "string") {
+    return (appointment as { doctorUuid: string }).doctorUuid;
+  }
+  if (typeof (appointment as { medicalServiceUuid?: unknown }).medicalServiceUuid === "string") {
+    return (appointment as { medicalServiceUuid: string }).medicalServiceUuid;
+  }
+  return appointment.hospitalUuid;
 }
 
 function getGenderLabel(value: string) {

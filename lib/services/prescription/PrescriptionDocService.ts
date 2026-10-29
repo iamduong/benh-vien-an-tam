@@ -23,9 +23,9 @@ export const prescriptionDocService = {
             signal,
         });
 
-        // Linh hoạt xử lý nếu Backend trả về trực tiếp object hoặc gói trong { Data: ... }
-        if ("Data" in response.data && response.data.Data) {
-            return response.data.Data;
+        // Linh hoạt xử lý nếu Backend trả về trực tiếp object hoặc gói trong { data: ... }
+        if ("data" in response.data && response.data.data) {
+            return response.data.data;
         }
         return response.data as PrescriptionMetrics;
     },
@@ -54,8 +54,8 @@ export const prescriptionDocService = {
             signal,
         });
 
-        if ("Data" in response.data && response.data.Data) {
-            return response.data.Data;
+        if ("data" in response.data && response.data.data) {
+            return response.data.data;
         }
         return response.data as PaginatedData<PrescriptionListItem>;
     },
@@ -71,8 +71,8 @@ export const prescriptionDocService = {
             PrescriptionDetail | ApiResponse<PrescriptionDetail>
         >(`/v1/prescriptions/${uuid}`, { signal });
 
-        if ("Data" in response.data && response.data.Data) {
-            return response.data.Data;
+        if ("data" in response.data && response.data.data) {
+            return response.data.data;
         }
         return response.data as PrescriptionDetail;
     },

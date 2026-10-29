@@ -27,7 +27,7 @@ export function BookingConfirmation() {
     status: "loading",
   });
   const requestKey = session
-    ? `${session.Account.Uuid}:${appointmentUuid}`
+    ? `${session.account.uuid}:${appointmentUuid}`
     : "";
 
   useEffect(() => {
@@ -38,12 +38,12 @@ export function BookingConfirmation() {
     appointmentService
       .getConfirmation(
         appointmentUuid,
-        session.Account.Uuid,
+        session.account.uuid,
         controller.signal,
       )
       .then((response) => {
         if (!cancelled) {
-          setState({ status: "success", key: requestKey, data: response.Data });
+          setState({ status: "success", key: requestKey, data: response.data });
         }
       })
       .catch(() => {
@@ -99,7 +99,7 @@ export function BookingConfirmation() {
     );
   }
 
-  const { Appointment: appointment } = state.data;
+  const { appointment: appointment } = state.data;
 
   return (
     <div className="container-shell py-10 sm:py-16">
@@ -121,19 +121,19 @@ export function BookingConfirmation() {
             Trạng thái: Chờ duyệt
           </div>
           <dl className="grid gap-5 sm:grid-cols-2">
-            <ConfirmationField label="Loại lịch" value={getTypeLabel(state.data.Type)} />
-            <ConfirmationField label="Đối tượng" value={state.data.TargetName} />
-            <ConfirmationField label="Cơ sở" value={state.data.HospitalName} />
+            <ConfirmationField label="Loại lịch" value={getTypeLabel(state.data.type)} />
+            <ConfirmationField label="Đối tượng" value={state.data.targetName} />
+            <ConfirmationField label="Cơ sở" value={state.data.hospitalName} />
             <ConfirmationField
               label="Thời gian"
-              value={formatAppointmentDateTime(appointment.AppointmentAt)}
+              value={formatAppointmentDateTime(appointment.appointmentAt)}
             />
-            <ConfirmationField label="Người khám" value={appointment.PatientName} />
-            <ConfirmationField label="Mã y tế" value={appointment.MedicalCode} />
+            <ConfirmationField label="Người khám" value={appointment.patientName} />
+            <ConfirmationField label="Mã y tế" value={appointment.medicalCode} />
             <div className="sm:col-span-2">
               <ConfirmationField
                 label="Ghi chú"
-                value={appointment.Note || "Không có"}
+                value={appointment.note || "Không có"}
               />
             </div>
           </dl>
@@ -163,7 +163,7 @@ function ConfirmationField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function getTypeLabel(type: Confirmation["Type"]) {
+function getTypeLabel(type: Confirmation["type"]) {
   if (type === "hospital") return "Khám tại cơ sở";
   if (type === "doctor") return "Khám với bác sĩ";
   return "Dịch vụ y tế";

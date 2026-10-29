@@ -54,14 +54,14 @@ export function getAppointmentTargetLabel(type: BookingType) {
 }
 
 export function getPublicTargetHref(item: AppointmentPresentation) {
-  if (item.Type === "doctor") return `/bac-si/${item.TargetSlug}`;
-  if (item.Type === "medical-service") return `/dich-vu/${item.TargetSlug}`;
-  return `/co-so-y-te/${item.HospitalSlug}`;
+  if (item.type === "doctor") return `/bac-si/${item.targetSlug}`;
+  if (item.type === "medical-service") return `/dich-vu/${item.targetSlug}`;
+  return `/co-so-y-te/${item.hospitalSlug}`;
 }
 
 export function canChangeAppointment(item: AppointmentPresentation, now: number) {
   const editable =
-    item.Appointment.Status === AppointmentStatus.Pending ||
-    item.Appointment.Status === AppointmentStatus.Approved;
-  return editable && item.Appointment.AppointmentAt.getTime() - now >= 86_400_000;
+    item.appointment.status === AppointmentStatus.Pending ||
+    item.appointment.status === AppointmentStatus.Approved;
+  return editable && item.appointment.appointmentAt.getTime() - now >= 86_400_000;
 }

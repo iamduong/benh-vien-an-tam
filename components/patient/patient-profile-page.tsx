@@ -35,7 +35,7 @@ import type {
 
 export function PatientProfilePage() {
   const { session, syncPatientProfile } = useAuth();
-  const accountUuid = session?.Account.Uuid;
+  const accountUuid = session?.account.uuid;
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<AsyncState<PatientProfileView>>({
     status: "loading",
@@ -48,7 +48,7 @@ export function PatientProfilePage() {
     patientService
       .getCurrent(controller.signal)
       .then((response) => {
-        if (active) setState({ status: "success", data: response.Data });
+        if (active) setState({ status: "success", data: response.data });
       })
       .catch(() => {
         if (active) {
@@ -97,7 +97,7 @@ export function PatientProfilePage() {
           view={state.data}
           onSaved={(view) => {
             setState({ status: "success", data: view });
-            syncPatientProfile(view.Profile, session);
+            syncPatientProfile(view.profile, session);
           }}
         />
       ) : null}
@@ -112,11 +112,11 @@ function ProfileEditor({
   view: PatientProfileView;
   onSaved: (view: PatientProfileView) => void;
 }) {
-  const [avatar, setAvatar] = useState(view.Profile.Avatar);
-  const [name, setName] = useState(view.Profile.Name);
-  const [gender, setGender] = useState<Gender>(view.Profile.Gender);
-  const [birthdate, setBirthdate] = useState(toDateInput(view.Profile.Birthdate));
-  const [email, setEmail] = useState(view.Profile.Email);
+  const [avatar, setAvatar] = useState(view.profile.avatar);
+  const [name, setName] = useState(view.profile.name);
+  const [gender, setGender] = useState<Gender>(view.profile.gender);
+  const [birthdate, setBirthdate] = useState(toDateInput(view.profile.birthdate));
+  const [email, setEmail] = useState(view.profile.email);
   const [errors, setErrors] = useState<PatientProfileFieldErrors>({});
   const [serverError, setServerError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -126,20 +126,20 @@ function ProfileEditor({
     today.setUTCDate(today.getUTCDate() - 1);
     return today.toISOString().slice(0, 10);
   });
-  const originalBirthdate = toDateInput(view.Profile.Birthdate);
+  const originalBirthdate = toDateInput(view.profile.birthdate);
   const isDirty =
-    avatar !== view.Profile.Avatar ||
-    name !== view.Profile.Name ||
-    gender !== view.Profile.Gender ||
+    avatar !== view.profile.avatar ||
+    name !== view.profile.name ||
+    gender !== view.profile.gender ||
     birthdate !== originalBirthdate ||
-    email !== view.Profile.Email;
+    email !== view.profile.email;
 
   function resetForm() {
-    setAvatar(view.Profile.Avatar);
-    setName(view.Profile.Name);
-    setGender(view.Profile.Gender);
+    setAvatar(view.profile.avatar);
+    setName(view.profile.name);
+    setGender(view.profile.gender);
     setBirthdate(originalBirthdate);
-    setEmail(view.Profile.Email);
+    setEmail(view.profile.email);
     setErrors({});
     setServerError("");
     setSuccessMessage("");
@@ -148,11 +148,11 @@ function ProfileEditor({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const request: UpdatePatientProfileRequest = {
-      Avatar: avatar,
-      Name: name,
-      Gender: gender,
-      Birthdate: new Date(`${birthdate}T00:00:00.000Z`),
-      Email: email,
+      avatar: avatar,
+      name: name,
+      gender: gender,
+      birthdate: new Date(`${birthdate}T00:00:00.000Z`),
+      email: email,
     };
     const nextErrors = validatePatientProfile(request);
     setErrors(nextErrors);
@@ -163,13 +163,13 @@ function ProfileEditor({
     setIsSubmitting(true);
     try {
       const response = await patientService.updateCurrent(request);
-      onSaved(response.Data);
-      setAvatar(response.Data.Profile.Avatar);
-      setName(response.Data.Profile.Name);
-      setGender(response.Data.Profile.Gender);
-      setBirthdate(toDateInput(response.Data.Profile.Birthdate));
-      setEmail(response.Data.Profile.Email);
-      setSuccessMessage(response.Message);
+      onSaved(response.data);
+      setAvatar(response.data.profile.avatar);
+      setName(response.data.profile.name);
+      setGender(response.data.profile.gender);
+      setBirthdate(toDateInput(response.data.profile.birthdate));
+      setEmail(response.data.profile.email);
+      setSuccessMessage(response.message);
     } catch (error) {
       if (error instanceof PatientServiceError) {
         setErrors(error.fieldErrors);
@@ -201,15 +201,15 @@ function ProfileEditor({
         {successMessage ? <p role="status" className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{successMessage}</p> : null}
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          <ProfileField htmlFor="profile-avatar" label="URL ảnh đại diện" error={errors.Avatar} className="sm:col-span-2">
-            <Input id="profile-avatar" type="url" inputMode="url" value={avatar} disabled={isSubmitting} aria-invalid={Boolean(errors.Avatar)} aria-describedby={errors.Avatar ? "profile-avatar-error" : undefined} placeholder="https://example.com/avatar.jpg" onChange={(event) => setAvatar(event.target.value)} />
+          <ProfileField htmlFor="profile-avatar" label="URL ảnh đại diện" error={errors.avatar} className="sm:col-span-2">
+            <Input id="profile-avatar" type="url" inputMode="url" value={avatar} disabled={isSubmitting} aria-invalid={Boolean(errors.avatar)} aria-describedby={errors.avatar ? "profile-avatar-error" : undefined} placeholder="https://example.com/avatar.jpg" onChange={(event) => setAvatar(event.target.value)} />
           </ProfileField>
-          <ProfileField htmlFor="profile-name" label="Họ và tên" error={errors.Name} className="sm:col-span-2">
-            <Input id="profile-name" autoComplete="name" value={name} disabled={isSubmitting} aria-invalid={Boolean(errors.Name)} aria-describedby={errors.Name ? "profile-name-error" : undefined} onChange={(event) => setName(event.target.value)} />
+          <ProfileField htmlFor="profile-name" label="Họ và tên" error={errors.name} className="sm:col-span-2">
+            <Input id="profile-name" autoComplete="name" value={name} disabled={isSubmitting} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? "profile-name-error" : undefined} onChange={(event) => setName(event.target.value)} />
           </ProfileField>
-          <ProfileField htmlFor="profile-gender" label="Giới tính" error={errors.Gender}>
+          <ProfileField htmlFor="profile-gender" label="Giới tính" error={errors.gender}>
             <Select items={genderOptions} value={gender} disabled={isSubmitting} onValueChange={(value) => setGender(value as Gender)}>
-              <SelectTrigger id="profile-gender" className="w-full" aria-invalid={Boolean(errors.Gender)} aria-describedby={errors.Gender ? "profile-gender-error" : undefined}><SelectValue /></SelectTrigger>
+              <SelectTrigger id="profile-gender" className="w-full" aria-invalid={Boolean(errors.gender)} aria-describedby={errors.gender ? "profile-gender-error" : undefined}><SelectValue /></SelectTrigger>
               <SelectContent>
                 {genderOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
@@ -217,14 +217,14 @@ function ProfileEditor({
               </SelectContent>
             </Select>
           </ProfileField>
-          <ProfileField htmlFor="profile-birthdate" label="Ngày sinh" error={errors.Birthdate}>
-            <Input id="profile-birthdate" type="date" autoComplete="bday" max={maximumBirthdate} value={birthdate} disabled={isSubmitting} aria-invalid={Boolean(errors.Birthdate)} aria-describedby={errors.Birthdate ? "profile-birthdate-error" : undefined} onChange={(event) => setBirthdate(event.target.value)} />
+          <ProfileField htmlFor="profile-birthdate" label="Ngày sinh" error={errors.birthdate}>
+            <Input id="profile-birthdate" type="date" autoComplete="bday" max={maximumBirthdate} value={birthdate} disabled={isSubmitting} aria-invalid={Boolean(errors.birthdate)} aria-describedby={errors.birthdate ? "profile-birthdate-error" : undefined} onChange={(event) => setBirthdate(event.target.value)} />
           </ProfileField>
-          <ProfileField htmlFor="profile-email" label="Email" error={errors.Email} className="sm:col-span-2">
-            <Input id="profile-email" type="email" autoComplete="email" value={email} disabled={isSubmitting} aria-invalid={Boolean(errors.Email)} aria-describedby={errors.Email ? "profile-email-error" : undefined} onChange={(event) => setEmail(event.target.value)} />
+          <ProfileField htmlFor="profile-email" label="email" error={errors.email} className="sm:col-span-2">
+            <Input id="profile-email" type="email" autoComplete="email" value={email} disabled={isSubmitting} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "profile-email-error" : undefined} onChange={(event) => setEmail(event.target.value)} />
           </ProfileField>
-          <ReadOnlyField id="profile-medical-code" label="Mã y tế" value={view.Profile.MedicalCode} />
-          <ReadOnlyField id="profile-phone" label="Số điện thoại" value={view.Phone} />
+          <ReadOnlyField id="profile-medical-code" label="Mã y tế" value={view.profile.medicalCode} />
+          <ReadOnlyField id="profile-phone" label="Số điện thoại" value={view.phone} />
         </div>
 
         <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

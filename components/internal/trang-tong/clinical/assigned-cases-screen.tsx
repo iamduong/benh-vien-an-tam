@@ -140,19 +140,19 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
             .getAppointmentDetail(uuid, controller.signal)
             .then((item) => {
                 setState({ status: "success", item });
-                if (item.DoctorNote) setDiagnosisNote(item.DoctorNote);
-                if (item.Prescription) {
-                    setPrescriptionNote(item.Prescription.Note ?? "");
+                if (item.doctorNote) setDiagnosisNote(item.doctorNote);
+                if (item.prescription) {
+                    setPrescriptionNote(item.prescription.note ?? "");
                     setPrescriptionItems(
-                        item.Prescription.Details.map((d) => ({
-                            medicineUuid: d.MedicineUuid,
-                            medicineName: d.MedicineName,
-                            unit: d.Unit,
-                            quantity: d.Quantity,
-                            quantityPerDose: d.QuantityPerDose,
-                            dosesPerDay: d.DosesPerDay,
-                            duration: d.Duration,
-                            note: d.Note,
+                        item.prescription.details.map((d) => ({
+                            medicineUuid: d.medicineUuid,
+                            medicineName: d.medicineName,
+                            unit: d.unit,
+                            quantity: d.quantity,
+                            quantityPerDose: d.quantityPerDose,
+                            dosesPerDay: d.dosesPerDay,
+                            duration: d.duration,
+                            note: d.note,
                         }))
                     );
                 }
@@ -188,31 +188,31 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
     }
 
     const item = state.item;
-    const dateTime = formatDateTime(item.AppointmentAt);
+    const dateTime = formatDateTime(item.appointmentAt);
 
-    const isApproved = item.Status === "Approved";
-    const isCheckedIn = item.Status === "CheckedIn";
-    const isDone = item.Status === "Done";
-    const prescriptionStatus = item.Prescription?.Status ?? "Unpaid";
+    const isApproved = item.status === "Approved";
+    const isCheckedIn = item.status === "CheckedIn";
+    const isDone = item.status === "Done";
+    const prescriptionStatus = item.prescription?.status ?? "Unpaid";
 
     async function handleStartAppointment() {
-        await doctorAppointmentService.updateStatus(item.Uuid, "CheckedIn");
+        await doctorAppointmentService.updateStatus(item.uuid, "CheckedIn");
         loadDetail();
     }
 
     async function handleCancelAppointment() {
         if (window.confirm("Bạn có chắc chắn muốn hủy ca khám này không?")) {
-            await doctorAppointmentService.updateStatus(item.Uuid, "Cancelled");
+            await doctorAppointmentService.updateStatus(item.uuid, "Cancelled");
             loadDetail();
         }
     }
 
     async function handleCompleteAppointment() {
         try {
-            await doctorAppointmentService.updateStatus(item.Uuid, "Done");
+            await doctorAppointmentService.updateStatus(item.uuid, "Completed");
             loadDetail();
         } catch (err: any) {
-            alert(err?.response?.data?.Message || "Không thể hoàn thành ca khám.");
+            alert(err?.response?.data?.message || "Không thể hoàn thành ca khám.");
         }
     }
 
@@ -221,12 +221,12 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
         setIsAddingService(true);
         setServiceError("");
         try {
-            const service = await clinicalExaminationService.addService(item.Uuid, selectedService);
+            const service = await clinicalExaminationService.addService(item.uuid, selectedService);
             setState({
                 status: "success",
                 item: {
                     ...item,
-                    MedicalServices: [...item.MedicalServices, service],
+                    medicalServices: [...item.medicalServices, service],
                 },
             });
             setSelectedService("");
@@ -239,31 +239,31 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
 
     async function handleSaveDiagnosis() {
         try {
-            await clinicalExaminationService.saveDiagnosis(item.Uuid, diagnosisNote);
+            await clinicalExaminationService.saveDiagnosis(item.uuid, diagnosisNote);
             alert("Đã lưu chẩn đoán thành công!");
         } catch (error: any) {
-            alert(error?.response?.data?.Message || "Lưu chẩn đoán thất bại.");
+            alert(error?.response?.data?.message || "Lưu chẩn đoán thất bại.");
         }
     }
 
     async function handleSavePrescription() {
         try {
             await prescriptionService.savePrescription(
-                item.Uuid,
+                item.uuid,
                 prescriptionNote,
                 prescriptionItems.map((p) => ({
-                    MedicineUuid: p.medicineUuid,
-                    Quantity: p.quantity,
-                    QuantityPerDose: p.quantityPerDose,
-                    DosesPerDay: p.dosesPerDay,
-                    Duration: p.duration,
-                    Note: p.note,
+                    medicineUuid: p.medicineUuid,
+                    quantity: p.quantity,
+                    quantityPerDose: p.quantityPerDose,
+                    dosesPerDay: p.dosesPerDay,
+                    duration: p.duration,
+                    note: p.note,
                 }))
             );
             alert("Lưu đơn thuốc thành công!");
             loadDetail();
         } catch (error: any) {
-            alert(error?.response?.data?.Message || "Lưu đơn thuốc thất bại.");
+            alert(error?.response?.data?.message || "Lưu đơn thuốc thất bại.");
         }
     }
 
@@ -272,8 +272,8 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
             status: "success",
             item: {
                 ...item,
-                MedicalServices: item.MedicalServices.map((current) =>
-                    current.Uuid === updatedService.Uuid ? updatedService : current
+                medicalServices: item.medicalServices.map((current) =>
+                    current.uuid === updatedService.uuid ? updatedService : current
                 ),
             },
         });
@@ -290,8 +290,9 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
         </Link>
 
         < PortalPageHeader
-title = { item.PatientName }
-description = {`Mã y tế ${item.MedicalCode} · ${genderLabel(item.Gender)} · Lịch được phân công trực tiếp cho bạn.`}
+eyebrow = "Chi tiết ca khám"
+title = { item.patientName }
+description = {`Mã y tế ${item.medicalCode} · ${genderLabel(item.gender)} · Lịch được phân công trực tiếp cho bạn.`}
 actions = {
     isApproved?(
                         <>
@@ -316,18 +317,18 @@ actions = {
         < PortalSection title = "Thông tin lượt khám" >
             <DetailGrid>
             <DetailItem label="Thời gian" value = {`${dateTime.time} · ${dateTime.date}`} />
-                < DetailItem label = "Phòng" value = { item.RoomName } />
-                    <DetailItem label="Loại lịch" value = { item.TypeLabel } />
+                < DetailItem label = "Phòng" value = { item.roomName } />
+                    <DetailItem label="Loại lịch" value = { item.typeLabel } />
                         <DetailItem
                             label="Trạng thái"
 value = {
-                                < StatusPill tone = { statusTones[item.Status] ?? "blue" } >
-{ statusLabels[item.Status] ?? item.Status }
+                                < StatusPill tone = { statusTones[item.status] ?? "blue" } >
+{ statusLabels[item.status] ?? item.status }
     </StatusPill>
                             }
                         />
-    < DetailItem label = "Ghi chú đặt lịch" value = { item.Note || "Không có ghi chú" } />
-        <DetailItem label="UUID lịch" value = { item.Uuid } />
+    < DetailItem label = "Ghi chú đặt lịch" value = { item.note || "Không có ghi chú" } />
+        <DetailItem label="UUID lịch" value = { item.uuid } />
             </DetailGrid>
             </PortalSection>
 
@@ -348,9 +349,9 @@ className = "h-10 w-full rounded-md border bg-white px-3 text-sm outline-none fo
     >
     <option value="" > Chọn dịch vụ cần chỉ định </option>
 {
-    item.AvailableMedicalServices.map((service) => (
-        <option key= { service.Uuid } value = { service.Uuid } >
-        { service.Name } · { formatPrice(service.Price)
+    item.availableMedicalServices.map((service) => (
+        <option key= { service.uuid } value = { service.uuid } >
+        { service.name } · { formatPrice(service.price)
 }
 </option>
                                         ))}
@@ -369,13 +370,13 @@ disabled = {!selectedService || isAddingService}
 { serviceError ? <p className="text-sm text-destructive" > { serviceError } </p> : null }
 
 {
-    item.MedicalServices.length ? (
+    item.medicalServices.length ? (
         <div className= "space-y-3" >
         {
-            item.MedicalServices.map((service) => (
+            item.medicalServices.map((service) => (
                 <MedicalServiceResult
-                                        key= { service.Uuid }
-                                        appointmentUuid = { item.Uuid }
+                                        key= { service.uuid }
+                                        appointmentUuid = { item.uuid }
                                         service = { service }
                                         canEdit = { isCheckedIn }
                                         onUpdate = { updateMedicalService }
@@ -531,17 +532,17 @@ onFocus = {() => setShowDropdown(true)}
         {
             searchedMedicines.map((med) => (
                 <div
-                                                key= { med.Uuid }
+                                                key= { med.uuid }
                                                 className = "cursor-pointer px-3 py-2.5 text-sm hover:bg-slate-100 transition-colors border-b last:border-b-0"
                                                 onClick = {() => {
                 setSelectedMedicine(med);
-                                                    setMedicineSearch(med.Name);
+                                                    setMedicineSearch(med.name);
             setShowDropdown(false);
         }
 }
                                             >
-    <div className="font-medium text-slate-800" > { med.Name } </div>
-        < div className = "text-xs text-muted-foreground" > Đơn vị: { String(med.Unit ?? "Viên") } </div>
+    <div className="font-medium text-slate-800" > { med.name } </div>
+        < div className = "text-xs text-muted-foreground" > Đơn vị: { String(med.unit ?? "Viên") } </div>
             </div>
                                         ))}
 </div>
@@ -552,7 +553,7 @@ onFocus = {() => setShowDropdown(true)}
         <div className="space-y-2" >
             <Label>Tên thuốc </Label>
                 < Input
-value = { selectedMedicine?.Name || ""}
+value = { selectedMedicine?.name || ""}
 readOnly
 placeholder = "Chọn thuốc từ thanh tìm kiếm trên"
 className = "bg-slate-50 text-slate-700 cursor-not-allowed"
@@ -569,7 +570,7 @@ onChange = {(e) => setQuantity(e.target.value)}
     < div className = "space-y-2" >
         <Label>Đơn vị </Label>
             < Input
-value = { selectedMedicine? String(selectedMedicine.Unit ?? "Viên") : ""}
+value = { selectedMedicine? String(selectedMedicine.unit ?? "Viên") : ""}
 readOnly
 placeholder = "—"
 className = "bg-slate-50 text-slate-700 cursor-not-allowed"
@@ -622,9 +623,9 @@ onClick = {() => {
     setPrescriptionItems((prev) => [
         ...prev,
         {
-            medicineUuid: selectedMedicine.Uuid,
-            medicineName: selectedMedicine.Name,
-            unit: String(selectedMedicine.Unit ?? "Viên"),
+            medicineUuid: selectedMedicine.uuid,
+            medicineName: selectedMedicine.name,
+            unit: String(selectedMedicine.unit ?? "Viên"),
             quantity: Number(quantity) || 1,
             quantityPerDose: Number(quantityPerDose) || 1,
             dosesPerDay: Number(dosesPerDay) || 1,
@@ -658,13 +659,13 @@ function MedicalServiceResult({
     canEdit: boolean;
     onUpdate: (service: ClinicalMedicalService) => void;
 }) {
-    const [description, setDescription] = useState(service.Description);
+    const [description, setDescription] = useState(service.description);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
-    const isCompleted = service.Status === "Done";
+    const isCompleted = service.status === "Completed";
 
-    async function save(status: ClinicalMedicalService["Status"]) {
-        if (status === "Done" && !description.trim()) {
+    async function save(status: ClinicalMedicalService["status"]) {
+        if (status === "Completed" && !description.trim()) {
             setError("Vui lòng nhập kết quả dịch vụ trước khi hoàn tất.");
             return;
         }
@@ -673,11 +674,11 @@ function MedicalServiceResult({
         try {
             const updated = await clinicalExaminationService.updateService(
                 appointmentUuid,
-                service.Uuid,
+                service.uuid,
                 description,
                 status
             );
-            setDescription(updated.Description);
+            setDescription(updated.description);
             onUpdate(updated);
         } catch (saveError) {
             setError(saveError instanceof Error ? saveError.message : "Không thể cập nhật dịch vụ.");
@@ -694,8 +695,8 @@ function MedicalServiceResult({
                     <FlaskConical className="size-4" />
                         </span>
                         < div >
-                        <h3 className="font-semibold text-[#173b57]" > { service.Name } </h3>
-                            < p className = "mt-1 text-xs text-muted-foreground" > { formatPrice(service.Price) } </p>
+                        <h3 className="font-semibold text-[#173b57]" > { service.name } </h3>
+                            < p className = "mt-1 text-xs text-muted-foreground" > { formatPrice(service.price) } </p>
                                 </div>
                                 </div>
                                 < StatusPill tone = { isCompleted? "green": "amber" } >
@@ -703,9 +704,9 @@ function MedicalServiceResult({
                                     </StatusPill>
                                     </div>
                                     < div className = "mt-4 space-y-2" >
-                                        <Label htmlFor={ `service-result-${service.Uuid}` }> Kết quả dịch vụ </Label>
+                                        <Label htmlFor={ `service-result-${service.uuid}` }> Kết quả dịch vụ </Label>
                                             < Textarea
-    id = {`service-result-${service.Uuid}`
+    id = {`service-result-${service.uuid}`
 }
 rows = { 3}
 value = { description }
@@ -718,11 +719,11 @@ placeholder = "Nhập mô tả kết quả X-quang, nội soi, xét nghiệm..."
 {
     canEdit && !isCompleted ? (
         <div className= "mt-3 flex flex-wrap justify-end gap-2" >
-        <Button type="button" size = "sm" variant = "outline" disabled = { isSaving } onClick = {() => save("Processing")
+        <Button type="button" size = "sm" variant = "outline" disabled = { isSaving } onClick = {() => save("InProgress")
 }>
     <Save /> Lưu kết quả
     </Button>
-    < Button type = "button" size = "sm" disabled = { isSaving } onClick = {() => save("Done")}>
+    < Button type = "button" size = "sm" disabled = { isSaving } onClick = {() => save("Completed")}>
         <CheckCircle2 /> Hoàn tất dịch vụ
         </Button>
         </div>
@@ -733,11 +734,11 @@ placeholder = "Nhập mô tả kết quả X-quang, nội soi, xét nghiệm..."
 
 function formatDateTime(value: Date) {
     const parts = getVietnamDateTimeParts(value);
-    const [year, month, day] = parts.Date.split("-");
-    return { date: `${day}/${month}/${year}`, time: parts.Time };
+    const [year, month, day] = parts.date.split("-");
+    return { date: `${day}/${month}/${year}`, time: parts.time };
 }
 
-function genderLabel(gender: ClinicalAppointment["Gender"]) {
+function genderLabel(gender: ClinicalAppointment["gender"]) {
     return gender === "Male" ? "Nam" : gender === "Female" ? "Nữ" : "Khác";
 }
 

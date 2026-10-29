@@ -8,6 +8,7 @@ import { useState, type FormEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getManagementLanding } from "@/lib/auth/management-landing";
 import { internalAuthService } from "@/lib/services/auth/InternalAuthService";
 
 export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }) {
@@ -33,11 +34,11 @@ export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }
     const formData = new FormData(event.currentTarget);
 
     try {
-      await internalAuthService.login(
+      const session = await internalAuthService.login(
         String(formData.get("phone") ?? ""),
         String(formData.get("password") ?? ""),
       );
-      router.push("/noi-bo/trang-tong/tong-quan-he-thong");
+      router.push(getManagementLanding(session));
       router.refresh();
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Đăng nhập không thành công.");

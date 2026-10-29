@@ -35,7 +35,7 @@ export function TimeWorkingCatalogScreen() {
     adminTimeWorkingService.getAll(controller.signal)
       .then((response) => {
         if (!active) return;
-        setWorkings((response.data ?? response.Data ?? []).map(mapTimeWorking));
+        setWorkings((response.data ?? response.data ?? []).map(mapTimeWorking));
       })
       .catch((requestError) => {
         if (!active) return;
@@ -63,13 +63,13 @@ export function TimeWorkingCatalogScreen() {
         status: BaseStatus.Active,
       };
       const response = editing
-        ? await adminTimeWorkingService.update(editing.Uuid, payload)
+        ? await adminTimeWorkingService.update(editing.uuid, payload)
         : await adminTimeWorkingService.create(payload);
-      const saved = response.data ?? response.Data;
+      const saved = response.data ?? response.data;
       if (!saved) throw new Error("API không trả về khung giờ đã lưu");
       const mapped = mapTimeWorking(saved);
       setWorkings((current) => (editing
-        ? current.map((item) => item.Uuid === mapped.Uuid ? mapped : item)
+        ? current.map((item) => item.uuid === mapped.uuid ? mapped : item)
         : [...current, mapped]).sort(compareTimeWorking));
       setEditing(null);
     } catch (requestError) {
@@ -82,17 +82,17 @@ export function TimeWorkingCatalogScreen() {
 
   async function toggleDeleted(working: TimeWorking) {
     if (submitting) return;
-    const deleted = working.DeletedAt.getTime() === 0;
+    const deleted = working.deletedAt.getTime() === 0;
     if (!window.confirm(`${deleted ? "Xóa" : "Khôi phục"} khung giờ này?`)) return;
 
     setSubmitting(true);
     setError(null);
     try {
-      if (deleted) await adminTimeWorkingService.delete(working.Uuid);
-      else await adminTimeWorkingService.restore(working.Uuid);
+      if (deleted) await adminTimeWorkingService.delete(working.uuid);
+      else await adminTimeWorkingService.restore(working.uuid);
       const now = new Date();
-      setWorkings((current) => current.map((item) => item.Uuid === working.Uuid
-        ? { ...item, DeletedAt: deleted ? now : new Date(0), UpdatedAt: now }
+      setWorkings((current) => current.map((item) => item.uuid === working.uuid
+        ? { ...item, deletedAt: deleted ? now : new Date(0), updatedAt: now }
         : item));
     } catch (requestError) {
       console.error("Không thể thay đổi khung giờ:", requestError);
@@ -102,15 +102,15 @@ export function TimeWorkingCatalogScreen() {
     }
   }
 
-  const visibleWorkings = workings.filter((working) => visibility === "deleted" ? working.DeletedAt.getTime() > 0 : working.DeletedAt.getTime() === 0);
+  const visibleWorkings = workings.filter((working) => visibility === "deleted" ? working.deletedAt.getTime() > 0 : working.deletedAt.getTime() === 0);
   const rows = visibleWorkings.map((working) => [
-    dayNames[working.DayOfWeek],
-    working.StartTime,
-    working.EndTime,
-    working.DeletedAt.getTime() > 0 ? <StatusPill key={`${working.Uuid}-status`} tone="red">Đã xóa</StatusPill> : <StatusPill key={`${working.Uuid}-status`} tone="green">Hoạt động</StatusPill>,
-    <div key={`${working.Uuid}-actions`} className="flex gap-1">
-      {working.DeletedAt.getTime() === 0 ? <Button type="button" size="icon-sm" variant="ghost" disabled={submitting} aria-label="Sửa khung giờ" onClick={() => setEditing(working)}><Pencil /></Button> : null}
-      <Button type="button" size="sm" disabled={submitting} variant={working.DeletedAt.getTime() > 0 ? "outline" : "destructive"} onClick={() => void toggleDeleted(working)}>{working.DeletedAt.getTime() > 0 ? <><RotateCcw />Khôi phục</> : <><Trash2 />Xóa</>}</Button>
+    dayNames[working.dayOfWeek],
+    working.startTime,
+    working.endTime,
+    working.deletedAt.getTime() > 0 ? <StatusPill key={`${working.uuid}-status`} tone="red">Đã xóa</StatusPill> : <StatusPill key={`${working.uuid}-status`} tone="green">Hoạt động</StatusPill>,
+    <div key={`${working.uuid}-actions`} className="flex gap-1">
+      {working.deletedAt.getTime() === 0 ? <Button type="button" size="icon-sm" variant="ghost" disabled={submitting} aria-label="Sửa khung giờ" onClick={() => setEditing(working)}><Pencil /></Button> : null}
+      <Button type="button" size="sm" disabled={submitting} variant={working.deletedAt.getTime() > 0 ? "outline" : "destructive"} onClick={() => void toggleDeleted(working)}>{working.deletedAt.getTime() > 0 ? <><RotateCcw />Khôi phục</> : <><Trash2 />Xóa</>}</Button>
     </div>,
   ]);
 
@@ -125,13 +125,13 @@ export function TimeWorkingCatalogScreen() {
         <PortalTable caption="Danh sách khung giờ làm việc" columns={["Ngày", "Bắt đầu", "Kết thúc", "Trạng thái", "Thao tác"]} rows={rows} />
       </PortalSection>
       <ScheduleForm
-        key={editing?.Uuid ?? "create-time-working"}
+        key={editing?.uuid ?? "create-time-working"}
         title={editing ? "Chỉnh sửa khung giờ" : "Tạo khung giờ mới"}
         submitLabel={editing ? "Lưu thay đổi" : "Lưu khung giờ"}
         initialValue={editing ? {
-          dayOfWeek: editing.DayOfWeek,
-          startTime: editing.StartTime,
-          endTime: editing.EndTime,
+          dayOfWeek: editing.dayOfWeek,
+          startTime: editing.startTime,
+          endTime: editing.endTime,
         } : undefined}
         submitting={submitting}
         onCancel={editing ? () => setEditing(null) : undefined}
@@ -143,19 +143,19 @@ export function TimeWorkingCatalogScreen() {
 
 function mapTimeWorking(item: AdminTimeWorkingItem): TimeWorking {
   return {
-    Uuid: item.uuid,
-    DayOfWeek: item.dayOfWeek,
-    StartTime: item.startTime.slice(0, 5),
-    EndTime: item.endTime.slice(0, 5),
-    Status: item.status,
-    CreatedAt: new Date(item.createdAt),
-    UpdatedAt: new Date(item.updatedAt),
-    DeletedAt: item.deletedAt ? new Date(item.deletedAt) : new Date(0),
+    uuid: item.uuid,
+    dayOfWeek: item.dayOfWeek,
+    startTime: item.startTime.slice(0, 5),
+    endTime: item.endTime.slice(0, 5),
+    status: item.status,
+    createdAt: new Date(item.createdAt),
+    updatedAt: new Date(item.updatedAt),
+    deletedAt: item.deletedAt ? new Date(item.deletedAt) : new Date(0),
   };
 }
 
 function compareTimeWorking(left: TimeWorking, right: TimeWorking) {
-  return left.DayOfWeek - right.DayOfWeek || left.StartTime.localeCompare(right.StartTime);
+  return left.dayOfWeek - right.dayOfWeek || left.startTime.localeCompare(right.startTime);
 }
 
 export function DoctorWorkingScreen() {
@@ -215,10 +215,10 @@ const initialRequests: WorkingRequest[] = [
 function AssignmentScreen({ eyebrow, title, description, assignmentCount, request = false, admin = false }: { eyebrow: string; title: string; description: string; assignmentCount: number; request?: boolean; admin?: boolean }) {
   const [requests, setRequests] = useState<WorkingRequest[]>(initialRequests);
   const [schedules, setSchedules] = useState<Schedule[]>(() => mockTimeWorkings.slice(0, 6).map((working) => ({
-    id: working.Uuid,
-    dayOfWeek: working.DayOfWeek,
-    startTime: working.StartTime,
-    endTime: working.EndTime,
+    id: working.uuid,
+    dayOfWeek: working.dayOfWeek,
+    startTime: working.startTime,
+    endTime: working.endTime,
     source: "Lịch hiện tại",
   })));
   const rows = schedules.map((working) => [

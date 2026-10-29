@@ -43,17 +43,17 @@ class RoleService {
       },
       signal,
     });
-    return response.data.Data;
+    return response.data.data;
   }
 
   async create(payload: RoleRequest) {
     const response = await httpClient.post<ApiResponse<RoleItem>>("/roles", payload);
-    return response.data.Data;
+    return response.data.data;
   }
 
   async update(uuid: string, payload: RoleRequest) {
     const response = await httpClient.put<ApiResponse<RoleItem>>(`/roles/${uuid}`, payload);
-    return response.data.Data;
+    return response.data.data;
   }
 
   async delete(uuid: string) {
@@ -63,8 +63,8 @@ class RoleService {
 
 export function getRoleApiError(error: unknown, fallback: string) {
   if (!axios.isAxiosError(error)) return fallback;
-  const data = error.response?.data as { message?: string; Message?: string } | undefined;
-  return data?.message ?? data?.Message ?? fallback;
+  const data = error.response?.data as { message?: string } | undefined;
+  return data?.message ?? fallback;
 }
 
 export const roleService = new RoleService();

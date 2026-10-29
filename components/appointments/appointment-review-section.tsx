@@ -34,7 +34,7 @@ export function AppointmentReviewSection({
     reviewService
       .getEligibility(appointmentUuid, controller.signal)
       .then((response) => {
-        if (active) setState({ status: "success", data: response.Data });
+        if (active) setState({ status: "success", data: response.data });
       })
       .catch((error) => {
         if (!active) return;
@@ -77,9 +77,9 @@ export function AppointmentReviewSection({
       ) : null}
       {state.status === "success" ? (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          {state.data.Targets.map((target) => (
+          {state.data.targets.map((target) => (
             <ReviewEditor
-              key={`${target.Type}:${target.TargetUuid}`}
+              key={`${target.type}:${target.targetUuid}`}
               target={target}
             />
           ))}
@@ -90,25 +90,25 @@ export function AppointmentReviewSection({
 }
 
 function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
-  const [review, setReview] = useState(target.Review);
-  const [stars, setStars] = useState(target.Review?.NumberOfStar ?? 0);
-  const [content, setContent] = useState(target.Review?.Content ?? "");
+  const [review, setReview] = useState(target.review);
+  const [stars, setStars] = useState(target.review?.numberOfStar ?? 0);
+  const [content, setContent] = useState(target.review?.content ?? "");
   const [errors, setErrors] = useState<{
-    NumberOfStar?: string;
-    Content?: string;
+    numberOfStar?: string;
+    content?: string;
   }>({});
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitLock = useRef(false);
-  const prefix = `${target.Type}-${target.TargetUuid}`;
+  const prefix = `${target.type}-${target.targetUuid}`;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitLock.current) return;
 
     const nextErrors = {
-      NumberOfStar: stars < 1 || stars > 5 ? "Chọn số sao từ 1 đến 5." : undefined,
-      Content:
+      numberOfStar: stars < 1 || stars > 5 ? "Chọn số sao từ 1 đến 5." : undefined,
+      content:
         content.trim().length < 10
           ? "Nội dung đánh giá cần ít nhất 10 ký tự."
           : content.trim().length > 1000
@@ -117,19 +117,19 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
     };
     setErrors(nextErrors);
     setFeedback("");
-    if (nextErrors.NumberOfStar || nextErrors.Content) return;
+    if (nextErrors.numberOfStar || nextErrors.content) return;
 
     submitLock.current = true;
     setIsSubmitting(true);
     try {
-      const response = await reviewService.save(target.Type, target.TargetUuid, {
-        NumberOfStar: stars,
-        Content: content.trim(),
+      const response = await reviewService.save(target.type, target.targetUuid, {
+        numberOfStar: stars,
+        content: content.trim(),
       });
-      setReview(response.Data);
-      setContent(response.Data.Content);
+      setReview(response.data);
+      setContent(response.data.content);
       setErrors({});
-      setFeedback(response.Message);
+      setFeedback(response.message);
     } catch (error) {
       if (error instanceof ReviewServiceError) {
         setErrors(error.fieldErrors ?? {});
@@ -146,9 +146,9 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
   return (
     <form onSubmit={submit} className="rounded-xl border bg-background p-4 sm:p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {getTargetLabel(target.Type)}
+        {getTargetLabel(target.type)}
       </p>
-      <h3 className="mt-1 font-bold">{target.TargetName}</h3>
+      <h3 className="mt-1 font-bold">{target.targetName}</h3>
       <div className="mt-5">
         <Label id={`${prefix}-stars-label`}>Mức độ hài lòng</Label>
         <div
@@ -167,7 +167,7 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
                 className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => {
                   setStars(value);
-                  setErrors((current) => ({ ...current, NumberOfStar: undefined }));
+                  setErrors((current) => ({ ...current, numberOfStar: undefined }));
                   setFeedback("");
                 }}
               >
@@ -182,8 +182,8 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
             );
           })}
         </div>
-        {errors.NumberOfStar ? (
-          <p className="mt-1 text-sm text-destructive">{errors.NumberOfStar}</p>
+        {errors.numberOfStar ? (
+          <p className="mt-1 text-sm text-destructive">{errors.numberOfStar}</p>
         ) : null}
       </div>
       <div className="mt-4 space-y-2">
@@ -192,16 +192,16 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
           id={`${prefix}-content`}
           value={content}
           maxLength={1000}
-          aria-invalid={Boolean(errors.Content)}
+          aria-invalid={Boolean(errors.content)}
           placeholder="Chia sẻ về quy trình, thời gian chờ hoặc chất lượng tư vấn..."
           onChange={(event) => {
             setContent(event.target.value);
-            setErrors((current) => ({ ...current, Content: undefined }));
+            setErrors((current) => ({ ...current, content: undefined }));
             setFeedback("");
           }}
         />
         <div className="flex justify-between gap-3 text-xs text-muted-foreground">
-          <span>{errors.Content ?? "Từ 10 đến 1000 ký tự"}</span>
+          <span>{errors.content ?? "Từ 10 đến 1000 ký tự"}</span>
           <span>{content.length}/1000</span>
         </div>
       </div>
@@ -234,7 +234,7 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
   );
 }
 
-function getTargetLabel(type: ReviewEligibilityTarget["Type"]) {
+function getTargetLabel(type: ReviewEligibilityTarget["type"]) {
   if (type === "hospital") return "Cơ sở y tế";
   if (type === "doctor") return "Bác sĩ";
   return "Dịch vụ y tế";

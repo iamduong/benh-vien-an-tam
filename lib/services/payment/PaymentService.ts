@@ -8,19 +8,11 @@ import type {
 } from "@/types/payment";
 
 type RawResultEndpoint = Partial<ResultEndpoint> & {
-  IsValid?: boolean;
-  ErrorMessage?: string | null;
-  OrderUuid?: string;
-  Type?: string;
-  Amount?: number;
-  Content?: string;
-  PayUrl?: string;
-  ExpiresAt?: string;
+  errorMessage?: string | null;
 };
 
 type PaymentResponse = {
   data?: RawResultEndpoint;
-  Data?: RawResultEndpoint;
 };
 
 export class PaymentServiceError extends Error {
@@ -36,10 +28,7 @@ export class PaymentServiceError extends Error {
 function readErrorMessage(response?: PaymentApiErrorResponse) {
   return (
     response?.errors?.errorMessage ??
-    response?.Errors?.ErrorMessage ??
-    response?.Errors?.errorMessage ??
-    response?.message ??
-    response?.Message
+    response?.message
   );
 }
 
@@ -61,14 +50,14 @@ function toPaymentError(error: unknown) {
 
 function normalizeResult(payload: RawResultEndpoint): ResultEndpoint {
   const result: ResultEndpoint = {
-    isValid: payload.isValid ?? payload.IsValid ?? false,
-    errorMessage: payload.errorMessage ?? payload.ErrorMessage ?? null,
-    orderUuid: payload.orderUuid ?? payload.OrderUuid ?? "",
-    type: payload.type ?? payload.Type ?? "",
-    amount: payload.amount ?? payload.Amount ?? 0,
-    content: payload.content ?? payload.Content ?? "",
-    payUrl: payload.payUrl ?? payload.PayUrl ?? "",
-    expiresAt: payload.expiresAt ?? payload.ExpiresAt ?? "",
+    isValid: payload.isValid ?? false,
+    errorMessage: payload.errorMessage ?? null,
+    orderUuid: payload.orderUuid ?? "",
+    type: payload.type ?? "",
+    amount: payload.amount ?? 0,
+    content: payload.content ?? "",
+    payUrl: payload.payUrl ?? "",
+    expiresAt: payload.expiresAt ?? "",
   };
 
   if (
@@ -104,7 +93,7 @@ export class PaymentService {
           signal,
         },
       );
-      const payload = response.data.data ?? response.data.Data;
+      const payload = response.data.data ?? response.data.data;
 
       if (!payload) {
         throw new PaymentServiceError("Dữ liệu thanh toán không hợp lệ.");

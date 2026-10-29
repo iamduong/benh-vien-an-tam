@@ -31,9 +31,9 @@ export class AppointmentServiceError extends Error {
 function toAppointmentError(error: unknown) {
   if (axios.isAxiosError<AppointmentErrorResponse>(error)) {
     return new AppointmentServiceError(
-      error.response?.data?.Message ??
+      error.response?.data?.message ??
         "Không thể kết nối đến hệ thống. Vui lòng thử lại.",
-      error.response?.data?.Code,
+      error.response?.data?.code,
       error.response?.status,
     );
   }
@@ -49,9 +49,9 @@ export class AppointmentService {
       );
       return {
         ...response.data,
-        Data: {
-          ...response.data.Data,
-          Items: response.data.Data.Items.map(hydratePresentation),
+        data: {
+          ...response.data.data,
+          Items: response.data.data.Items.map(hydratePresentation),
         },
       };
     } catch (error) {
@@ -94,11 +94,11 @@ export class AppointmentService {
 
   async create(request: CreateAppointmentRequest) {
     try {
-      const { Type, ...payload } = request;
+      const { type, ...payload } = request;
       const endpoint =
-        Type === "hospital"
+        type === "hospital"
           ? "hospitals"
-          : Type === "doctor"
+          : type === "doctor"
             ? "doctors"
             : "medical-services";
       const response = await httpClient.post<ApiResponse<Appointment>>(
@@ -107,7 +107,7 @@ export class AppointmentService {
       );
       return {
         ...response.data,
-        Data: hydrateAppointment(response.data.Data),
+        data: hydrateAppointment(response.data.data),
       };
     } catch (error) {
       throw toAppointmentError(error);
@@ -122,7 +122,7 @@ export class AppointmentService {
       );
       return {
         ...response.data,
-        Data: hydrateAppointment(response.data.Data),
+        data: hydrateAppointment(response.data.data),
       };
     } catch (error) {
       throw toAppointmentError(error);
@@ -163,9 +163,9 @@ export class AppointmentService {
       });
       return {
         ...response.data,
-        Data: {
-          ...response.data.Data,
-          Appointment: hydrateAppointment(response.data.Data.Appointment),
+        data: {
+          ...response.data.data,
+          appointment: hydrateAppointment(response.data.data.appointment),
         },
       };
     } catch (error) {
@@ -183,7 +183,7 @@ export class AppointmentService {
         `/appointments/${encodeURIComponent(appointmentUuid)}/detail`,
         { params: { accountUuid }, signal },
       );
-      return { ...response.data, Data: hydratePresentation(response.data.Data) };
+      return { ...response.data, data: hydratePresentation(response.data.data) };
     } catch (error) {
       throw toAppointmentError(error);
     }
@@ -198,7 +198,7 @@ export class AppointmentService {
         `/appointments/${encodeURIComponent(appointmentUuid)}/reschedule`,
         request,
       );
-      return { ...response.data, Data: hydratePresentation(response.data.Data) };
+      return { ...response.data, data: hydratePresentation(response.data.data) };
     } catch (error) {
       throw toAppointmentError(error);
     }
@@ -208,9 +208,9 @@ export class AppointmentService {
     try {
       const response = await httpClient.post<ApiResponse<AppointmentPresentation>>(
         `/appointments/${encodeURIComponent(appointmentUuid)}/cancel`,
-        { AccountUuid: accountUuid },
+        { accountUuid: accountUuid },
       );
-      return { ...response.data, Data: hydratePresentation(response.data.Data) };
+      return { ...response.data, data: hydratePresentation(response.data.data) };
     } catch (error) {
       throw toAppointmentError(error);
     }
@@ -220,16 +220,16 @@ export class AppointmentService {
 function hydrateAppointment<T extends Appointment>(appointment: T): T {
   return {
     ...appointment,
-    AppointmentAt: new Date(appointment.AppointmentAt),
-    CreatedAt: new Date(appointment.CreatedAt),
-    UpdatedAt: new Date(appointment.UpdatedAt),
+    appointmentAt: new Date(appointment.appointmentAt),
+    createdAt: new Date(appointment.createdAt),
+    updatedAt: new Date(appointment.updatedAt),
   };
 }
 
 function hydratePresentation<T extends AppointmentPresentation>(item: T): T {
   return {
     ...item,
-    Appointment: hydrateAppointment(item.Appointment),
+    appointment: hydrateAppointment(item.appointment),
   };
 }
 

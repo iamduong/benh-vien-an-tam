@@ -22,7 +22,7 @@ export function ReviewList({
     reviewService
       .getPublic(target.type, target.uuid, controller.signal)
       .then((response) => {
-        if (active) setReviews(response.Data);
+        if (active) setReviews(response.data);
       })
       .catch(() => {
         // Keep the server-rendered reviews when the client refresh cannot complete.
@@ -34,7 +34,7 @@ export function ReviewList({
   }, [target.type, target.uuid]);
 
   const averageRating = reviews.length
-    ? reviews.reduce((total, review) => total + review.NumberOfStar, 0) /
+    ? reviews.reduce((total, review) => total + review.numberOfStar, 0) /
       reviews.length
     : null;
 
@@ -50,24 +50,24 @@ export function ReviewList({
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {reviews.map((review) => (
-          <article key={review.Uuid} className="rounded-xl border p-4">
+          <article key={review.uuid} className="rounded-xl border p-4">
             <div
               className="flex gap-1 text-amber-500"
-              aria-label={`${review.NumberOfStar} trên 5 sao`}
+              aria-label={`${review.numberOfStar} trên 5 sao`}
             >
               {Array.from({ length: 5 }).map((_, index) => (
                 <Star
                   key={index}
                   aria-hidden="true"
-                  className={cnStar(index < review.NumberOfStar)}
+                  className={cnStar(index < review.numberOfStar)}
                 />
               ))}
             </div>
             <p className="mt-3 text-sm leading-6">
-              {review.Content || "Đang cập nhật"}
+              {review.content || "Đang cập nhật"}
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
-              Người bệnh · {formatDate(review.CreatedAt)}
+              Người bệnh · {formatDate(review.createdAt)}
             </p>
           </article>
         ))}

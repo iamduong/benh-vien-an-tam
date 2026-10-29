@@ -48,8 +48,8 @@ export default function DoctorProfileScreen() {
 
                 const res = await doctorProfileInternalService.getMyProfile(controller.signal);
 
-                if (res && res.Data) {
-                    const data = res.Data;
+                if (res && res.data) {
+                    const data = res.data;
                     setProfile(data);
                     setFormData({
                         name: data.name || "",

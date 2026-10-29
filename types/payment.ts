@@ -20,9 +20,7 @@ export type ResultEndpoint = {
 
 export type PaymentApiErrorResponse = {
   message?: string;
-  Message?: string;
-  errors?: Partial<ResultEndpoint>;
-  Errors?: Partial<ResultEndpoint> & {
-    ErrorMessage?: string | null;
+  errors?: Partial<ResultEndpoint> & {
+    errorMessage?: string | null;
   };
 };

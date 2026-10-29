@@ -82,30 +82,30 @@ export function DoctorScheduleScreen() {
         const keyword = debouncedSearch.trim().toLocaleLowerCase("vi-VN");
         return state.items.filter(
             (item) =>
-                (!status || item.Status === status) &&
+                (!status || item.status === status) &&
                 (!keyword ||
-                    item.PatientName.toLocaleLowerCase("vi-VN").includes(keyword) ||
-                    item.MedicalCode.toLocaleLowerCase("vi-VN").includes(keyword))
+                    item.patientName.toLocaleLowerCase("vi-VN").includes(keyword) ||
+                    item.medicalCode.toLocaleLowerCase("vi-VN").includes(keyword))
         );
     }, [debouncedSearch, state, status]);
 
     const rows = filteredItems.map((item) => {
         const isReadOnly =
-            item.Status === "Done" ||
-            item.Status === "Pending" ||
-            item.Status === "Cancelled" ||
-            item.Status === "Unconfirmed";
+            item.status === "Done" ||
+            item.status === "Pending" ||
+            item.status === "Cancelled" ||
+            item.status === "Unconfirmed";
 
         return [
-            formatTime(item.AppointmentAt),
-            `${item.PatientName} · ${item.MedicalCode}`,
-            item.TypeLabel,
-            item.RoomName,
-            <AppointmentStatus key={`status-${item.Uuid}`} status = { item.Status } />,
+            formatTime(item.appointmentAt),
+            `${item.patientName} · ${item.medicalCode}`,
+            item.typeLabel,
+            item.roomName,
+            <AppointmentStatus key={`status-${item.uuid}`} status = { item.status } />,
         isReadOnly ? (
             <Link
-                    key= {`action-${item.Uuid}`}
-href = {`/noi-bo/trang-tong/ca-kham/${item.Uuid}`}
+                    key= {`action-${item.uuid}`}
+href = {`/noi-bo/trang-tong/ca-kham/${item.uuid}`}
 className = { cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
                 >
     <Eye className="size-4" aria-hidden="true" />
@@ -113,8 +113,8 @@ className = { cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
             </Link>
             ) : (
     <Link
-                    key= {`action-${item.Uuid}`}
-href = {`/noi-bo/trang-tong/ca-kham/${item.Uuid}`}
+                    key= {`action-${item.uuid}`}
+href = {`/noi-bo/trang-tong/ca-kham/${item.uuid}`}
 className = { cn(buttonVariants({ size: "sm" }), "gap-1.5")}
                 >
     <Stethoscope className="size-4" aria-hidden="true" />
@@ -219,7 +219,7 @@ function AppointmentStatus({ status }: { status: ClinicalAppointmentStatus }) {
 }
 
 function formatTime(value: Date) {
-    return getVietnamDateTimeParts(value).Time;
+    return getVietnamDateTimeParts(value).time;
 }
 
 function formatSelectedDate(date: string) {

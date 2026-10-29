@@ -213,7 +213,7 @@ async function loadResourceData(
       ),
       departmentService.getOptions(signal),
     ]);
-    return { result: result.Data, departments: departments.Data, hospitals: [] };
+    return { result: result.data, departments: departments.data, hospitals: [] };
   }
 
   if (kind === "doctor") {
@@ -230,9 +230,9 @@ async function loadResourceData(
       hospitalService.getOptions(signal),
     ]);
     return {
-      result: result.Data,
-      departments: departments.Data,
-      hospitals: hospitals.Data,
+      result: result.data,
+      departments: departments.data,
+      hospitals: hospitals.data,
     };
   }
 
@@ -243,7 +243,7 @@ async function loadResourceData(
     ),
     hospitalService.getOptions(signal),
   ]);
-  return { result: result.Data, departments: [], hospitals: hospitals.Data };
+  return { result: result.data, departments: [], hospitals: hospitals.data };
 }
 
 function getFilters(
@@ -255,13 +255,13 @@ function getFilters(
     key: "department",
     label: "Chuyên khoa",
     allLabel: "Tất cả chuyên khoa",
-    options: departments.map((item) => ({ value: item.Uuid, label: item.Name })),
+    options: departments.map((item) => ({ value: item.uuid, label: item.name })),
   };
   const hospitalFilter: DiscoveryFilter = {
     key: "hospital",
     label: "Cơ sở y tế",
     allLabel: "Tất cả cơ sở",
-    options: hospitals.map((item) => ({ value: item.Uuid, label: item.Name })),
+    options: hospitals.map((item) => ({ value: item.uuid, label: item.name })),
   };
 
   if (kind === "hospital") return [departmentFilter];
@@ -274,7 +274,7 @@ function renderCard(kind: ResourceKind, item: Resource) {
     const hospital = item as Hospital;
     return (
       <HospitalCard
-        key={hospital.Uuid}
+        key={hospital.uuid}
         hospital={hospital}
         showBookingAction
       />
@@ -282,12 +282,12 @@ function renderCard(kind: ResourceKind, item: Resource) {
   }
   if (kind === "doctor") {
     const doctor = item as DoctorProfile;
-    return <DoctorCard key={doctor.Uuid} doctor={doctor} showBookingAction />;
+    return <DoctorCard key={doctor.uuid} doctor={doctor} showBookingAction />;
   }
   const service = item as MedicalService;
   return (
     <MedicalServiceCard
-      key={service.Uuid}
+      key={service.uuid}
       service={service}
       showBookingAction
     />

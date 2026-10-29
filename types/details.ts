@@ -9,21 +9,27 @@ import type {
 } from "@/types/models";
 
 export type HospitalDetail = {
-  Hospital: Hospital;
-  Departments: Department[];
-  MedicalServices: MedicalService[];
-  Reviews: ReviewHospital[];
+  hospital: Hospital;
+  departments: Department[];
+  medicalServices: MedicalService[];
+  reviews: ReviewHospital[];
 };
 
 export type DoctorDetail = {
-  Doctor: DoctorProfile;
-  Departments: Department[];
-  Hospital: Hospital;
-  Reviews: ReviewDoctor[];
+  doctor: DoctorProfile;
+  departments: Department[];
+  hospital: Hospital;
+  reviews: ReviewDoctor[];
 };
 
 export type MedicalServiceDetail = {
-  MedicalService: MedicalService;
-  Hospitals: Hospital[];
-  Reviews: ReviewMedicalService[];
+  medicalService: MedicalService;
+  hospitals: Hospital[];
+  reviews: ReviewMedicalService[];
+};
+
+export type DepartmentDetail = {
+  department: Department;
+  hospitals: Hospital[];
+  doctors: DoctorProfile[];
 };

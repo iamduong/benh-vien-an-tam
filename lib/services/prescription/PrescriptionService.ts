@@ -23,7 +23,7 @@ export class PrescriptionServiceError extends Error {
 function toPrescriptionError(error: unknown) {
   if (axios.isAxiosError<PrescriptionErrorResponse>(error)) {
     return new PrescriptionServiceError(
-      error.response?.data?.Message ??
+      error.response?.data?.message ??
         "Không thể kết nối đến hệ thống. Vui lòng thử lại.",
       error.response?.status,
     );
@@ -40,9 +40,9 @@ export class PrescriptionService {
       );
       return {
         ...response.data,
-        Data: {
-          ...response.data.Data,
-          Items: response.data.Data.Items.map(hydrateSummary),
+        data: {
+          ...response.data.data,
+          Items: response.data.data.Items.map(hydrateSummary),
         },
       };
     } catch (error) {
@@ -58,15 +58,15 @@ export class PrescriptionService {
       );
       return {
         ...response.data,
-        Data: {
-          ...hydrateSummary(response.data.Data),
-          Details: response.data.Data.Details.map((item) => ({
+        data: {
+          ...hydrateSummary(response.data.data),
+          details: response.data.data.details.map((item) => ({
             ...item,
-            Medicine: {
-              ...item.Medicine,
-              CreatedAt: new Date(item.Medicine.CreatedAt),
-              UpdatedAt: new Date(item.Medicine.UpdatedAt),
-              DeletedAt: new Date(item.Medicine.DeletedAt),
+            medicine: {
+              ...item.medicine,
+              createdAt: new Date(item.medicine.createdAt),
+              updatedAt: new Date(item.medicine.updatedAt),
+              deletedAt: new Date(item.medicine.deletedAt),
             },
           })),
         },
@@ -80,11 +80,11 @@ export class PrescriptionService {
 function hydrateSummary<T extends PrescriptionSummary>(item: T): T {
   return {
     ...item,
-    Prescription: {
-      ...item.Prescription,
-      CreatedAt: new Date(item.Prescription.CreatedAt),
-      UpdatedAt: new Date(item.Prescription.UpdatedAt),
-      DeletedAt: new Date(item.Prescription.DeletedAt),
+    prescription: {
+      ...item.prescription,
+      createdAt: new Date(item.prescription.createdAt),
+      updatedAt: new Date(item.prescription.updatedAt),
+      deletedAt: new Date(item.prescription.deletedAt),
     },
   };
 }

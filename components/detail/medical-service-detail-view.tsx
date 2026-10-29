@@ -31,8 +31,8 @@ export function MedicalServiceDetailView({
 }: {
   detail: MedicalServiceDetail;
 }) {
-  const { MedicalService: service, Hospitals, Reviews } = detail;
-  const bookingHref = `/dat-lich/dich-vu?service=${service.Uuid}`;
+  const { medicalService: service, hospitals, reviews } = detail;
+  const bookingHref = `/dat-lich/dich-vu?service=${service.uuid}`;
 
   return (
     <article className="pb-20">
@@ -50,16 +50,16 @@ export function MedicalServiceDetailView({
           </Link>
           <ChevronRight aria-hidden="true" className="size-4 shrink-0" />
           <span aria-current="page" className="truncate text-foreground">
-            {service.Name}
+            {service.name}
           </span>
         </nav>
 
         <div className="mt-6 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
           <div className="relative min-h-72 overflow-hidden rounded-2xl border bg-muted sm:min-h-[28rem]">
             <DetailImage
-              src={service.Image}
+              src={service.image}
               fallbackSrc="/images/service-placeholder.svg"
-              alt={`Minh họa ${service.Name}`}
+              alt={`Minh họa ${service.name}`}
             />
           </div>
 
@@ -68,7 +68,7 @@ export function MedicalServiceDetailView({
               Dịch vụ y tế đang hoạt động
             </p>
             <h1 className="mt-3 text-balance text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-              {service.Name}
+              {service.name}
             </h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               Xem nội dung thực hiện, thời gian, chi phí dự kiến và lựa chọn cơ sở phù hợp trước khi đặt lịch.
@@ -78,17 +78,17 @@ export function MedicalServiceDetailView({
               <SummaryFact
                 icon={WalletCards}
                 label="Chi phí dự kiến"
-                value={formatPrice(service.Price)}
+                value={formatPrice(service.price)}
               />
               <SummaryFact
                 icon={Clock3}
                 label="Khung giờ phục vụ"
-                value={displayText(service.WorkingHour)}
+                value={displayText(service.workingHour)}
               />
               <SummaryFact
                 icon={Building2}
                 label="Cơ sở cung cấp"
-                value={Hospitals.length ? `${Hospitals.length} cơ sở` : "Đang cập nhật"}
+                value={hospitals.length ? `${hospitals.length} cơ sở` : "Đang cập nhật"}
               />
               <SummaryFact
                 icon={ClipboardCheck}
@@ -141,11 +141,11 @@ export function MedicalServiceDetailView({
       <div className="container-shell mt-8 grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 space-y-7">
           <DetailSection id="tong-quan" title="Tổng quan dịch vụ">
-            <SafeMarkdown content={service.Description} />
+            <SafeMarkdown content={service.description} />
           </DetailSection>
 
           <DetailSection id="chi-tiet" title="Chi tiết thực hiện">
-            <SafeMarkdown content={service.DetailService} />
+            <SafeMarkdown content={service.detailService} />
           </DetailSection>
 
           <DetailSection
@@ -154,10 +154,10 @@ export function MedicalServiceDetailView({
             description="Chọn cơ sở phù hợp ở bước đặt lịch. Danh sách được xác định từ quan hệ cung cấp dịch vụ."
           >
             <RelatedList
-              items={Hospitals.map((hospital) => ({
-                href: `/co-so-y-te/${hospital.Slug}`,
-                title: hospital.Name,
-                description: `${displayText(hospital.Address)} · ${displayText(hospital.WorkingHour)}`,
+              items={hospitals.map((hospital) => ({
+                href: `/co-so-y-te/${hospital.slug}`,
+                title: hospital.name,
+                description: `${displayText(hospital.address)} · ${displayText(hospital.workingHour)}`,
               }))}
               emptyMessage="Cơ sở cung cấp đang được cập nhật."
             />
@@ -165,15 +165,8 @@ export function MedicalServiceDetailView({
 
           <DetailSection id="danh-gia" title="Đánh giá từ người bệnh">
             <ReviewList
-              reviews={Reviews.map(
-                ({ Uuid, Content, NumberOfStar, CreatedAt }) => ({
-                  Uuid,
-                  Content,
-                  NumberOfStar,
-                  CreatedAt,
-                }),
-              )}
-              target={{ type: "medical-service", uuid: service.Uuid }}
+              reviews={reviews}
+              target={{ type: "medical-service", uuid: service.uuid }}
             />
           </DetailSection>
         </div>
@@ -188,7 +181,7 @@ export function MedicalServiceDetailView({
             <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">
               Chi phí dự kiến
               <strong className="mt-1 block text-base text-foreground">
-                {formatPrice(service.Price)}
+                {formatPrice(service.price)}
               </strong>
             </p>
             <Link
@@ -201,14 +194,14 @@ export function MedicalServiceDetailView({
           </div>
           <div className="rounded-xl border bg-card p-5">
             <p className="text-sm font-semibold">Cơ sở tiếp nhận</p>
-            <p className="mt-3 text-2xl font-bold">{Hospitals.length}</p>
+            <p className="mt-3 text-2xl font-bold">{hospitals.length}</p>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
               cơ sở đang liên kết cung cấp dịch vụ này.
             </p>
-            {Hospitals[0] ? (
+            {hospitals[0] ? (
               <p className="mt-4 flex items-start gap-2 border-t pt-4 text-sm leading-6 text-muted-foreground">
                 <MapPin aria-hidden="true" className="mt-1 size-4 shrink-0 text-primary" />
-                {Hospitals[0].Address}
+                {hospitals[0].address}
               </p>
             ) : null}
           </div>

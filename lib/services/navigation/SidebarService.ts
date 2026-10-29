@@ -32,7 +32,7 @@ class SidebarService {
       "/sidebar",
       { signal },
     );
-    const data = response.data.data ?? response.data.Data;
+    const data = response.data.data ?? response.data.data;
 
     return {
       role: data.role,

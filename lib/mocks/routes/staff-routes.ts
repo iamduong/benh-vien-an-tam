@@ -53,11 +53,11 @@ export function registerStaffRoutes(mock: AxiosMockAdapter) {
     const items = mockAccounts
       .filter(
         (account) =>
-          account.HospitalUuid === hospitalUuid &&
-          account.DeletedAt.getTime() === 0 &&
+          account.hospitalUuid === hospitalUuid &&
+          account.deletedAt.getTime() === 0 &&
           isStaffAccount(account) &&
           (!role || roleCodeFor(account) === role) &&
-          (!status || account.Status === status) &&
+          (!status || account.status === status) &&
           matchesKeyword(search, ...getStaffSearchValues(account)),
       )
       .map((account) => toStaffDto(account, hospitalUuid))
@@ -86,12 +86,12 @@ export function registerStaffRoutes(mock: AxiosMockAdapter) {
     if (!isValidPayload(payload)) {
       return [400, { message: "Staff account details are invalid", error: "INVALID_STAFF_REQUEST" }];
     }
-    if (mockAccounts.some((account) => account.Phone === payload.phone.trim())) {
+    if (mockAccounts.some((account) => account.phone === payload.phone.trim())) {
       return [409, { message: "Phone number is already in use", error: "PHONE_ALREADY_EXISTS" }];
     }
 
     let departmentUuid: string | null = null;
-    if (payload.roleCode === "Doctor") {
+    if (payload.roleCode === "doctor") {
       if (
         typeof payload.departmentUuid !== "string" ||
         !payload.name ||
@@ -104,61 +104,61 @@ export function registerStaffRoutes(mock: AxiosMockAdapter) {
       }
       const assignment = mockHospitalDepartments.find(
         (item) =>
-          item.HospitalUuid === hospitalUuid &&
-          item.DepartmentUuid === payload.departmentUuid,
+          item.hospitalUuid === hospitalUuid &&
+          item.departmentUuid === payload.departmentUuid,
       );
       const department = mockDepartments.find(
         (item) =>
-          item.Uuid === payload.departmentUuid &&
-          item.Status === BaseStatus.Active &&
-          item.DeletedAt.getTime() === 0,
+          item.uuid === payload.departmentUuid &&
+          item.status === BaseStatus.Active &&
+          item.deletedAt.getTime() === 0,
       );
       if (!assignment || !department) {
         return [400, { message: "Department is not assigned to this hospital", error: "DEPARTMENT_NOT_ASSIGNED" }];
       }
-      departmentUuid = department.Uuid;
+      departmentUuid = department.uuid;
     }
 
     const accountUuid = crypto.randomUUID();
     const now = new Date();
     const account: Account = {
-      Uuid: accountUuid,
-      Phone: payload.phone.trim(),
-      Password: payload.password,
-      RoleUuid: roleUuidFor(payload.roleCode),
-      Status: BaseStatus.Active,
-      HospitalUuid: hospitalUuid,
-      CreatedAt: now,
-      UpdatedAt: now,
-      DeletedAt: new Date(0),
+      uuid: accountUuid,
+      phone: payload.phone.trim(),
+      password: payload.password,
+      roleUuid: roleUuidFor(payload.roleCode),
+      status: BaseStatus.Active,
+      hospitalUuid: hospitalUuid,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: new Date(0),
     };
     mockAccounts.push(account);
 
-    if (payload.roleCode === "Doctor" && departmentUuid) {
-      const hospital = mockHospitals.find((item) => item.Uuid === hospitalUuid)!;
+    if (payload.roleCode === "doctor" && departmentUuid) {
+      const hospital = mockHospitals.find((item) => item.uuid === hospitalUuid)!;
       const doctorUuid = crypto.randomUUID();
       const name = payload.name!.trim();
-      const department = mockDepartments.find((item) => item.Uuid === departmentUuid)!;
+      const department = mockDepartments.find((item) => item.uuid === departmentUuid)!;
       const doctor: DoctorProfile = {
-        Uuid: doctorUuid,
-        Avatar: "/images/doctor-placeholder.svg",
-        Slug: `${toSlug(name)}-${doctorUuid.slice(0, 8)}`,
-        Name: name,
-        Price: payload.price as number,
-        DepartmentDisplay: department.Name,
-        Introduction: "Hồ sơ bác sĩ mới.",
-        Expertise: payload.specialty!.trim(),
-        Specialty: payload.specialty!.trim(),
-        Workplace: hospital.Name,
-        IsFeatured: false,
-        AccountUuid: accountUuid,
-        HospitalUuid: hospitalUuid,
+        uuid: doctorUuid,
+        avatar: "/images/doctor-placeholder.svg",
+        slug: `${toSlug(name)}-${doctorUuid.slice(0, 8)}`,
+        name: name,
+        price: payload.price as number,
+        departmentDisplay: department.name,
+        introduction: "Hồ sơ bác sĩ mới.",
+        expertise: payload.specialty!.trim(),
+        specialty: payload.specialty!.trim(),
+        workplace: hospital.name,
+        isFeatured: false,
+        accountUuid: accountUuid,
+        hospitalUuid: hospitalUuid,
       };
       mockDoctors.push(doctor);
       mockDoctorDepartments.push({
-        Uuid: crypto.randomUUID(),
-        DoctorUuid: doctorUuid,
-        DepartmentUuid: departmentUuid,
+        uuid: crypto.randomUUID(),
+        doctorUuid: doctorUuid,
+        departmentUuid: departmentUuid,
       });
     }
 
@@ -173,9 +173,9 @@ export function registerStaffRoutes(mock: AxiosMockAdapter) {
 
       const account = mockAccounts.find(
         (item) =>
-          item.Uuid === accountUuid &&
-          item.HospitalUuid === hospitalUuid &&
-          item.DeletedAt.getTime() === 0 &&
+          item.uuid === accountUuid &&
+          item.hospitalUuid === hospitalUuid &&
+          item.deletedAt.getTime() === 0 &&
           isStaffAccount(item),
       );
       if (!account) return notFound("Staff account not found");
@@ -189,16 +189,16 @@ export function registerStaffRoutes(mock: AxiosMockAdapter) {
         return [400, { message: "Account status is invalid" }];
       }
 
-      account.Status = payload.status as BaseStatus;
-      account.UpdatedAt = new Date();
+      account.status = payload.status as BaseStatus;
+      account.updatedAt = new Date();
       return [
         200,
         {
           message: "Updated successfully",
           data: {
-            accountUuid: account.Uuid,
-            status: account.Status,
-            updatedAt: account.UpdatedAt.toISOString(),
+            accountUuid: account.uuid,
+            status: account.status,
+            updatedAt: account.updatedAt.toISOString(),
           },
         },
       ];
@@ -216,27 +216,27 @@ function getRouteIds(url?: string) {
 
 function hospitalExists(uuid: string) {
   return mockHospitals.some(
-    (hospital) => hospital.Uuid === uuid && hospital.DeletedAt.getTime() === 0,
+    (hospital) => hospital.uuid === uuid && hospital.deletedAt.getTime() === 0,
   );
 }
 
 function isStaffAccount(account: Account) {
   return (
-    account.RoleUuid === ROLE_UUIDS.DOCTOR ||
-    account.RoleUuid === ROLE_UUIDS.STAFF ||
-    account.RoleUuid === ROLE_UUIDS.WAREHOUSE_MANAGER
+    account.roleUuid === ROLE_UUIDS.DOCTOR ||
+    account.roleUuid === ROLE_UUIDS.STAFF ||
+    account.roleUuid === ROLE_UUIDS.WAREHOUSE_MANAGER
   );
 }
 
 function roleCodeFor(account: Account): StaffRoleCode {
-  if (account.RoleUuid === ROLE_UUIDS.DOCTOR) return "Doctor";
-  if (account.RoleUuid === ROLE_UUIDS.WAREHOUSE_MANAGER) return "WarehouseManager";
+  if (account.roleUuid === ROLE_UUIDS.DOCTOR) return "doctor";
+  if (account.roleUuid === ROLE_UUIDS.WAREHOUSE_MANAGER) return "WarehouseManager";
   return "Staff";
 }
 
 function roleUuidFor(roleCode: StaffRoleCode) {
   switch (roleCode) {
-    case "Doctor":
+    case "doctor":
       return ROLE_UUIDS.DOCTOR;
     case "WarehouseManager":
       return ROLE_UUIDS.WAREHOUSE_MANAGER;
@@ -247,34 +247,34 @@ function roleUuidFor(roleCode: StaffRoleCode) {
 
 function toStaffDto(account: Account, hospitalUuid: string) {
   const roleCode = roleCodeFor(account);
-  const doctor = mockDoctors.find((item) => item.AccountUuid === account.Uuid);
+  const doctor = mockDoctors.find((item) => item.accountUuid === account.uuid);
   const relation = doctor
-    ? mockDoctorDepartments.find((item) => item.DoctorUuid === doctor.Uuid)
+    ? mockDoctorDepartments.find((item) => item.doctorUuid === doctor.uuid)
     : undefined;
   const department = relation
-    ? mockDepartments.find((item) => item.Uuid === relation.DepartmentUuid)
+    ? mockDepartments.find((item) => item.uuid === relation.departmentUuid)
     : undefined;
-  const role = mockRoles.find((item) => item.Uuid === account.RoleUuid);
+  const role = mockRoles.find((item) => item.uuid === account.roleUuid);
 
   return {
-    accountUuid: account.Uuid,
-    doctorUuid: doctor?.Uuid ?? null,
-    displayName: doctor?.Name ?? account.Phone,
-    phone: account.Phone,
+    accountUuid: account.uuid,
+    doctorUuid: doctor?.uuid ?? null,
+    displayName: doctor?.name ?? account.phone,
+    phone: account.phone,
     roleCode,
-    roleName: role?.Name ?? roleCode,
-    departmentUuid: department?.Uuid ?? null,
-    departmentName: department?.Name ?? null,
-    specialty: doctor?.Specialty ?? null,
-    status: account.Status,
-    createdAt: account.CreatedAt.toISOString(),
-    updatedAt: account.UpdatedAt.toISOString(),
+    roleName: role?.name ?? roleCode,
+    departmentUuid: department?.uuid ?? null,
+    departmentName: department?.name ?? null,
+    specialty: doctor?.specialty ?? null,
+    status: account.status,
+    createdAt: account.createdAt.toISOString(),
+    updatedAt: account.updatedAt.toISOString(),
     hospitalUuid,
   };
 }
 
 function getStaffSearchValues(account: Account) {
-  const dto = toStaffDto(account, account.HospitalUuid ?? "");
+  const dto = toStaffDto(account, account.hospitalUuid ?? "");
   return [dto.displayName, dto.phone, dto.roleName, dto.departmentName ?? ""];
 }
 
@@ -306,7 +306,7 @@ function isValidPayload(
 }
 
 function isStaffRole(value: unknown): value is StaffRoleCode {
-  return value === "Doctor" || value === "Staff" || value === "WarehouseManager";
+  return value === "doctor" || value === "Staff" || value === "WarehouseManager";
 }
 
 function parsePayload(data: unknown): Record<string, unknown> {

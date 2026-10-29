@@ -28,7 +28,7 @@ type ListState =
 
 export function PrescriptionsPage() {
   const { session } = useAuth();
-  const accountUuid = session?.Account.Uuid;
+  const accountUuid = session?.account.uuid;
   const searchParams = useSearchParams();
   const currentParams = searchParams.toString();
   const status = parseStatus(searchParams.get("status"));
@@ -56,7 +56,7 @@ export function PrescriptionsPage() {
         controller.signal,
       )
       .then((response) => {
-        if (active) setState({ status: "success", key, data: response.Data });
+        if (active) setState({ status: "success", key, data: response.data });
       })
       .catch(() => {
         if (active) {
@@ -168,29 +168,29 @@ export function PrescriptionsPage() {
               <div className="space-y-4">
                 {state.data.Items.map((item) => (
                   <article
-                    key={item.Prescription.Uuid}
+                    key={item.prescription.uuid}
                     className="rounded-xl border bg-card p-5"
                   >
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                            Đơn ngày {formatAppointmentDateTime(item.Prescription.CreatedAt)}
+                            Đơn ngày {formatAppointmentDateTime(item.prescription.createdAt)}
                           </p>
-                          <PrescriptionStatusBadge status={item.Prescription.Status} />
+                          <PrescriptionStatusBadge status={item.prescription.status} />
                         </div>
                         <h3 className="mt-3 break-words text-lg font-bold">
-                          {item.Doctor.Name}
+                          {item.doctor.name}
                         </h3>
                         <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                          <CardFact icon={Building2} value={item.Hospital.Name} />
-                          <CardFact icon={Stethoscope} value={`${item.NumberOfItems} loại thuốc`} />
-                          <CardFact icon={CalendarDays} value={`Tạo lúc ${formatAppointmentDateTime(item.Prescription.CreatedAt)}`} />
-                          <CardFact icon={CircleDollarSign} value={`Tổng đơn: ${formatPrescriptionTotal(item.TotalAmount)}`} />
+                          <CardFact icon={Building2} value={item.hospital.name} />
+                          <CardFact icon={Stethoscope} value={`${item.numberOfItems} loại thuốc`} />
+                          <CardFact icon={CalendarDays} value={`Tạo lúc ${formatAppointmentDateTime(item.prescription.createdAt)}`} />
+                          <CardFact icon={CircleDollarSign} value={`Tổng đơn: ${formatPrescriptionTotal(item.totalAmount)}`} />
                         </div>
                       </div>
                       <Link
-                        href={`/tai-khoan/don-thuoc/${item.Prescription.Uuid}`}
+                        href={`/tai-khoan/don-thuoc/${item.prescription.uuid}`}
                         className={cn(
                           buttonVariants({ variant: "outline" }),
                           "w-full sm:w-auto",

@@ -151,8 +151,8 @@ function HospitalProfileScreen() {
         if (active) {
           setState({
             status: "success",
-            hospital: response.Data,
-            draft: toHospitalProfileDraft(response.Data),
+            hospital: response.data,
+            draft: toHospitalProfileDraft(response.data),
           });
         }
       })
@@ -188,7 +188,7 @@ function HospitalProfileScreen() {
   }
 
   const { hospital, draft } = state;
-  const isActive = hospital.Status === BaseStatus.Active;
+  const isActive = hospital.status === BaseStatus.Active;
 
   function updateDraft<K extends keyof HospitalProfileDraft>(
     key: K,
@@ -218,27 +218,27 @@ function HospitalProfileScreen() {
     );
 
     const request: HospitalUpdateRequest = {
-      Image: hospital.Image,
-      MapUrl: hospital.MapUrl,
-      Slug: draft.Slug.trim(),
-      Name: draft.Name.trim(),
-      Address: draft.Address.trim(),
-      NumberOfRoom: Number(draft.NumberOfRoom),
-      Description: draft.Description.trim(),
-      DetailService: hospital.DetailService,
-      WorkingHour: draft.WorkingHour.trim(),
+      image: hospital.image,
+      mapUrl: hospital.mapUrl,
+      slug: draft.slug.trim(),
+      name: draft.name.trim(),
+      address: draft.address.trim(),
+      numberOfRoom: Number(draft.numberOfRoom),
+      description: draft.description.trim(),
+      detailService: hospital.detailService,
+      workingHour: draft.workingHour.trim(),
     };
 
     try {
       const response = await hospitalService.updateBranchProfile(
-        hospital.Uuid,
+        hospital.uuid,
         request,
       );
       setState({
         status: "success",
-        hospital: response.Data,
-        draft: toHospitalProfileDraft(response.Data),
-        savedMessage: response.Message,
+        hospital: response.data,
+        draft: toHospitalProfileDraft(response.data),
+        savedMessage: response.message,
       });
     } catch (error) {
       setState((current) =>
@@ -272,38 +272,38 @@ function HospitalProfileScreen() {
           <div className="grid gap-5 p-5 sm:grid-cols-2">
             <Field
               label="Tên cơ sở"
-              value={draft.Name}
-              onChange={(value) => updateDraft("Name", value)}
+              value={draft.name}
+              onChange={(value) => updateDraft("name", value)}
               required
               disabled={isSaving}
             />
             <Field
-              label="Slug"
-              value={draft.Slug}
-              onChange={(value) => updateDraft("Slug", value)}
+              label="slug"
+              value={draft.slug}
+              onChange={(value) => updateDraft("slug", value)}
               required
               disabled={isSaving}
             />
             <div className="sm:col-span-2">
               <Field
                 label="Địa chỉ"
-                value={draft.Address}
-                onChange={(value) => updateDraft("Address", value)}
+                value={draft.address}
+                onChange={(value) => updateDraft("address", value)}
                 required
                 disabled={isSaving}
               />
             </div>
             <Field
               label="Giờ làm việc"
-              value={draft.WorkingHour}
-              onChange={(value) => updateDraft("WorkingHour", value)}
+              value={draft.workingHour}
+              onChange={(value) => updateDraft("workingHour", value)}
               required
               disabled={isSaving}
             />
             <Field
               label="Số phòng"
-              value={draft.NumberOfRoom}
-              onChange={(value) => updateDraft("NumberOfRoom", value)}
+              value={draft.numberOfRoom}
+              onChange={(value) => updateDraft("numberOfRoom", value)}
               type="number"
               min="1"
               step="1"
@@ -315,9 +315,9 @@ function HospitalProfileScreen() {
               <Textarea
                 id="hospital-description"
                 rows={6}
-                value={draft.Description}
+                value={draft.description}
                 onChange={(event) =>
-                  updateDraft("Description", event.currentTarget.value)
+                  updateDraft("description", event.currentTarget.value)
                 }
                 disabled={isSaving}
               />
@@ -343,8 +343,8 @@ function HospitalProfileScreen() {
         <PortalSection title="Trạng thái xuất bản">
           <DetailGrid>
             <DetailItem label="Trạng thái" value={<StatusPill tone={isActive ? "green" : "amber"}>{isActive ? "Hoạt động" : "Tạm ngưng"}</StatusPill>} />
-            <DetailItem label="UUID cơ sở" value={<span className="break-all font-mono text-xs">{hospital.Uuid}</span>} />
-            <DetailItem label="Cập nhật cuối" value={formatHospitalDate(hospital.UpdatedAt)} />
+            <DetailItem label="UUID cơ sở" value={<span className="break-all font-mono text-xs">{hospital.uuid}</span>} />
+            <DetailItem label="Cập nhật cuối" value={formatHospitalDate(hospital.updatedAt)} />
           </DetailGrid>
         </PortalSection>
       </div>
@@ -391,7 +391,7 @@ function AssignmentsScreen() {
     hospitalService
       .getBranchProfile(controller.signal)
       .then(async (hospitalResponse) => {
-        const hospital = hospitalResponse.Data;
+        const hospital = hospitalResponse.data;
         const [
           departmentResponse,
           serviceResponse,
@@ -407,11 +407,11 @@ function AssignmentsScreen() {
             controller.signal,
           ),
           hospitalService.getAssignedDepartments(
-            hospital.Uuid,
+            hospital.uuid,
             controller.signal,
           ),
           hospitalService.getAssignedMedicalServices(
-            hospital.Uuid,
+            hospital.uuid,
             controller.signal,
           ),
         ]);
@@ -419,22 +419,22 @@ function AssignmentsScreen() {
         if (!active) return;
 
         const assigned = {
-          DepartmentUuids: assignedDepartmentResponse.Data.Items.map(
-            (department) => department.Uuid,
+          departmentUuids: assignedDepartmentResponse.data.Items.map(
+            (department) => department.uuid,
           ),
-          MedicalServiceUuids: assignedServiceResponse.Data.Items.map(
-            (service) => service.Uuid,
+          medicalServiceUuids: assignedServiceResponse.data.Items.map(
+            (service) => service.uuid,
           ),
         };
         setState({
           status: "success",
           hospital,
-          departments: departmentResponse.Data.Items,
-          services: serviceResponse.Data.Items,
+          departments: departmentResponse.data.Items,
+          services: serviceResponse.data.Items,
           assigned,
           selected: {
-            DepartmentUuids: [...assigned.DepartmentUuids],
-            MedicalServiceUuids: [...assigned.MedicalServiceUuids],
+            departmentUuids: [...assigned.departmentUuids],
+            medicalServiceUuids: [...assigned.medicalServiceUuids],
           },
         });
       })
@@ -468,12 +468,12 @@ function AssignmentsScreen() {
 
   const hasChanges =
     !sameUuidSelection(
-      state.assigned.DepartmentUuids,
-      state.selected.DepartmentUuids,
+      state.assigned.departmentUuids,
+      state.selected.departmentUuids,
     ) ||
     !sameUuidSelection(
-      state.assigned.MedicalServiceUuids,
-      state.selected.MedicalServiceUuids,
+      state.assigned.medicalServiceUuids,
+      state.selected.medicalServiceUuids,
     );
 
   function toggleAssignment(
@@ -501,8 +501,8 @@ function AssignmentsScreen() {
         ? {
             ...current,
             selected: {
-              DepartmentUuids: [...current.assigned.DepartmentUuids],
-              MedicalServiceUuids: [...current.assigned.MedicalServiceUuids],
+              departmentUuids: [...current.assigned.departmentUuids],
+              medicalServiceUuids: [...current.assigned.medicalServiceUuids],
             },
             savedMessage: undefined,
             saveError: undefined,
@@ -522,19 +522,19 @@ function AssignmentsScreen() {
 
     try {
       const response = await hospitalService.updateAssignments(
-        state.hospital.Uuid,
+        state.hospital.uuid,
         state.selected,
       );
       setState((current) =>
         current.status === "success"
           ? {
               ...current,
-              assigned: response.Data,
+              assigned: response.data,
               selected: {
-                DepartmentUuids: [...response.Data.DepartmentUuids],
-                MedicalServiceUuids: [...response.Data.MedicalServiceUuids],
+                departmentUuids: [...response.data.departmentUuids],
+                medicalServiceUuids: [...response.data.medicalServiceUuids],
               },
-              savedMessage: response.Message,
+              savedMessage: response.message,
             }
           : current,
       );
@@ -558,7 +558,7 @@ function AssignmentsScreen() {
   return (
     <div className="space-y-6">
       <PortalPageHeader
-        eyebrow={`Phân bổ danh mục · ${state.hospital.Name}`}
+        eyebrow={`Phân bổ danh mục · ${state.hospital.name}`}
         title="Chuyên khoa và dịch vụ"
         description="Chọn danh mục đang được cung cấp tại chi nhánh. Thay đổi hiện demo."
         actions={
@@ -601,16 +601,16 @@ function AssignmentsScreen() {
         <AssignmentList
           title="Chuyên khoa"
           items={state.departments}
-          selectedUuids={state.selected.DepartmentUuids}
+          selectedUuids={state.selected.departmentUuids}
           disabled={isSaving}
-          onToggle={(uuid) => toggleAssignment("DepartmentUuids", uuid)}
+          onToggle={(uuid) => toggleAssignment("departmentUuids", uuid)}
         />
         <AssignmentList
           title="Dịch vụ"
           items={state.services}
-          selectedUuids={state.selected.MedicalServiceUuids}
+          selectedUuids={state.selected.medicalServiceUuids}
           disabled={isSaving}
-          onToggle={(uuid) => toggleAssignment("MedicalServiceUuids", uuid)}
+          onToggle={(uuid) => toggleAssignment("medicalServiceUuids", uuid)}
         />
       </div>
     </div>
@@ -625,14 +625,14 @@ function AssignmentList({
   onToggle,
 }: {
   title: string;
-  items: Array<{ Uuid: string; Name: string; Description: string }>;
+  items: Array<{ uuid: string; name: string; description: string }>;
   selectedUuids: string[];
   disabled: boolean;
   onToggle: (uuid: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const filteredItems = items.filter((item) =>
-    `${item.Name} ${item.Description}`
+    `${item.name} ${item.description}`
       .toLocaleLowerCase("vi")
       .includes(query.trim().toLocaleLowerCase("vi")),
   );
@@ -656,10 +656,10 @@ function AssignmentList({
       {filteredItems.length > 0 ? (
         <div className="divide-y">
           {filteredItems.map((item) => {
-            const isSelected = selectedUuids.includes(item.Uuid);
+            const isSelected = selectedUuids.includes(item.uuid);
             return (
               <label
-                key={item.Uuid}
+                key={item.uuid}
                 className="flex cursor-pointer items-start justify-between gap-4 px-5 py-4 hover:bg-muted/35"
               >
                 <span className="flex min-w-0 items-start gap-3">
@@ -667,13 +667,13 @@ function AssignmentList({
                     type="checkbox"
                     checked={isSelected}
                     disabled={disabled}
-                    onChange={() => onToggle(item.Uuid)}
+                    onChange={() => onToggle(item.uuid)}
                     className="mt-1 size-4 shrink-0 accent-primary"
                   />
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium">{item.Name}</span>
+                    <span className="block text-sm font-medium">{item.name}</span>
                     <span className="mt-1 line-clamp-2 block text-xs leading-5 text-muted-foreground">
-                      {markdownToPlainText(item.Description)}
+                      {markdownToPlainText(item.description)}
                     </span>
                   </span>
                 </span>
@@ -745,18 +745,18 @@ function RoomsScreen() {
     hospitalService
       .getBranchProfile(controller.signal)
       .then(async (response) => {
-        const hospital = response.Data;
+        const hospital = response.data;
         const roomsResponse = await roomService.getAll(
-          hospital.Uuid,
+          hospital.uuid,
           { page: 1, pageSize: 100, includeDeleted: true },
           controller.signal,
         );
         const remainingPages = await Promise.all(
           Array.from(
-            { length: Math.max(roomsResponse.Data.TotalPages - 1, 0) },
+            { length: Math.max(roomsResponse.data.TotalPages - 1, 0) },
             (_, index) =>
               roomService.getAll(
-                hospital.Uuid,
+                hospital.uuid,
                 {
                   page: index + 2,
                   pageSize: 100,
@@ -772,8 +772,8 @@ function RoomsScreen() {
             status: "success",
             hospital,
             rooms: [
-              ...roomsResponse.Data.Items,
-              ...remainingPages.flatMap((page) => page.Data.Items),
+              ...roomsResponse.data.Items,
+              ...remainingPages.flatMap((page) => page.data.Items),
             ],
           });
         }
@@ -817,23 +817,23 @@ function RoomsScreen() {
   }
 
   const { hospital, rooms } = state;
-  const activeRooms = rooms.filter((room) => room.DeletedAt.getTime() === 0);
-  const atCapacity = activeRooms.length >= hospital.NumberOfRoom;
+  const activeRooms = rooms.filter((room) => room.deletedAt.getTime() === 0);
+  const atCapacity = activeRooms.length >= hospital.numberOfRoom;
   const capacityPercent =
-    hospital.NumberOfRoom > 0
-      ? Math.min((activeRooms.length / hospital.NumberOfRoom) * 100, 100)
+    hospital.numberOfRoom > 0
+      ? Math.min((activeRooms.length / hospital.numberOfRoom) * 100, 100)
       : 0;
   const normalizedSearch = search.trim().toLocaleLowerCase("vi");
   const visibleRooms = rooms.filter((room) => {
-    const isDeleted = room.DeletedAt.getTime() !== 0;
+    const isDeleted = room.deletedAt.getTime() !== 0;
     const matchesRecord =
       recordFilter === "all" ||
       (recordFilter === "deleted" ? isDeleted : !isDeleted);
     const matchesStatus =
-      statusFilter === "all" || room.Status === statusFilter;
+      statusFilter === "all" || room.status === statusFilter;
     const matchesSearch =
       !normalizedSearch ||
-      `${room.Name} ${room.Uuid}`.toLocaleLowerCase("vi").includes(normalizedSearch);
+      `${room.name} ${room.uuid}`.toLocaleLowerCase("vi").includes(normalizedSearch);
 
     return matchesRecord && matchesStatus && matchesSearch;
   });
@@ -861,29 +861,29 @@ function RoomsScreen() {
 
     try {
       if (editingRoom) {
-        const response = await roomService.update(hospital.Uuid, editingRoom.Uuid, {
-          Name: name,
-          Status: status,
+        const response = await roomService.update(hospital.uuid, editingRoom.uuid, {
+          name: name,
+          status: status,
         });
         setState((current) =>
           current.status === "success"
             ? {
                 ...current,
                 rooms: current.rooms.map((room) =>
-                  room.Uuid === response.Data.Uuid ? response.Data : room,
+                  room.uuid === response.data.uuid ? response.data : room,
                 ),
               }
             : current,
         );
         setMessage(`Đã cập nhật ${name}.`);
       } else {
-        const response = await roomService.create(hospital.Uuid, {
-          Name: name,
-          Status: status,
+        const response = await roomService.create(hospital.uuid, {
+          name: name,
+          status: status,
         });
         setState((current) =>
           current.status === "success"
-            ? { ...current, rooms: [...current.rooms, response.Data] }
+            ? { ...current, rooms: [...current.rooms, response.data] }
             : current,
         );
         setMessage(`Đã thêm ${name}.`);
@@ -904,22 +904,22 @@ function RoomsScreen() {
     setMessage("");
 
     try {
-      await roomService.delete(hospital.Uuid, room.Uuid);
+      await roomService.delete(hospital.uuid, room.uuid);
       const deletedAt = new Date();
       setState((current) =>
         current.status === "success"
           ? {
               ...current,
               rooms: current.rooms.map((item) =>
-                item.Uuid === room.Uuid
-                  ? { ...item, DeletedAt: deletedAt, UpdatedAt: deletedAt }
+                item.uuid === room.uuid
+                  ? { ...item, deletedAt: deletedAt, updatedAt: deletedAt }
                   : item,
               ),
             }
           : current,
       );
-      setMessage(`Đã chuyển ${room.Name} vào danh sách đã xóa.`);
-      if (editingRoom?.Uuid === room.Uuid) {
+      setMessage(`Đã chuyển ${room.name} vào danh sách đã xóa.`);
+      if (editingRoom?.uuid === room.uuid) {
         setEditingRoom(null);
         setShowForm(false);
       }
@@ -936,18 +936,18 @@ function RoomsScreen() {
     setMessage("");
 
     try {
-      const response = await roomService.restore(hospital.Uuid, room.Uuid);
+      const response = await roomService.restore(hospital.uuid, room.uuid);
       setState((current) =>
         current.status === "success"
           ? {
               ...current,
               rooms: current.rooms.map((item) =>
-                item.Uuid === response.Data.Uuid ? response.Data : item,
+                item.uuid === response.data.uuid ? response.data : item,
               ),
             }
           : current,
       );
-      setMessage(`Đã khôi phục ${response.Data.Name}.`);
+      setMessage(`Đã khôi phục ${response.data.name}.`);
     } catch (error) {
       setMessage(
         getRoomError(error, "Không thể khôi phục phòng. Vui lòng thử lại."),
@@ -958,23 +958,23 @@ function RoomsScreen() {
   }
 
   const roomRows = visibleRooms.map((room) => {
-    const isDeleted = room.DeletedAt.getTime() !== 0;
-    const status = room.Status === RoomStatus.Available
+    const isDeleted = room.deletedAt.getTime() !== 0;
+    const status = room.status === RoomStatus.Available
       ? <StatusPill tone="green">Khả dụng</StatusPill>
-      : room.Status === RoomStatus.Occupied
+      : room.status === RoomStatus.Occupied
         ? <StatusPill tone="blue">Đang sử dụng</StatusPill>
         : <StatusPill tone="amber">Bảo trì</StatusPill>;
     return [
-      <div key={`${room.Uuid}-name`}><p>{room.Name}</p><p className="mt-1 font-mono text-xs font-normal text-muted-foreground">{room.Uuid.slice(0, 8)}</p></div>,
+      <div key={`${room.uuid}-name`}><p>{room.name}</p><p className="mt-1 font-mono text-xs font-normal text-muted-foreground">{room.uuid.slice(0, 8)}</p></div>,
       status,
-      <StatusPill key={`${room.Uuid}-record`} tone={isDeleted ? "red" : "green"}>{isDeleted ? "Đã xóa" : "Đang quản lý"}</StatusPill>,
-      new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(room.UpdatedAt),
-      <div key={`${room.Uuid}-actions`} className="flex gap-2">
+      <StatusPill key={`${room.uuid}-record`} tone={isDeleted ? "red" : "green"}>{isDeleted ? "Đã xóa" : "Đang quản lý"}</StatusPill>,
+      new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(room.updatedAt),
+      <div key={`${room.uuid}-actions`} className="flex gap-2">
         {isDeleted ? (
           <Button type="button" size="sm" variant="outline" disabled={isSaving || atCapacity} onClick={() => restoreRoom(room)}><RotateCcw />Khôi phục</Button>
         ) : (
           <>
-            <Button type="button" size="sm" variant="outline" disabled={isSaving} onClick={() => { setEditingRoom(room); setRoomName(room.Name); setRoomStatus(room.Status); setShowForm(true); setMessage(""); }}><Pencil />Sửa</Button>
+            <Button type="button" size="sm" variant="outline" disabled={isSaving} onClick={() => { setEditingRoom(room); setRoomName(room.name); setRoomStatus(room.status); setShowForm(true); setMessage(""); }}><Pencil />Sửa</Button>
             <Button type="button" size="sm" variant="outline" disabled={isSaving} onClick={() => deleteRoom(room)}><Trash2 />Xóa</Button>
           </>
         )}
@@ -984,8 +984,8 @@ function RoomsScreen() {
 
   return (
     <div className="space-y-6">
-      <PortalPageHeader eyebrow="Vận hành cơ sở" title="Phòng khám" description={`Quản lý phòng của ${hospital.Name}; giới hạn lấy từ cấu hình Hospital.NumberOfRoom.`} actions={<Button type="button" size="sm" onClick={openCreateForm} disabled={atCapacity || isSaving}><Plus />Thêm phòng</Button>} />
-      <PortalSection title="Sức chứa phòng" description={`${activeRooms.length} phòng đang quản lý trên tối đa ${hospital.NumberOfRoom} phòng`}>
+      <PortalPageHeader eyebrow="Vận hành cơ sở" title="Phòng khám" description={`Quản lý phòng của ${hospital.name}; giới hạn lấy từ cấu hình Hospital.numberOfRoom.`} actions={<Button type="button" size="sm" onClick={openCreateForm} disabled={atCapacity || isSaving}><Plus />Thêm phòng</Button>} />
+      <PortalSection title="Sức chứa phòng" description={`${activeRooms.length} phòng đang quản lý trên tối đa ${hospital.numberOfRoom} phòng`}>
         <div className="p-5">
           <div className="mb-2 flex items-center justify-between gap-4 text-sm"><span className="font-medium">Mức sử dụng cấu hình</span><span className={atCapacity ? "font-semibold text-red-600" : "text-muted-foreground"}>{Math.round(capacityPercent)}%</span></div>
           <div className="h-2 overflow-hidden rounded-full bg-muted"><div className={`h-full rounded-full ${atCapacity ? "bg-red-500" : "bg-primary"}`} style={{ width: `${capacityPercent}%` }} /></div>
@@ -993,7 +993,7 @@ function RoomsScreen() {
         </div>
       </PortalSection>
       {showForm ? (
-        <PortalSection title={editingRoom ? `Chỉnh sửa ${editingRoom.Name}` : "Thêm phòng mới"} description={editingRoom ? "Cập nhật tên và trạng thái vận hành." : `Còn ${Math.max(hospital.NumberOfRoom - activeRooms.length, 0)} vị trí có thể tạo.`}>
+        <PortalSection title={editingRoom ? `Chỉnh sửa ${editingRoom.name}` : "Thêm phòng mới"} description={editingRoom ? "Cập nhật tên và trạng thái vận hành." : `Còn ${Math.max(hospital.numberOfRoom - activeRooms.length, 0)} vị trí có thể tạo.`}>
           <form onSubmit={handleSubmit} className="grid gap-5 p-5 sm:grid-cols-2">
             <div className="space-y-2"><Label htmlFor="room-name">Tên phòng</Label><Input id="room-name" name="name" maxLength={100} value={roomName} onChange={(event) => setRoomName(event.currentTarget.value)} placeholder="Ví dụ: Phòng khám A2" required disabled={isSaving} /></div>
             <div className="space-y-2"><Label htmlFor="room-status">Trạng thái</Label><select id="room-status" name="status" value={roomStatus} onChange={(event) => setRoomStatus(event.currentTarget.value as RoomStatus)} disabled={isSaving} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value={RoomStatus.Available}>Khả dụng</option><option value={RoomStatus.Occupied}>Đang sử dụng</option><option value={RoomStatus.Maintenance}>Bảo trì</option></select></div>
@@ -1101,21 +1101,21 @@ function StaffAccountsScreen() {
 
     hospitalService
       .getBranchProfile(controller.signal)
-      .then(async ({ Data: hospital }) => {
+      .then(async ({ data: hospital }) => {
         const [staffResponse, departmentsResponse] = await Promise.all([
           staffService.getAll(
-            hospital.Uuid,
+            hospital.uuid,
             { page: 1, pageSize: 100 },
             controller.signal,
           ),
-          hospitalService.getAssignedDepartments(hospital.Uuid, controller.signal),
+          hospitalService.getAssignedDepartments(hospital.uuid, controller.signal),
         ]);
         const remainingPages = await Promise.all(
           Array.from(
-            { length: Math.max(staffResponse.Data.TotalPages - 1, 0) },
+            { length: Math.max(staffResponse.data.TotalPages - 1, 0) },
             (_, index) =>
               staffService.getAll(
-                hospital.Uuid,
+                hospital.uuid,
                 { page: index + 2, pageSize: 100 },
                 controller.signal,
               ),
@@ -1127,10 +1127,10 @@ function StaffAccountsScreen() {
             status: "success",
             hospital,
             staff: [
-              ...staffResponse.Data.Items,
-              ...remainingPages.flatMap((page) => page.Data.Items),
+              ...staffResponse.data.Items,
+              ...remainingPages.flatMap((page) => page.data.Items),
             ],
-            departments: departmentsResponse.Data.Items,
+            departments: departmentsResponse.data.Items,
           });
         }
       })
@@ -1176,9 +1176,9 @@ function StaffAccountsScreen() {
   const filteredStaff = staff.filter((member) => {
     const matchesRole = roleFilter === "all" || member.RoleCode === roleFilter;
     const matchesStatus =
-      statusFilter === "all" || member.Status === statusFilter;
+      statusFilter === "all" || member.status === statusFilter;
     const searchText =
-      `${member.DisplayName} ${member.Phone} ${member.RoleName} ${member.DepartmentName ?? ""}`.toLocaleLowerCase("vi");
+      `${member.DisplayName} ${member.phone} ${member.RoleName} ${member.DepartmentName ?? ""}`.toLocaleLowerCase("vi");
     return (
       matchesRole &&
       matchesStatus &&
@@ -1202,25 +1202,25 @@ function StaffAccountsScreen() {
     setIsSaving(true);
     setMessage("");
     try {
-      const response = await staffService.create(hospital.Uuid, {
-        Phone: phone.trim(),
-        Password: password,
+      const response = await staffService.create(hospital.uuid, {
+        phone: phone.trim(),
+        password: password,
         RoleCode: roleCode,
-        ...(roleCode === "Doctor"
+        ...(roleCode === "doctor"
           ? {
-              Name: doctorName.trim(),
-              Specialty: specialty.trim(),
-              Price: Number(doctorPrice),
-              DepartmentUuid: departmentUuid,
+              name: doctorName.trim(),
+              specialty: specialty.trim(),
+              price: Number(doctorPrice),
+              departmentUuid: departmentUuid,
             }
           : {}),
       });
       setState((current) =>
         current.status === "success"
-          ? { ...current, staff: [response.Data, ...current.staff] }
+          ? { ...current, staff: [response.data, ...current.staff] }
           : current,
       );
-      setMessage(`Đã tạo tài khoản ${response.Data.DisplayName}.`);
+      setMessage(`Đã tạo tài khoản ${response.data.DisplayName}.`);
       setShowForm(false);
       resetForm();
     } catch (error) {
@@ -1235,15 +1235,15 @@ function StaffAccountsScreen() {
   async function toggleStatus(member: HospitalStaffMember) {
     if (state.status !== "success" || isSaving) return;
     const nextStatus =
-      member.Status === BaseStatus.Active
+      member.status === BaseStatus.Active
         ? BaseStatus.InActive
         : BaseStatus.Active;
     setIsSaving(true);
     setMessage("");
     try {
       const response = await staffService.updateStatus(
-        hospital.Uuid,
-        member.AccountUuid,
+        hospital.uuid,
+        member.accountUuid,
         nextStatus,
       );
       setState((current) =>
@@ -1251,11 +1251,11 @@ function StaffAccountsScreen() {
           ? {
               ...current,
               staff: current.staff.map((item) =>
-                item.AccountUuid === response.Data.AccountUuid
+                item.accountUuid === response.data.accountUuid
                   ? {
                       ...item,
-                      Status: response.Data.Status,
-                      UpdatedAt: response.Data.UpdatedAt,
+                      status: response.data.status,
+                      updatedAt: response.data.updatedAt,
                     }
                   : item,
               ),
@@ -1277,13 +1277,13 @@ function StaffAccountsScreen() {
   }
 
   const rows = filteredStaff.map((member) => [
-    <div key={`${member.AccountUuid}-identity`}>
+    <div key={`${member.accountUuid}-identity`}>
       <p className="font-medium">{member.DisplayName}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{member.Phone}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{member.phone}</p>
     </div>,
     <StatusPill
-      key={`${member.AccountUuid}-role`}
-      tone={member.RoleCode === "Doctor" ? "blue" : member.RoleCode === "Staff" ? "green" : "amber"}
+      key={`${member.accountUuid}-role`}
+      tone={member.RoleCode === "doctor" ? "blue" : member.RoleCode === "Staff" ? "green" : "amber"}
     >
       {getStaffRoleLabel(member.RoleCode)}
     </StatusPill>,
@@ -1294,24 +1294,24 @@ function StaffAccountsScreen() {
           ? "Tiếp nhận"
           : "Chưa gán chuyên khoa"),
     <StatusPill
-      key={`${member.AccountUuid}-status`}
-      tone={member.Status === BaseStatus.Active ? "green" : "red"}
+      key={`${member.accountUuid}-status`}
+      tone={member.status === BaseStatus.Active ? "green" : "red"}
     >
-      {member.Status === BaseStatus.Active ? "Hoạt động" : "Vô hiệu hóa"}
+      {member.status === BaseStatus.Active ? "Hoạt động" : "Vô hiệu hóa"}
     </StatusPill>,
     new Intl.DateTimeFormat("vi-VN", {
       dateStyle: "short",
       timeStyle: "short",
-    }).format(member.UpdatedAt),
+    }).format(member.updatedAt),
     <Button
-      key={`${member.AccountUuid}-action`}
+      key={`${member.accountUuid}-action`}
       type="button"
       size="sm"
-      variant={member.Status === BaseStatus.Active ? "outline" : "default"}
+      variant={member.status === BaseStatus.Active ? "outline" : "default"}
       disabled={isSaving}
       onClick={() => toggleStatus(member)}
     >
-      {member.Status === BaseStatus.Active ? "Vô hiệu hóa" : "Kích hoạt"}
+      {member.status === BaseStatus.Active ? "Vô hiệu hóa" : "Kích hoạt"}
     </Button>,
   ]);
 
@@ -1320,7 +1320,7 @@ function StaffAccountsScreen() {
       <PortalPageHeader
         eyebrow="Nhân sự chi nhánh"
         title="Tài khoản nhân sự"
-        description={`Quản lý Doctor, Staff và Warehouse Manager thuộc ${hospital.Name}.`}
+        description={`Quản lý Doctor, Staff và Warehouse Manager thuộc ${hospital.name}.`}
         actions={
           <Button
             type="button"
@@ -1390,12 +1390,12 @@ function StaffAccountsScreen() {
                 disabled={isSaving}
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="Doctor">Bác sĩ (Doctor)</option>
+                <option value="doctor">Bác sĩ (Doctor)</option>
                 <option value="Staff">Tiếp nhận (Staff)</option>
                 <option value="WarehouseManager">Quản lý kho</option>
               </select>
             </div>
-            {roleCode === "Doctor" ? (
+            {roleCode === "doctor" ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="staff-doctor-name">Họ tên bác sĩ</Label>
@@ -1455,8 +1455,8 @@ function StaffAccountsScreen() {
                   >
                     <option value="">Chọn chuyên khoa</option>
                     {departments.map((department) => (
-                      <option key={department.Uuid} value={department.Uuid}>
-                        {department.Name}
+                      <option key={department.uuid} value={department.uuid}>
+                        {department.name}
                       </option>
                     ))}
                   </select>
@@ -1471,7 +1471,7 @@ function StaffAccountsScreen() {
             <div className="flex gap-2 sm:col-span-2">
               <Button
                 type="submit"
-                disabled={isSaving || (roleCode === "Doctor" && departments.length === 0)}
+                disabled={isSaving || (roleCode === "doctor" && departments.length === 0)}
               >
                 {isSaving ? "Đang tạo..." : "Tạo tài khoản"}
               </Button>
@@ -1511,7 +1511,7 @@ function StaffAccountsScreen() {
             className="h-9 rounded-md border bg-white px-3 text-sm"
           >
             <option value="all">Tất cả vai trò</option>
-            <option value="Doctor">Bác sĩ (Doctor)</option>
+            <option value="doctor">Bác sĩ (Doctor)</option>
             <option value="Staff">Tiếp nhận (Staff)</option>
             <option value="WarehouseManager">Quản lý kho</option>
           </select>
@@ -1667,22 +1667,22 @@ function OperationalTable({ eyebrow, title, description, action, metrics, column
 }
 
 type HospitalProfileDraft = {
-  Name: string;
-  Slug: string;
-  Address: string;
-  WorkingHour: string;
-  NumberOfRoom: string;
-  Description: string;
+  name: string;
+  slug: string;
+  address: string;
+  workingHour: string;
+  numberOfRoom: string;
+  description: string;
 };
 
 function toHospitalProfileDraft(hospital: Hospital): HospitalProfileDraft {
   return {
-    Name: hospital.Name,
-    Slug: hospital.Slug,
-    Address: hospital.Address,
-    WorkingHour: hospital.WorkingHour,
-    NumberOfRoom: String(hospital.NumberOfRoom),
-    Description: hospital.Description,
+    name: hospital.name,
+    slug: hospital.slug,
+    address: hospital.address,
+    workingHour: hospital.workingHour,
+    numberOfRoom: String(hospital.numberOfRoom),
+    description: hospital.description,
   };
 }
 
@@ -1690,12 +1690,8 @@ function getHospitalSaveError(
   error: unknown,
   fallback = "Không thể lưu thông tin chi nhánh. Vui lòng thử lại.",
 ) {
-  if (isAxiosError<{ Message?: string; message?: string }>(error)) {
-    return (
-      error.response?.data?.Message ??
-      error.response?.data?.message ??
-      fallback
-    );
+  if (isAxiosError<{ message?: string }>(error)) {
+    return error.response?.data?.message ?? fallback;
   }
 
   return error instanceof Error && error.message
@@ -1708,7 +1704,6 @@ function getRoomError(error: unknown, fallback: string) {
     isAxiosError<{
       error?: string;
       message?: string;
-      Message?: string;
     }>(error)
   ) {
     const code = error.response?.data?.error;
@@ -1718,7 +1713,7 @@ function getRoomError(error: unknown, fallback: string) {
     if (code === "ROOM_HAS_ACTIVE_APPOINTMENTS") {
       return "Không thể xóa hoặc đưa phòng vào bảo trì vì phòng còn lịch hẹn đang chờ hoặc đã xác nhận.";
     }
-    return error.response?.data?.message ?? error.response?.data?.Message ?? fallback;
+    return error.response?.data?.message ?? fallback;
   }
 
   return error instanceof Error && error.message ? error.message : fallback;
@@ -1750,7 +1745,7 @@ function getStaffError(error: unknown, fallback: string) {
 
 function getStaffRoleLabel(roleCode: StaffRoleCode) {
   switch (roleCode) {
-    case "Doctor":
+    case "doctor":
       return "Bác sĩ";
     case "Staff":
       return "Tiếp nhận";

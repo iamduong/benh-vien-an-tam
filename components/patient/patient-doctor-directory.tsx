@@ -104,9 +104,9 @@ export function PatientDoctorDirectory() {
           status: "success",
           key,
           data: {
-            result: doctorResponse.Data,
-            departments: departmentResponse.Data,
-            hospitals: hospitalResponse.Data,
+            result: doctorResponse.data,
+            departments: departmentResponse.data,
+            hospitals: hospitalResponse.data,
           },
         });
       })
@@ -131,7 +131,7 @@ export function PatientDoctorDirectory() {
     appointmentService
       .getAll(
         {
-          accountUuid: session.Account.Uuid,
+          accountUuid: session.account.uuid,
           type: "doctor",
           status: AppointmentStatus.Approved,
           pageSize: 3,
@@ -140,7 +140,7 @@ export function PatientDoctorDirectory() {
       )
       .then((response) => {
         if (!active) return;
-        setAppointments({ status: "success", items: response.Data });
+        setAppointments({ status: "success", items: response.data });
       })
       .catch(() => {
         if (!active) return;
@@ -174,7 +174,7 @@ export function PatientDoctorDirectory() {
 
   return (
     <div>
-      <PatientHeroBanner name={session.PatientProfile.Name} />
+      <PatientHeroBanner name={session.patientProfile.name} />
 
       <PatientAppointmentStrip
         state={appointments}
@@ -285,7 +285,7 @@ export function PatientDoctorDirectory() {
                   {data.result.Items.length ? (
                     <div className="grid items-stretch gap-5 xl:grid-cols-2">
                       {data.result.Items.map((doctor) => (
-                        <DoctorDirectoryCard key={doctor.Uuid} doctor={doctor} />
+                        <DoctorDirectoryCard key={doctor.uuid} doctor={doctor} />
                       ))}
                     </div>
                   ) : (
@@ -412,8 +412,8 @@ function PatientAppointmentStrip({
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {state.items.Items.map((item) => (
             <Link
-              key={item.Appointment.Uuid}
-              href={`/tai-khoan/lich-hen/${item.Appointment.Uuid}`}
+              key={item.appointment.uuid}
+              href={`/tai-khoan/lich-hen/${item.appointment.uuid}`}
               className="group flex min-w-0 items-start gap-3 rounded-xl border bg-card p-4 transition hover:border-primary/40 hover:shadow-sm"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -422,15 +422,15 @@ function PatientAppointmentStrip({
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-                    {getAppointmentTypeLabel(item.Type)}
+                    {getAppointmentTypeLabel(item.type)}
                   </span>
-                  <AppointmentStatusBadge status={item.Appointment.Status} />
+                  <AppointmentStatusBadge status={item.appointment.status} />
                 </span>
                 <span className="mt-1 block break-words text-sm font-semibold group-hover:text-primary">
-                  {item.TargetName}
+                  {item.targetName}
                 </span>
                 <span className="mt-1 block text-xs text-muted-foreground">
-                  {formatAppointmentDateTime(item.Appointment.AppointmentAt)} · {item.HospitalName}
+                  {formatAppointmentDateTime(item.appointment.appointmentAt)} · {item.hospitalName}
                 </span>
               </span>
             </Link>
@@ -446,12 +446,12 @@ function DoctorDirectoryCard({ doctor }: { doctor: DoctorProfile }) {
     <article className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
       <div className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] gap-4 p-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:p-5">
         <Link
-          href={`/bac-si/${doctor.Slug}`}
+          href={`/bac-si/${doctor.slug}`}
           className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[linear-gradient(145deg,var(--muted),var(--secondary))]"
         >
           <Image
-            src={doctor.Avatar}
-            alt={`Bác sĩ ${doctor.Name}`}
+            src={doctor.avatar}
+            alt={`Bác sĩ ${doctor.name}`}
             fill
             sizes="144px"
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
@@ -459,31 +459,31 @@ function DoctorDirectoryCard({ doctor }: { doctor: DoctorProfile }) {
         </Link>
         <div className="min-w-0 py-1">
           <span className="inline-flex max-w-full rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-            <span className="truncate">{doctor.DepartmentDisplay}</span>
+            <span className="truncate">{doctor.departmentDisplay}</span>
           </span>
-          <Link href={`/bac-si/${doctor.Slug}`} className="block">
+          <Link href={`/bac-si/${doctor.slug}`} className="block">
             <h3 className="mt-3 break-words text-lg font-bold leading-7 group-hover:text-primary">
-              {doctor.Name}
+              {doctor.name}
             </h3>
           </Link>
-          <DoctorFact icon={Stethoscope} value={doctor.Specialty} />
-          <DoctorFact icon={Building2} value={doctor.Workplace} />
+          <DoctorFact icon={Stethoscope} value={doctor.specialty} />
+          <DoctorFact icon={Building2} value={doctor.workplace} />
         </div>
       </div>
       <div className="mt-auto border-t px-4 py-4 sm:px-5">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm text-muted-foreground">Phí khám dự kiến</span>
-          <strong className="text-sm text-primary">{formatPrice(doctor.Price)}</strong>
+          <strong className="text-sm text-primary">{formatPrice(doctor.price)}</strong>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <Link
-            href={`/bac-si/${doctor.Slug}`}
+            href={`/bac-si/${doctor.slug}`}
             className={cn(buttonVariants({ variant: "outline" }), "w-full")}
           >
             Xem hồ sơ
           </Link>
           <Link
-            href={`/dat-lich/bac-si?doctor=${doctor.Uuid}`}
+            href={`/dat-lich/bac-si?doctor=${doctor.uuid}`}
             className={cn(buttonVariants(), "w-full")}
           >
             <CalendarPlus aria-hidden="true" />
@@ -519,13 +519,13 @@ function getFilters(
       key: "hospital",
       label: "Cơ sở y tế",
       allLabel: "Tất cả cơ sở",
-      options: hospitals.map((item) => ({ value: item.Uuid, label: item.Name })),
+      options: hospitals.map((item) => ({ value: item.uuid, label: item.name })),
     },
     {
       key: "department",
       label: "Chuyên khoa",
       allLabel: "Tất cả chuyên khoa",
-      options: departments.map((item) => ({ value: item.Uuid, label: item.Name })),
+      options: departments.map((item) => ({ value: item.uuid, label: item.name })),
     },
   ];
 }

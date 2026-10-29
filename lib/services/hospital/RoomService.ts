@@ -11,13 +11,13 @@ export type RoomListQuery = {
 };
 
 export type CreateRoomRequest = {
-  Name: string;
-  Status?: RoomStatus;
+  name: string;
+  status?: RoomStatus;
 };
 
 export type UpdateRoomRequest = {
-  Name: string;
-  Status?: RoomStatus;
+  name: string;
+  status?: RoomStatus;
 };
 
 type RoomApiDto = {
@@ -58,8 +58,8 @@ export class RoomService {
     );
 
     return {
-      Message: response.data.message,
-      Data: {
+      message: response.data.message,
+      data: {
         Items: response.data.data.map((room) =>
           toRoom(room, hospitalUuid),
         ),
@@ -80,8 +80,8 @@ export class RoomService {
     );
 
     return {
-      Message: response.data.message,
-      Data: toRoom(response.data.data, hospitalUuid),
+      message: response.data.message,
+      data: toRoom(response.data.data, hospitalUuid),
     };
   }
 
@@ -92,14 +92,14 @@ export class RoomService {
     const response = await httpClient.post<RoomApiResponse>(
       `/hospitals/${encodeURIComponent(hospitalUuid)}/rooms`,
       {
-        name: request.Name,
-        status: request.Status,
+        name: request.name,
+        status: request.status,
       },
     );
 
     return {
-      Message: response.data.message,
-      Data: toRoom(response.data.data, hospitalUuid),
+      message: response.data.message,
+      data: toRoom(response.data.data, hospitalUuid),
     };
   }
 
@@ -111,14 +111,14 @@ export class RoomService {
     const response = await httpClient.put<RoomApiResponse>(
       `/hospitals/${encodeURIComponent(hospitalUuid)}/rooms/${encodeURIComponent(roomUuid)}`,
       {
-        name: request.Name,
-        status: request.Status,
+        name: request.name,
+        status: request.status,
       },
     );
 
     return {
-      Message: response.data.message,
-      Data: toRoom(response.data.data, hospitalUuid),
+      message: response.data.message,
+      data: toRoom(response.data.data, hospitalUuid),
     };
   }
 
@@ -137,21 +137,21 @@ export class RoomService {
     );
 
     return {
-      Message: response.data.message,
-      Data: toRoom(response.data.data, hospitalUuid),
+      message: response.data.message,
+      data: toRoom(response.data.data, hospitalUuid),
     };
   }
 }
 
 function toRoom(room: RoomApiDto, hospitalUuid: Guid): Room {
   return {
-    Uuid: room.uuid,
-    Name: room.name,
-    Status: room.status,
-    HospitalUuid: room.hospitalUuid ?? hospitalUuid,
-    CreatedAt: new Date(room.createdAt),
-    UpdatedAt: new Date(room.updatedAt),
-    DeletedAt: room.deletedAt ? new Date(room.deletedAt) : new Date(0),
+    uuid: room.uuid,
+    name: room.name,
+    status: room.status,
+    hospitalUuid: room.hospitalUuid ?? hospitalUuid,
+    createdAt: new Date(room.createdAt),
+    updatedAt: new Date(room.updatedAt),
+    deletedAt: room.deletedAt ? new Date(room.deletedAt) : new Date(0),
   };
 }
 

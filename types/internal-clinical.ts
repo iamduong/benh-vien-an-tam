@@ -1,64 +1,64 @@
 export type ClinicalAppointmentStatus = "Approved" | "Pending" | "Unconfirmed" | "CheckedIn" | "Done" | "Cancelled";
-export type ClinicalMedicalServiceStatus = "Processing" | "Done";
+export type ClinicalMedicalServiceStatus = "InProgress" | "Completed";
 export type PrescriptionStatus = "Unpaid" | "Paid" | "Cancelled";
 
 export interface ClinicalAppointment {
-    Uuid: string;
-    PatientName: string;
-    Gender: "Male" | "Female" | "Other";
-    MedicalCode: string;
-    Note?: string;
-    AppointmentAt: Date;
-    TypeLabel: string;
-    RoomName: string;
-    Status: ClinicalAppointmentStatus;
-    DoctorNote?: string;
+    uuid: string;
+    patientName: string;
+    gender: "Male" | "Female" | "Other";
+    medicalCode: string;
+    note?: string;
+    appointmentAt: Date;
+    typeLabel: string;
+    roomName: string;
+    status: ClinicalAppointmentStatus;
+    doctorNote?: string;
 }
 
 export interface ClinicalMedicalService {
-    Uuid: string;
-    AppointmentUuid: string;
-    MedicalServiceUuid: string;
-    Name: string;
-    Price: number;
-    Description: string;
-    Status: ClinicalMedicalServiceStatus;
+    uuid: string;
+    appointmentUuid: string;
+    medicalServiceUuid: string;
+    name: string;
+    price: number;
+    description: string;
+    status: ClinicalMedicalServiceStatus;
 }
 
 export interface ClinicalServiceOption {
-    Uuid: string;
-    Name: string;
-    Price: number;
+    uuid: string;
+    name: string;
+    price: number;
 }
 
 export interface ClinicalMedicineOption {
-    Uuid: string;
-    Name: string;
-    Unit: string;
+    uuid: string;
+    name: string;
+    unit: string;
 }
 
 export interface PrescriptionDetail {
-    Uuid: string;
-    MedicineUuid: string;
-    MedicineName: string;
-    Unit: string;
-    Quantity: number;
-    QuantityPerDose: number;
-    DosesPerDay: number;
-    Duration: number;
-    Note: string;
+    uuid: string;
+    medicineUuid: string;
+    medicineName: string;
+    unit: string;
+    quantity: number;
+    quantityPerDose: number;
+    dosesPerDay: number;
+    duration: number;
+    note: string;
 }
 
 export interface Prescription {
-    Uuid: string;
-    Status: PrescriptionStatus;
-    Note?: string;
-    Details: PrescriptionDetail[];
+    uuid: string;
+    status: PrescriptionStatus;
+    note?: string;
+    details: PrescriptionDetail[];
 }
 
 export interface ClinicalCaseDetail extends ClinicalAppointment {
-    MedicalServices: ClinicalMedicalService[];
-    AvailableMedicalServices: ClinicalServiceOption[];
-    AvailableMedicines: ClinicalMedicineOption[];
-    Prescription?: Prescription | null;
+    medicalServices: ClinicalMedicalService[];
+    availableMedicalServices: ClinicalServiceOption[];
+    availableMedicines: ClinicalMedicineOption[];
+    prescription?: Prescription | null;
 }

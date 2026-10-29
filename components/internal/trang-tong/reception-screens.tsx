@@ -153,38 +153,38 @@ function StaffRoomsScreen() {
   // Ghép thông tin cơ sở và số lượt đang chờ cho mỗi phòng.
   const roomsWithDetails = useMemo(() => {
     const hospitalNameByUuid = new Map(
-      mockHospitals.map((hospital) => [hospital.Uuid, hospital.Name] as const),
+      mockHospitals.map((hospital) => [hospital.uuid, hospital.name] as const),
     );
     const waitingByRoom = new Map<string, number>();
     for (const appointment of mockAppointments) {
       if (
-        !appointment.RoomUuid ||
-        appointment.DeletedAt.getTime() !== 0 ||
-        appointment.Status === AppointmentStatus.Cancelled ||
-        appointment.Status === AppointmentStatus.Unconfirmed ||
-        appointment.Status === AppointmentStatus.Done
+        !appointment.roomUuid ||
+        appointment.deletedAt.getTime() !== 0 ||
+        appointment.status === AppointmentStatus.Cancelled ||
+        appointment.status === AppointmentStatus.Unconfirmed ||
+        appointment.status === AppointmentStatus.Done
       ) {
         continue;
       }
       waitingByRoom.set(
-        appointment.RoomUuid,
-        (waitingByRoom.get(appointment.RoomUuid) ?? 0) + 1,
+        appointment.roomUuid,
+        (waitingByRoom.get(appointment.roomUuid) ?? 0) + 1,
       );
     }
     return mockRooms.map((room) => ({
       ...room,
-      HospitalName: hospitalNameByUuid.get(room.HospitalUuid) ?? "Chưa gán",
-      Waiting: waitingByRoom.get(room.Uuid) ?? 0,
+      hospitalName: hospitalNameByUuid.get(room.hospitalUuid) ?? "Chưa gán",
+      Waiting: waitingByRoom.get(room.uuid) ?? 0,
     }));
   }, []);
 
   const filteredRooms = useMemo(() => {
     const keyword = search.trim().toLocaleLowerCase("vi-VN");
     return roomsWithDetails.filter((room) => {
-      if (statusFilter !== "all" && room.Status !== statusFilter) return false;
-      if (hospitalFilter !== "all" && room.HospitalUuid !== hospitalFilter) return false;
+      if (statusFilter !== "all" && room.status !== statusFilter) return false;
+      if (hospitalFilter !== "all" && room.hospitalUuid !== hospitalFilter) return false;
       if (keyword) {
-        const haystack = `${room.Name} ${room.HospitalName}`.toLocaleLowerCase("vi-VN");
+        const haystack = `${room.name} ${room.hospitalName}`.toLocaleLowerCase("vi-VN");
         if (!haystack.includes(keyword)) return false;
       }
       return true;
@@ -202,9 +202,9 @@ function StaffRoomsScreen() {
   const counts = useMemo(() => {
     return {
       total: filteredRooms.length,
-      available: filteredRooms.filter((room) => room.Status === RoomStatus.Available).length,
-      occupied: filteredRooms.filter((room) => room.Status === RoomStatus.Occupied).length,
-      maintenance: filteredRooms.filter((room) => room.Status === RoomStatus.Maintenance).length,
+      available: filteredRooms.filter((room) => room.status === RoomStatus.Available).length,
+      occupied: filteredRooms.filter((room) => room.status === RoomStatus.Occupied).length,
+      maintenance: filteredRooms.filter((room) => room.status === RoomStatus.Maintenance).length,
       waiting: filteredRooms.reduce((sum, room) => sum + room.Waiting, 0),
     };
   }, [filteredRooms]);
@@ -311,8 +311,8 @@ function StaffRoomsScreen() {
             >
               <option value="all">Tất cả cơ sở</option>
               {mockHospitals.map((hospital) => (
-                <option key={hospital.Uuid} value={hospital.Uuid}>
-                  {hospital.Name}
+                <option key={hospital.uuid} value={hospital.uuid}>
+                  {hospital.name}
                 </option>
               ))}
             </select>
@@ -322,15 +322,15 @@ function StaffRoomsScreen() {
         {paginatedRooms.length ? (
           <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
             {paginatedRooms.map((room) => (
-              <article key={room.Uuid} className="flex h-full flex-col border bg-white p-5">
+              <article key={room.uuid} className="flex h-full flex-col border bg-white p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="break-words text-lg font-bold text-[#173b57]">{room.Name}</p>
-                    <p className="mt-1 break-words text-sm text-muted-foreground">{room.HospitalName}</p>
+                    <p className="break-words text-lg font-bold text-[#173b57]">{room.name}</p>
+                    <p className="mt-1 break-words text-sm text-muted-foreground">{room.hospitalName}</p>
                   </div>
-                  {room.Status === RoomStatus.Available ? (
+                  {room.status === RoomStatus.Available ? (
                     <StatusPill tone="green">Khả dụng</StatusPill>
-                  ) : room.Status === RoomStatus.Occupied ? (
+                  ) : room.status === RoomStatus.Occupied ? (
                     <StatusPill tone="blue">Đang sử dụng</StatusPill>
                   ) : (
                     <StatusPill tone="amber">Bảo trì</StatusPill>
@@ -343,7 +343,7 @@ function StaffRoomsScreen() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Cập nhật</p>
-                    <p className="mt-1 text-sm font-medium text-foreground">{formatDate(room.UpdatedAt)}</p>
+                    <p className="mt-1 text-sm font-medium text-foreground">{formatDate(room.updatedAt)}</p>
                   </div>
                 </div>
               </article>
@@ -395,7 +395,7 @@ type PaymentPrescription = {
   medicines: { name: string; dosage: string; quantity: number; unit: string; price: number; external?: boolean }[];
   status: "unpaid" | "paid";
   payment?: { method: string; amount: number; paidAt: string; reference: string };
-  DeletedAt: Date;
+  deletedAt: Date;
 };
 
 const paymentPrescriptions: PaymentPrescription[] = [
@@ -412,7 +412,7 @@ const paymentPrescriptions: PaymentPrescription[] = [
       { name: "Omeprazole 20mg", dosage: "1 viên · 1 lần/ngày · 30 ngày", quantity: 30, unit: "Viên", price: 6000 },
     ],
     status: "unpaid",
-    DeletedAt: new Date(0),
+    deletedAt: new Date(0),
   },
   {
     code: "RX-260923-073",
@@ -427,7 +427,7 @@ const paymentPrescriptions: PaymentPrescription[] = [
     ],
     status: "paid",
     payment: { method: "Chuyển khoản", amount: 328000, paidAt: "23/09/2026 · 09:44", reference: "CK-923073" },
-    DeletedAt: new Date(0),
+    deletedAt: new Date(0),
   },
   {
     code: "RX-260923-071",
@@ -443,7 +443,7 @@ const paymentPrescriptions: PaymentPrescription[] = [
       { name: "Coenzyme Q10", dosage: "1 viên · 1 lần/ngày · 30 ngày", quantity: 30, unit: "Viên", price: 0, external: true },
     ],
     status: "unpaid",
-    DeletedAt: new Date(0),
+    deletedAt: new Date(0),
   },
   {
     code: "RX-260923-068",
@@ -454,7 +454,7 @@ const paymentPrescriptions: PaymentPrescription[] = [
     note: "Đơn được lưu trữ sau khi người bệnh yêu cầu hủy nhận thuốc.",
     medicines: [{ name: "Cetirizine 10mg", dosage: "1 viên buổi tối · 10 ngày", quantity: 10, unit: "Viên", price: 8600 }],
     status: "unpaid",
-    DeletedAt: new Date("2026-09-23T02:10:00.000Z"),
+    deletedAt: new Date("2026-09-23T02:10:00.000Z"),
   },
 ];
 
@@ -472,9 +472,9 @@ function PaymentDispensingScreen() {
 
   const selected = prescriptions.find((item) => item.code === selectedCode) ?? prescriptions[0];
   const selectedTotal = prescriptionTotal(selected);
-  const activePrescriptions = prescriptions.filter((item) => item.DeletedAt.getTime() === 0);
+  const activePrescriptions = prescriptions.filter((item) => item.deletedAt.getTime() === 0);
   const visiblePrescriptions = prescriptions.filter((item) => {
-    const matchesVisibility = visibility === "deleted" ? item.DeletedAt.getTime() !== 0 : item.DeletedAt.getTime() === 0;
+    const matchesVisibility = visibility === "deleted" ? item.deletedAt.getTime() !== 0 : item.deletedAt.getTime() === 0;
     const keyword = search.trim().toLocaleLowerCase("vi");
     return matchesVisibility && (!keyword || `${item.code} ${item.patient} ${item.medicalId}`.toLocaleLowerCase("vi").includes(keyword));
   });
@@ -487,8 +487,8 @@ function PaymentDispensingScreen() {
   }
 
   function toggleDeleted(prescription: PaymentPrescription) {
-    const restoring = prescription.DeletedAt.getTime() !== 0;
-    setPrescriptions((current) => current.map((item) => item.code === prescription.code ? { ...item, DeletedAt: restoring ? new Date(0) : new Date() } : item));
+    const restoring = prescription.deletedAt.getTime() !== 0;
+    setPrescriptions((current) => current.map((item) => item.code === prescription.code ? { ...item, deletedAt: restoring ? new Date(0) : new Date() } : item));
     setMessage(restoring ? "Đã khôi phục đơn thuốc vào hàng chờ." : "Đã lưu trữ đơn thuốc. Bạn có thể khôi phục trong mục Đã xóa.");
   }
 
@@ -552,7 +552,7 @@ function PaymentDispensingScreen() {
                     <td className="px-5 py-4 align-top"><StatusPill tone={prescription.status === "paid" ? "blue" : "amber"}>{prescription.status === "paid" ? "Đã thanh toán" : "Chờ thanh toán"}</StatusPill></td>
                     <td className="px-5 py-4 align-top"><div className="flex gap-1">
                       <Button type="button" size="icon-sm" variant="ghost" aria-label={`Xem ${prescription.code}`}><Eye /></Button>
-                      <Button type="button" size="icon-sm" variant={prescription.DeletedAt.getTime() ? "outline" : "destructive"} aria-label={prescription.DeletedAt.getTime() ? `Khôi phục ${prescription.code}` : `Xóa ${prescription.code}`} onClick={(event) => { event.stopPropagation(); selectPrescription(prescription); toggleDeleted(prescription); }}>{prescription.DeletedAt.getTime() ? <RotateCcw /> : <Trash2 />}</Button>
+                      <Button type="button" size="icon-sm" variant={prescription.deletedAt.getTime() ? "outline" : "destructive"} aria-label={prescription.deletedAt.getTime() ? `Khôi phục ${prescription.code}` : `Xóa ${prescription.code}`} onClick={(event) => { event.stopPropagation(); selectPrescription(prescription); toggleDeleted(prescription); }}>{prescription.deletedAt.getTime() ? <RotateCcw /> : <Trash2 />}</Button>
                     </div></td>
                   </tr>
                 );
@@ -564,7 +564,7 @@ function PaymentDispensingScreen() {
       </PortalSection>
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-        <PortalSection title={`Chi tiết ${selected.code}`} description={`${selected.patient} · ${selected.medicalId}`} action={<StatusPill tone={selected.status === "paid" ? "green" : selected.DeletedAt.getTime() ? "red" : "amber"}>{selected.DeletedAt.getTime() ? "Đã xóa" : selected.status === "paid" ? "Đã thanh toán" : "Chưa thanh toán"}</StatusPill>}>
+        <PortalSection title={`Chi tiết ${selected.code}`} description={`${selected.patient} · ${selected.medicalId}`} action={<StatusPill tone={selected.status === "paid" ? "green" : selected.deletedAt.getTime() ? "red" : "amber"}>{selected.deletedAt.getTime() ? "Đã xóa" : selected.status === "paid" ? "Đã thanh toán" : "Chưa thanh toán"}</StatusPill>}>
           <DetailGrid>
             <DetailItem label="Bác sĩ kê đơn" value={selected.doctor} />
             <DetailItem label="Ngày kê" value={selected.prescribedAt} />
@@ -582,7 +582,7 @@ function PaymentDispensingScreen() {
 
         <PortalSection title="Thanh toán" description="Xác nhận số tiền trước khi chuyển đơn sang cấp thuốc.">
           <div className="space-y-5 p-5">
-            {selected.DeletedAt.getTime() !== 0 ? (
+            {selected.deletedAt.getTime() !== 0 ? (
               <div className="space-y-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800"><p>Đơn đã được xóa và không thể thanh toán.</p><Button type="button" variant="outline" onClick={() => toggleDeleted(selected)}><RotateCcw />Khôi phục đơn</Button></div>
             ) : selected.status === "paid" && selected.payment ? (
               <div className="space-y-4">

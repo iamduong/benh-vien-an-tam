@@ -23,7 +23,7 @@ class InternalClinicalService {
         "/internal/clinical/appointments",
         { params: { date }, signal },
       );
-      return response.data.Data.map(hydrateAppointment);
+      return response.data.data.map(hydrateAppointment);
     } catch (error) {
       throw toServiceError(error);
     }
@@ -35,7 +35,7 @@ class InternalClinicalService {
         `/internal/clinical/appointments/${encodeURIComponent(uuid)}`,
         { signal },
       );
-      return hydrateAppointment(response.data.Data);
+      return hydrateAppointment(response.data.data);
     } catch (error) {
       throw toServiceError(error);
     }
@@ -45,9 +45,9 @@ class InternalClinicalService {
     try {
       const response = await httpClient.post<ApiResponse<ClinicalMedicalService>>(
         `/internal/clinical/appointments/${encodeURIComponent(appointmentUuid)}/medical-services`,
-        { MedicalServiceUuid: medicalServiceUuid },
+        { medicalServiceUuid: medicalServiceUuid },
       );
-      return response.data.Data;
+      return response.data.data;
     } catch (error) {
       throw toServiceError(error);
     }
@@ -56,14 +56,14 @@ class InternalClinicalService {
   async updateMedicalService(
     appointmentUuid: string,
     uuid: string,
-    request: { Description: string; Status: ClinicalMedicalServiceStatus },
+    request: { description: string; status: ClinicalMedicalServiceStatus },
   ) {
     try {
       const response = await httpClient.put<ApiResponse<ClinicalMedicalService>>(
         `/internal/clinical/appointments/${encodeURIComponent(appointmentUuid)}/medical-services/${encodeURIComponent(uuid)}`,
         request,
       );
-      return response.data.Data;
+      return response.data.data;
     } catch (error) {
       throw toServiceError(error);
     }
@@ -71,13 +71,13 @@ class InternalClinicalService {
 }
 
 function hydrateAppointment<T extends ClinicalAppointment>(item: T): T {
-  return { ...item, AppointmentAt: new Date(item.AppointmentAt) };
+  return { ...item, appointmentAt: new Date(item.appointmentAt) };
 }
 
 function toServiceError(error: unknown) {
-  if (axios.isAxiosError<{ Message?: string }>(error)) {
+  if (axios.isAxiosError<{ message?: string }>(error)) {
     return new InternalClinicalServiceError(
-      error.response?.data?.Message ?? "Không thể tải dữ liệu ca khám.",
+      error.response?.data?.message ?? "Không thể tải dữ liệu ca khám.",
       error.response?.status,
     );
   }

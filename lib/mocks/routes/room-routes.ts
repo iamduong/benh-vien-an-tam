@@ -23,9 +23,9 @@ type RoomQueryParams = Record<string, unknown> | undefined;
 
 const rooms: Room[] = mockRooms.map((room) => ({
   ...room,
-  CreatedAt: new Date(room.CreatedAt.getTime()),
-  UpdatedAt: new Date(room.UpdatedAt.getTime()),
-  DeletedAt: new Date(room.DeletedAt.getTime()),
+  createdAt: new Date(room.createdAt.getTime()),
+  updatedAt: new Date(room.updatedAt.getTime()),
+  deletedAt: new Date(room.deletedAt.getTime()),
 }));
 
 export function registerRoomRoutes(mock: AxiosMockAdapter) {
@@ -57,12 +57,12 @@ export function registerRoomRoutes(mock: AxiosMockAdapter) {
     const filtered = rooms
       .filter(
         (room) =>
-          room.HospitalUuid === hospitalUuid &&
-          (includeDeleted || room.DeletedAt.getTime() === 0) &&
-          (!status || room.Status === status) &&
-          matchesKeyword(search, room.Name, room.Uuid),
+          room.hospitalUuid === hospitalUuid &&
+          (includeDeleted || room.deletedAt.getTime() === 0) &&
+          (!status || room.status === status) &&
+          matchesKeyword(search, room.name, room.uuid),
       )
-      .sort((left, right) => right.CreatedAt.getTime() - left.CreatedAt.getTime());
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
     const totalCount = filtered.length;
     const totalPages = Math.ceil(totalCount / pageSize);
     const items = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -83,9 +83,9 @@ export function registerRoomRoutes(mock: AxiosMockAdapter) {
       const [hospitalUuid, roomUuid] = getRoomRouteIds(config.url);
       const room = rooms.find(
         (item) =>
-          item.Uuid === roomUuid &&
-          item.HospitalUuid === hospitalUuid &&
-          item.DeletedAt.getTime() === 0,
+          item.uuid === roomUuid &&
+          item.hospitalUuid === hospitalUuid &&
+          item.deletedAt.getTime() === 0,
       );
 
       return room
@@ -96,7 +96,7 @@ export function registerRoomRoutes(mock: AxiosMockAdapter) {
   mock.onPost(/^\/hospitals\/[^/]+\/rooms$/).reply((config) => {
     const hospitalUuid = getHospitalUuid(config.url);
     const hospital = mockHospitals.find(
-      (item) => item.Uuid === hospitalUuid && item.DeletedAt.getTime() === 0,
+      (item) => item.uuid === hospitalUuid && item.deletedAt.getTime() === 0,
     );
     if (!hospital) return notFound("Hospital not found");
 
@@ -105,19 +105,19 @@ export function registerRoomRoutes(mock: AxiosMockAdapter) {
       return [400, { message: "Room name must contain 1 to 100 characters." }];
     }
 
-    if (getActiveRoomCount(hospitalUuid) >= hospital.NumberOfRoom) {
+    if (getActiveRoomCount(hospitalUuid) >= hospital.numberOfRoom) {
       return capacityConflict();
     }
 
     const now = new Date();
     const room: Room = {
-      Uuid: crypto.randomUUID(),
-      Name: request.name.trim(),
-      Status: request.status ?? RoomStatus.Available,
-      HospitalUuid: hospitalUuid,
-      CreatedAt: now,
-      UpdatedAt: now,
-      DeletedAt: new Date(0),
+      uuid: crypto.randomUUID(),
+      name: request.name.trim(),
+      status: request.status ?? RoomStatus.Available,
+      hospitalUuid: hospitalUuid,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: new Date(0),
     };
     rooms.push(room);
 
@@ -133,9 +133,9 @@ export function registerRoomRoutes(mock: AxiosMockAdapter) {
       const [hospitalUuid, roomUuid] = getRoomRouteIds(config.url);
       const room = rooms.find(
         (item) =>
-          item.Uuid === roomUuid &&
-          item.HospitalUuid === hospitalUuid &&
-          item.DeletedAt.getTime() === 0,
+          item.uuid === roomUuid &&
+          item.hospitalUuid === hospitalUuid &&
+          item.deletedAt.getTime() === 0,
       );
 
       if (!room) return notFound("Room not found");
@@ -148,19 +148,19 @@ export function registerRoomRoutes(mock: AxiosMockAdapter) {
       if (request.status === RoomStatus.Maintenance) {
         const hasActiveAppointments = mockAppointments.some(
           (appointment) =>
-            appointment.RoomUuid === roomUuid &&
-            appointment.HospitalUuid === hospitalUuid &&
-            appointment.DeletedAt.getTime() === 0 &&
-            (appointment.Status === AppointmentStatus.Pending ||
-              appointment.Status === AppointmentStatus.Approved ||
-              appointment.Status === AppointmentStatus.CheckedIn),
+            appointment.roomUuid === roomUuid &&
+            appointment.hospitalUuid === hospitalUuid &&
+            appointment.deletedAt.getTime() === 0 &&
+            (appointment.status === AppointmentStatus.Pending ||
+              appointment.status === AppointmentStatus.Approved ||
+              appointment.status === AppointmentStatus.CheckedIn),
         );
         if (hasActiveAppointments) return appointmentConflict();
       }
 
-      if (typeof request.name === "string") room.Name = request.name.trim();
-      if (request.status) room.Status = request.status;
-      room.UpdatedAt = new Date();
+      if (typeof request.name === "string") room.name = request.name.trim();
+      if (request.status) room.status = request.status;
+      room.updatedAt = new Date();
 
       return [
         200,
@@ -174,26 +174,26 @@ export function registerRoomRoutes(mock: AxiosMockAdapter) {
       const [hospitalUuid, roomUuid] = getRoomRouteIds(config.url);
       const room = rooms.find(
         (item) =>
-          item.Uuid === roomUuid &&
-          item.HospitalUuid === hospitalUuid &&
-          item.DeletedAt.getTime() === 0,
+          item.uuid === roomUuid &&
+          item.hospitalUuid === hospitalUuid &&
+          item.deletedAt.getTime() === 0,
       );
 
       if (!room) return notFound("Room not found");
 
       const hasActiveAppointments = mockAppointments.some(
         (appointment) =>
-          appointment.RoomUuid === roomUuid &&
-          appointment.HospitalUuid === hospitalUuid &&
-          appointment.DeletedAt.getTime() === 0 &&
-          (appointment.Status === AppointmentStatus.Pending ||
-            appointment.Status === AppointmentStatus.Approved ||
-            appointment.Status === AppointmentStatus.CheckedIn),
+          appointment.roomUuid === roomUuid &&
+          appointment.hospitalUuid === hospitalUuid &&
+          appointment.deletedAt.getTime() === 0 &&
+          (appointment.status === AppointmentStatus.Pending ||
+            appointment.status === AppointmentStatus.Approved ||
+            appointment.status === AppointmentStatus.CheckedIn),
       );
       if (hasActiveAppointments) return appointmentConflict();
 
-      room.DeletedAt = new Date();
-      room.UpdatedAt = new Date();
+      room.deletedAt = new Date();
+      room.updatedAt = new Date();
       return [204];
     });
 
@@ -202,23 +202,23 @@ export function registerRoomRoutes(mock: AxiosMockAdapter) {
     .reply((config) => {
       const [hospitalUuid, roomUuid] = getRoomRouteIds(config.url);
       const hospital = mockHospitals.find(
-        (item) => item.Uuid === hospitalUuid && item.DeletedAt.getTime() === 0,
+        (item) => item.uuid === hospitalUuid && item.deletedAt.getTime() === 0,
       );
       if (!hospital) return notFound("Hospital not found");
 
       const room = rooms.find(
         (item) =>
-          item.Uuid === roomUuid &&
-          item.HospitalUuid === hospitalUuid &&
-          item.DeletedAt.getTime() !== 0,
+          item.uuid === roomUuid &&
+          item.hospitalUuid === hospitalUuid &&
+          item.deletedAt.getTime() !== 0,
       );
       if (!room) return notFound("Deleted room not found");
-      if (getActiveRoomCount(hospitalUuid) >= hospital.NumberOfRoom) {
+      if (getActiveRoomCount(hospitalUuid) >= hospital.numberOfRoom) {
         return capacityConflict();
       }
 
-      room.DeletedAt = new Date(0);
-      room.UpdatedAt = new Date();
+      room.deletedAt = new Date(0);
+      room.updatedAt = new Date();
 
       return [
         200,
@@ -245,14 +245,14 @@ function getRoomRouteIds(url?: string) {
 function hospitalExists(uuid: string) {
   return mockHospitals.some(
     (hospital) =>
-      hospital.Uuid === uuid && hospital.DeletedAt.getTime() === 0,
+      hospital.uuid === uuid && hospital.deletedAt.getTime() === 0,
   );
 }
 
 function getActiveRoomCount(hospitalUuid: string) {
   return rooms.filter(
     (room) =>
-      room.HospitalUuid === hospitalUuid && room.DeletedAt.getTime() === 0,
+      room.hospitalUuid === hospitalUuid && room.deletedAt.getTime() === 0,
   ).length;
 }
 
@@ -299,14 +299,14 @@ function isRoomStatus(value: unknown): value is RoomStatus {
 
 function toRoomDto(room: Room) {
   return {
-    uuid: room.Uuid,
-    name: room.Name,
-    status: room.Status,
-    hospitalUuid: room.HospitalUuid,
-    createdAt: room.CreatedAt.toISOString(),
-    updatedAt: room.UpdatedAt.toISOString(),
+    uuid: room.uuid,
+    name: room.name,
+    status: room.status,
+    hospitalUuid: room.hospitalUuid,
+    createdAt: room.createdAt.toISOString(),
+    updatedAt: room.updatedAt.toISOString(),
     deletedAt:
-      room.DeletedAt.getTime() === 0 ? null : room.DeletedAt.toISOString(),
+      room.deletedAt.getTime() === 0 ? null : room.deletedAt.toISOString(),
   };
 }
 

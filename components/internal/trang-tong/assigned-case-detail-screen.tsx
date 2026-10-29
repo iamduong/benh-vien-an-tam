@@ -77,9 +77,9 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
     }
 
     const item = state.item;
-    const dateTime = formatDateTime(item.AppointmentAt);
-    const canPrescribe = item.MedicalServices.every(
-        (service) => service.Status === "Completed",
+    const dateTime = formatDateTime(item.appointmentAt);
+    const canPrescribe = item.medicalServices.every(
+        (service) => service.status === "Completed",
     );
 
     async function addMedicalService() {
@@ -88,14 +88,14 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
         setServiceError("");
         try {
             const service = await internalClinicalService.addMedicalService(
-                item.Uuid,
+                item.uuid,
                 selectedService,
             );
             setState({
                 status: "success",
                 item: {
                     ...item,
-                    MedicalServices: [...item.MedicalServices, service],
+                    medicalServices: [...item.medicalServices, service],
                 },
             });
             setSelectedService("");
@@ -113,8 +113,8 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
             status: "success",
             item: {
                 ...item,
-                MedicalServices: item.MedicalServices.map((current) =>
-                    current.Uuid === service.Uuid ? service : current,
+                medicalServices: item.medicalServices.map((current) =>
+                    current.uuid === service.uuid ? service : current,
                 ),
             },
         });
@@ -131,8 +131,8 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
         </Link>
         < PortalPageHeader
 eyebrow = {`Ca đang xử lý · ${dateTime.time}`}
-title = { item.PatientName }
-description = {`Mã y tế ${item.MedicalCode} · ${genderLabel(item.Gender)} · Lịch được phân công trực tiếp cho bạn.`}
+title = { item.patientName }
+description = {`Mã y tế ${item.medicalCode} · ${genderLabel(item.gender)} · Lịch được phân công trực tiếp cho bạn.`}
 actions = {
           <>
     <PortalAction>Hủy ca </PortalAction>
@@ -145,11 +145,11 @@ actions = {
             <PortalSection title="Thông tin lượt khám" >
                 <DetailGrid>
                 <DetailItem label="Thời gian" value = {`${dateTime.time} · ${dateTime.date}`} />
-                    < DetailItem label = "Phòng" value = { item.RoomName } />
-                        <DetailItem label="Loại lịch" value = { item.TypeLabel } />
-                            <DetailItem label="Trạng thái" value = {< StatusPill tone = "blue" > { statusLabel(item.Status) } </StatusPill>} / >
-                                <DetailItem label="Ghi chú đặt lịch" value = { item.Note || "Không có ghi chú" } />
-                                    <DetailItem label="UUID lịch" value = { item.Uuid } />
+                    < DetailItem label = "Phòng" value = { item.roomName } />
+                        <DetailItem label="Loại lịch" value = { item.typeLabel } />
+                            <DetailItem label="Trạng thái" value = {< StatusPill tone = "blue" > { statusLabel(item.status) } </StatusPill>} / >
+                                <DetailItem label="Ghi chú đặt lịch" value = { item.note || "Không có ghi chú" } />
+                                    <DetailItem label="UUID lịch" value = { item.uuid } />
                                         </DetailGrid>
                                         </PortalSection>
                                         < PortalSection title = "Lịch liên quan gần đây" >
@@ -174,9 +174,9 @@ className = "h-10 w-full rounded-md border bg-white px-3 text-sm outline-none fo
     >
     <option value="" > Chọn dịch vụ cần chỉ định </option>
 {
-    item.AvailableMedicalServices.map((service) => (
-        <option key= { service.Uuid } value = { service.Uuid } >
-        { service.Name } · { formatPrice(service.Price)
+    item.availableMedicalServices.map((service) => (
+        <option key= { service.uuid } value = { service.uuid } >
+        { service.name } · { formatPrice(service.price)
 }
 </option>
                     ))}
@@ -194,12 +194,12 @@ disabled = {!selectedService || isAddingService}
 { serviceError ? <p className="text-sm text-destructive" > { serviceError } </p> : null }
 
 {
-    item.MedicalServices.length ? (
+    item.medicalServices.length ? (
         <div className= "space-y-3" >
         {
-            item.MedicalServices.map((service) => (
+            item.medicalServices.map((service) => (
                 <MedicalServiceResult
-                      key= { service.Uuid }
+                      key= { service.uuid }
                       service = { service }
                       onUpdate = { updateMedicalService }
                 />
@@ -234,8 +234,8 @@ description = "Đơn thuốc chỉ được kê khi tất cả dịch vụ khám
             <span className="text-sm font-medium" > Thuốc </span>
                 < select className = "h-10 w-full rounded-md border bg-white px-3 text-sm" >
                 {
-                    item.AvailableMedicines.map((medicine) => (
-                        <option key= { medicine.Uuid } value = { medicine.Uuid } > { medicine.Name } </option>
+                    item.availableMedicines.map((medicine) => (
+                        <option key= { medicine.uuid } value = { medicine.uuid } > { medicine.name } </option>
                     ))
                 }
                     </select>
@@ -267,12 +267,12 @@ function MedicalServiceResult({
     service: ClinicalMedicalService;
     onUpdate: (service: ClinicalMedicalService) => void;
 }) {
-    const [description, setDescription] = useState(service.Description);
+    const [description, setDescription] = useState(service.description);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
-    const isCompleted = service.Status === "Completed";
+    const isCompleted = service.status === "Completed";
 
-    async function save(status: ClinicalMedicalService["Status"]) {
+    async function save(status: ClinicalMedicalService["status"]) {
         if (status === "Completed" && !description.trim()) {
             setError("Vui lòng nhập kết quả dịch vụ trước khi hoàn tất.");
             return;
@@ -281,11 +281,11 @@ function MedicalServiceResult({
         setError("");
         try {
             const updated = await internalClinicalService.updateMedicalService(
-                service.AppointmentUuid,
-                service.Uuid,
-                { Description: description, Status: status },
+                service.appointmentUuid,
+                service.uuid,
+                { description: description, status: status },
             );
-            setDescription(updated.Description);
+            setDescription(updated.description);
             onUpdate(updated);
         } catch (saveError) {
             setError(saveError instanceof Error ? saveError.message : "Không thể cập nhật dịch vụ.");
@@ -300,16 +300,16 @@ function MedicalServiceResult({
             <div className="flex min-w-0 gap-3" >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary" > <FlaskConical className="size-4" /> </span>
                     < div >
-                    <h3 className="font-semibold text-[#173b57]" > { service.Name } </h3>
-                        < p className = "mt-1 text-xs text-muted-foreground" > { formatPrice(service.Price) } </p>
+                    <h3 className="font-semibold text-[#173b57]" > { service.name } </h3>
+                        < p className = "mt-1 text-xs text-muted-foreground" > { formatPrice(service.price) } </p>
                             </div>
                             </div>
                             < StatusPill tone = { isCompleted? "green": "amber" } > { isCompleted? "Đã xong": "Đang khám" } </StatusPill>
                                 </div>
                                 < div className = "mt-4 space-y-2" >
-                                    <Label htmlFor={ `service-result-${service.Uuid}` }> Kết quả dịch vụ </Label>
+                                    <Label htmlFor={ `service-result-${service.uuid}` }> Kết quả dịch vụ </Label>
                                         < Textarea
-    id = {`service-result-${service.Uuid}`
+    id = {`service-result-${service.uuid}`
 }
 rows = { 3}
 value = { description }
@@ -338,20 +338,22 @@ function Field({ label, defaultValue, type = "text" }: { label: string; defaultV
 
 function formatDateTime(value: Date) {
     const parts = getVietnamDateTimeParts(value);
-    const [year, month, day] = parts.Date.split("-");
-    return { date: `${day}/${month}/${year}`, time: parts.Time };
+    const [year, month, day] = parts.date.split("-");
+    return { date: `${day}/${month}/${year}`, time: parts.time };
 }
 
-function genderLabel(gender: ClinicalAppointment["Gender"]) {
+function genderLabel(gender: ClinicalAppointment["gender"]) {
     return gender === "Male" ? "Nam" : gender === "Female" ? "Nữ" : "Khác";
 }
 
-function statusLabel(status: ClinicalAppointment["Status"]) {
+function statusLabel(status: ClinicalAppointment["status"]) {
     return {
         Approved: "Đã xác nhận",
         CheckedIn: "Đã check-in",
         Done: "Hoàn thành",
         Pending: "Chưa đến",
+        Cancelled: "Đã hủy",
+        Unconfirmed: "Chưa xác nhận",
     }[status];
 }
 

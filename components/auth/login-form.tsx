@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/toast/toast-context";
 import { normalizePhone, validateLogin, type AuthFieldErrors } from "@/lib/auth/validation";
+import { getManagementLanding } from "@/lib/auth/management-landing";
 import { AuthServiceError } from "@/lib/services/auth/AuthService";
 
 type LoginFormProps = {
@@ -32,8 +33,8 @@ export function LoginForm({ returnUrl, registered }: LoginFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const credentials = {
-      Phone: normalizePhone(phone),
-      Password: password,
+      phone: normalizePhone(phone),
+      password: password,
     };
     const nextErrors = validateLogin(credentials);
 
@@ -45,9 +46,17 @@ export function LoginForm({ returnUrl, registered }: LoginFormProps) {
 
     setIsSubmitting(true);
     try {
-      await login(credentials);
-      toast.success("Đăng nhập thành công", "Chào mừng bạn quay lại An Tâm.");
-      router.replace(returnUrl);
+      const result = await login(credentials);
+      if (result.type === "management") {
+        toast.success(
+          "Đăng nhập thành công",
+          `Đang chuyển đến cổng làm việc dành cho ${result.session.role.name}.`,
+        );
+        router.replace(getManagementLanding(result.session));
+      } else {
+        toast.success("Đăng nhập thành công", "Chào mừng bạn quay lại An Tâm.");
+        router.replace(returnUrl);
+      }
       router.refresh();
     } catch (error) {
       if (error instanceof AuthServiceError) {
@@ -94,15 +103,15 @@ export function LoginForm({ returnUrl, registered }: LoginFormProps) {
           autoComplete="tel"
           placeholder="Ví dụ: 0901234567"
           value={phone}
-          aria-invalid={Boolean(errors.Phone)}
-          aria-describedby={errors.Phone ? "phone-error" : undefined}
+          aria-invalid={Boolean(errors.phone)}
+          aria-describedby={errors.phone ? "phone-error" : undefined}
           disabled={isSubmitting}
           onChange={(event) => setPhone(event.target.value)}
           className="h-10"
         />
-        {errors.Phone ? (
+        {errors.phone ? (
           <p id="phone-error" className="text-sm text-destructive">
-            {errors.Phone}
+            {errors.phone}
           </p>
         ) : null}
       </div>
@@ -116,8 +125,8 @@ export function LoginForm({ returnUrl, registered }: LoginFormProps) {
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             value={password}
-            aria-invalid={Boolean(errors.Password)}
-            aria-describedby={errors.Password ? "password-error" : undefined}
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? "password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => setPassword(event.target.value)}
             className="h-10 pr-11"
@@ -136,9 +145,9 @@ export function LoginForm({ returnUrl, registered }: LoginFormProps) {
             )}
           </button>
         </div>
-        {errors.Password ? (
+        {errors.password ? (
           <p id="password-error" className="text-sm text-destructive">
-            {errors.Password}
+            {errors.password}
           </p>
         ) : null}
       </div>

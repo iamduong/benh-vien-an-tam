@@ -92,7 +92,9 @@ public sealed class AuthService(
         var phone = NormalizePhone(request.Phone);
         var account = await dbContext.Accounts
             .AsNoTracking()
-            .SingleOrDefaultAsync(item => item.Phone == phone, cancellationToken);
+            .SingleOrDefaultAsync(
+                item => item.Phone == phone && item.DeletedAt == null,
+                cancellationToken);
 
         if (account is null)
         {
@@ -257,7 +259,10 @@ public sealed class AuthService(
                     account.CreatedAt,
                     account.UpdatedAt,
                     account.DeletedAt),
-                profile),
+                profile,
+                role is null
+                    ? null
+                    : new AuthRoleResult(role.Uuid, role.Name, role.IsDoctor, role.Scope)),
             issuedAt,
             accessExpiresAt,
             refreshExpiresAt,

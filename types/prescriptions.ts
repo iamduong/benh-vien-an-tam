@@ -14,26 +14,26 @@ export type PrescriptionAppointmentType =
   | "medical-service";
 
 export type LinkedPrescriptionAppointment = {
-  Uuid: string;
-  Type: PrescriptionAppointmentType;
+  uuid: string;
+  type: PrescriptionAppointmentType;
 };
 
 export type PrescriptionSummary = {
-  Prescription: Prescription;
-  Hospital: Pick<Hospital, "Uuid" | "Name" | "Slug">;
-  Doctor: Pick<DoctorProfile, "Uuid" | "Name" | "Slug">;
-  Appointment: LinkedPrescriptionAppointment | null;
-  TotalAmount: number | null;
-  NumberOfItems: number;
+  prescription: Prescription;
+  hospital: Pick<Hospital, "uuid" | "name" | "slug">;
+  doctor: Pick<DoctorProfile, "uuid" | "name" | "slug">;
+  appointment: LinkedPrescriptionAppointment | null;
+  totalAmount: number | null;
+  numberOfItems: number;
 };
 
 export type PrescriptionMedicineDetail = {
-  Detail: PrescriptionDetail;
-  Medicine: Medicine;
+  detail: PrescriptionDetail;
+  medicine: Medicine;
 };
 
 export type PrescriptionView = PrescriptionSummary & {
-  Details: PrescriptionMedicineDetail[];
+  details: PrescriptionMedicineDetail[];
 };
 
 export type PrescriptionListQuery = {
@@ -47,5 +47,5 @@ export type PrescriptionListQuery = {
 export type PrescriptionList = PaginatedData<PrescriptionSummary>;
 
 export type PrescriptionErrorResponse = {
-  Message?: string;
+  message?: string;
 };

@@ -70,8 +70,8 @@ export function MedicalServiceDirectory() {
           status: "success",
           key,
           data: {
-            result: serviceResponse.Data,
-            hospitals: hospitalResponse.Data,
+            result: serviceResponse.data,
+            hospitals: hospitalResponse.data,
           },
         });
       })
@@ -206,7 +206,7 @@ export function MedicalServiceDirectory() {
                   {data.result.Items.length ? (
                     <div className="grid items-stretch gap-5 xl:grid-cols-2">
                       {data.result.Items.map((service) => (
-                        <ServiceDirectoryCard key={service.Uuid} service={service} />
+                        <ServiceDirectoryCard key={service.uuid} service={service} />
                       ))}
                     </div>
                   ) : (
@@ -242,12 +242,12 @@ function ServiceDirectoryCard({ service }: { service: MedicalService }) {
   return (
     <article className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
       <Link
-        href={`/dich-vu/${service.Slug}`}
+        href={`/dich-vu/${service.slug}`}
         className="relative block aspect-[16/7] overflow-hidden bg-muted"
       >
         <Image
-          src={service.Image}
-          alt={`Minh họa ${service.Name}`}
+          src={service.image}
+          alt={`Minh họa ${service.name}`}
           fill
           sizes="(min-width: 1280px) 35vw, 100vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
@@ -257,31 +257,31 @@ function ServiceDirectoryCard({ service }: { service: MedicalService }) {
         </span>
       </Link>
       <div className="flex flex-1 flex-col p-5">
-        <Link href={`/dich-vu/${service.Slug}`}>
+        <Link href={`/dich-vu/${service.slug}`}>
           <h3 className="text-xl font-bold leading-7 group-hover:text-primary">
-            {service.Name}
+            {service.name}
           </h3>
         </Link>
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
-          {markdownToPlainText(service.Description) || "Thông tin đang được cập nhật."}
+          {markdownToPlainText(service.description) || "Thông tin đang được cập nhật."}
         </p>
         <p className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
           <Clock3 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
-          {service.WorkingHour}
+          {service.workingHour}
         </p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-5">
           <span className="text-sm text-muted-foreground">Chi phí dự kiến</span>
-          <strong className="text-base text-primary">{formatPrice(service.Price)}</strong>
+          <strong className="text-base text-primary">{formatPrice(service.price)}</strong>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <Link
-            href={`/dich-vu/${service.Slug}`}
+            href={`/dich-vu/${service.slug}`}
             className={cn(buttonVariants({ variant: "outline" }), "w-full")}
           >
             Xem chi tiết
           </Link>
           <Link
-            href={`/dat-lich/dich-vu?service=${service.Uuid}`}
+            href={`/dat-lich/dich-vu?service=${service.uuid}`}
             className={cn(buttonVariants(), "w-full")}
           >
             <CalendarPlus aria-hidden="true" />
@@ -299,7 +299,7 @@ function getFilters(hospitals: Hospital[]): DiscoveryFilter[] {
       key: "hospital",
       label: "Cơ sở cung cấp",
       allLabel: "Tất cả cơ sở",
-      options: hospitals.map((item) => ({ value: item.Uuid, label: item.Name })),
+      options: hospitals.map((item) => ({ value: item.uuid, label: item.name })),
     },
   ];
 }

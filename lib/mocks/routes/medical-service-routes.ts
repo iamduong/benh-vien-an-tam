@@ -12,13 +12,37 @@ import {
   getStringParam,
   matchesKeyword,
   paginate,
+  paginatePublic,
 } from "@/lib/mocks/query-utils";
 import { BaseStatus } from "@/types/models";
 
 export function registerMedicalServiceRoutes(mock: AxiosMockAdapter) {
   mock.onGet("/medical-services/featured").reply(200, {
-    Data: featuredMedicalServices,
-    Message: "Lấy danh sách dịch vụ nổi bật thành công.",
+    data: featuredMedicalServices,
+    message: "Lấy danh sách dịch vụ nổi bật thành công.",
+  });
+
+  mock.onGet("/public/medical-services").reply(200, {
+    data: featuredMedicalServices,
+    message: "Lấy danh sách dịch vụ nổi bật thành công.",
+  });
+
+  mock.onGet("/public/medical-services/search").reply((config) => {
+    const keyword = getStringParam(config.params, "q");
+    const hospital = getStringParam(config.params, "hospital");
+    const items = mockMedicalServices.filter((service) =>
+      service.status === BaseStatus.Active &&
+      matchesKeyword(keyword, service.name, service.description) &&
+      (!hospital || getHospitalAssignments(hospital).medicalServiceUuids.includes(service.uuid)),
+    );
+    return [200, {
+      data: paginatePublic(
+        items,
+        getPositiveIntegerParam(config.params, "page", 1),
+        getPositiveIntegerParam(config.params, "pageSize", 8),
+      ),
+      message: "Lấy danh sách dịch vụ y tế thành công.",
+    }];
   });
 
   mock.onGet("/medical-services").reply((config) => {
@@ -28,69 +52,69 @@ export function registerMedicalServiceRoutes(mock: AxiosMockAdapter) {
     const pageSize = getPositiveIntegerParam(config.params, "pageSize", 6);
     const items = mockMedicalServices.filter(
       (service) =>
-        service.Status === BaseStatus.Active &&
+        service.status === BaseStatus.Active &&
         matchesKeyword(
           getStringParam(config.params, "search") || q,
-          service.Name,
-          service.Description,
+          service.name,
+          service.description,
         ) &&
         (!hospital ||
-          getHospitalAssignments(hospital).MedicalServiceUuids.includes(
-            service.Uuid,
+          getHospitalAssignments(hospital).medicalServiceUuids.includes(
+            service.uuid,
           )),
     );
 
     return [
       200,
       {
-        Data: paginate(items, page, pageSize),
-        Message: "Lấy danh sách dịch vụ y tế thành công.",
+        data: paginate(items, page, pageSize),
+        message: "Lấy danh sách dịch vụ y tế thành công.",
       },
     ];
   });
 
   mock
-    .onGet(/^\/medical-services\/(?!featured$)[^/]+$/)
+    .onGet(/^\/(?:public\/)?medical-services\/(?!featured$)[^/]+$/)
     .reply((config) => {
       const slug = decodeURIComponent(config.url?.split("/").pop() ?? "");
       const service = mockMedicalServices.find(
-        (item) => item.Slug === slug && item.Status === BaseStatus.Active,
+        (item) => item.slug === slug && item.status === BaseStatus.Active,
       );
 
       if (!service) {
-        return [404, { Data: null, Message: "Không tìm thấy dịch vụ y tế." }];
+        return [404, { data: null, message: "Không tìm thấy dịch vụ y tế." }];
       }
 
       const hospitalUuids = new Set(
         mockHospitals
           .filter(
             (hospital) =>
-              hospital.Status === BaseStatus.Active &&
-              getHospitalAssignments(hospital.Uuid).MedicalServiceUuids.includes(
-                service.Uuid,
+              hospital.status === BaseStatus.Active &&
+              getHospitalAssignments(hospital.uuid).medicalServiceUuids.includes(
+                service.uuid,
               ),
           )
-          .map((hospital) => hospital.Uuid),
+          .map((hospital) => hospital.uuid),
       );
 
       return [
         200,
         {
-          Data: {
-            MedicalService: service,
-            Hospitals: mockHospitals.filter(
+          data: {
+            medicalService: service,
+            hospitals: mockHospitals.filter(
               (item) =>
-                item.Status === BaseStatus.Active && hospitalUuids.has(item.Uuid),
+                item.status === BaseStatus.Active && hospitalUuids.has(item.uuid),
             ),
-            Reviews: mockReviewMedicalServices
+            reviews: mockReviewMedicalServices
               .filter(
                 (review) =>
-                  review.MedicalServiceUuid === service.Uuid &&
-                  review.Status === BaseStatus.Active,
+                  review.medicalServiceUuid === service.uuid &&
+                  review.status === BaseStatus.Active,
               )
-              .sort((a, b) => b.CreatedAt.getTime() - a.CreatedAt.getTime()),
+              .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
           },
-          Message: "Lấy chi tiết dịch vụ y tế thành công.",
+          message: "Lấy chi tiết dịch vụ y tế thành công.",
         },
       ];
     });
