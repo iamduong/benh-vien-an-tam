@@ -1,18 +1,18 @@
 import type { PatientProfile } from "@/types/models";
 
 export type PatientProfileView = {
-  Profile: PatientProfile;
-  Phone: string;
+  profile: PatientProfile;
+  phone: string;
 };
 
 export type UpdatePatientProfileRequest = Pick<
   PatientProfile,
-  "Avatar" | "Name" | "Gender" | "Birthdate" | "Email"
+  "avatar" | "name" | "gender" | "birthdate" | "email"
 >;
 
 export type PatientProfileField = keyof UpdatePatientProfileRequest;
 
 export type PatientProfileErrorResponse = {
-  Message?: string;
-  Errors?: Partial<Record<PatientProfileField, string>>;
+  message?: string;
+  errors?: Partial<Record<PatientProfileField, string>>;
 };

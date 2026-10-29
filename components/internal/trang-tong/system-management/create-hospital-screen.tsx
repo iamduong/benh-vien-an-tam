@@ -51,7 +51,7 @@ export function HospitalFormScreen({ hospitalUuid }: { hospitalUuid?: string }) 
     const controller = new AbortController();
     adminHospitalService.getById(hospitalUuid, controller.signal)
       .then((response) => {
-        const hospital = response.data ?? response.Data;
+        const hospital = response.data ?? response.data;
         if (!hospital) throw new Error("API không trả về dữ liệu cơ sở y tế");
 
         setForm({
@@ -109,7 +109,7 @@ export function HospitalFormScreen({ hospitalUuid }: { hospitalUuid?: string }) 
       if (imageFile) {
         setSubmitStatus("Đang tải hình ảnh lên...");
         const uploadResponse = await uploadService.uploadImage(imageFile);
-        const uploadResult = uploadResponse.data ?? uploadResponse.Data;
+        const uploadResult = uploadResponse.data ?? uploadResponse.data;
         imageUri = uploadResult?.secureUri
           ?? uploadResult?.secureUrl
           ?? uploadResult?.uri
@@ -202,7 +202,7 @@ export function HospitalFormScreen({ hospitalUuid }: { hospitalUuid?: string }) 
             <FormField label="Tên cơ sở y tế">
               <Input required minLength={2} maxLength={200} value={form.name} onChange={(event) => update("name", event.target.value)} />
             </FormField>
-            <FormField label="Slug">
+            <FormField label="slug">
               <Input required minLength={2} maxLength={200} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Chỉ dùng chữ thường, số và dấu gạch ngang" value={form.slug} onChange={(event) => update("slug", event.target.value)} />
             </FormField>
             <FormField label="Địa chỉ" wide>

@@ -41,7 +41,7 @@ export function registerPrescriptionRoutes(mock: AxiosMockAdapter) {
       (to && !isValidDateString(to)) ||
       (from && to && from > to)
     ) {
-      return [422, { Message: "Bộ lọc đơn thuốc không hợp lệ." }];
+      return [422, { message: "Bộ lọc đơn thuốc không hợp lệ." }];
     }
 
     const page = parsePositiveInteger(config.params?.page, 1);
@@ -49,15 +49,15 @@ export function registerPrescriptionRoutes(mock: AxiosMockAdapter) {
     const items = mockPrescriptions
       .filter(
         (item) =>
-          item.PatientProfileUuid === patient.profileUuid &&
-          item.DeletedAt.getTime() === 0,
+          item.patientProfileUuid === patient.profileUuid &&
+          item.deletedAt.getTime() === 0,
       )
-      .filter((item) => !status || item.Status === status)
+      .filter((item) => !status || item.status === status)
       .filter((item) => {
-        const date = getVietnamDateTimeParts(item.CreatedAt).Date;
+        const date = getVietnamDateTimeParts(item.createdAt).date;
         return (!from || date >= from) && (!to || date <= to);
       })
-      .sort((left, right) => right.CreatedAt.getTime() - left.CreatedAt.getTime())
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
       .map(buildSummary)
       .filter((item): item is PrescriptionSummary => Boolean(item));
     const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
@@ -67,14 +67,14 @@ export function registerPrescriptionRoutes(mock: AxiosMockAdapter) {
     return [
       200,
       {
-        Data: {
+        data: {
           Items: items.slice(start, start + pageSize),
           Page: safePage,
           PageSize: pageSize,
           TotalItems: items.length,
           TotalPages: totalPages,
         },
-        Message: "Lấy danh sách đơn thuốc thành công.",
+        message: "Lấy danh sách đơn thuốc thành công.",
       },
     ];
   });
@@ -85,42 +85,42 @@ export function registerPrescriptionRoutes(mock: AxiosMockAdapter) {
     const uuid = decodeURIComponent(config.url?.split("/").pop() ?? "");
     const prescription = mockPrescriptions.find(
       (item) =>
-        item.Uuid === uuid &&
-        item.PatientProfileUuid === patient.profileUuid &&
-        item.DeletedAt.getTime() === 0,
+        item.uuid === uuid &&
+        item.patientProfileUuid === patient.profileUuid &&
+        item.deletedAt.getTime() === 0,
     );
     if (!prescription) return notFoundResponse();
     const view = buildView(prescription);
     return view
-      ? [200, { Data: view, Message: "Lấy chi tiết đơn thuốc thành công." }]
+      ? [200, { data: view, message: "Lấy chi tiết đơn thuốc thành công." }]
       : notFoundResponse();
   });
 }
 
 function buildSummary(prescription: Prescription): PrescriptionSummary | null {
   const hospital = mockHospitals.find(
-    (item) => item.Uuid === prescription.HospitalUuid,
+    (item) => item.uuid === prescription.hospitalUuid,
   );
   const doctor = mockDoctors.find(
-    (item) => item.Uuid === prescription.DoctorProfileUuid,
+    (item) => item.uuid === prescription.doctorProfileUuid,
   );
   if (!hospital || !doctor) return null;
   const details = mockPrescriptionDetails.filter(
-    (item) => item.PrescriptionUuid === prescription.Uuid,
+    (item) => item.prescriptionUuid === prescription.uuid,
   );
   return {
-    Prescription: prescription,
-    Hospital: {
-      Uuid: hospital.Uuid,
-      Name: hospital.Name,
-      Slug: hospital.Slug,
+    prescription: prescription,
+    hospital: {
+      uuid: hospital.uuid,
+      name: hospital.name,
+      slug: hospital.slug,
     },
-    Doctor: { Uuid: doctor.Uuid, Name: doctor.Name, Slug: doctor.Slug },
-    Appointment: getLinkedAppointment(prescription),
-    TotalAmount: details.length
-      ? details.reduce((total, item) => total + item.Quantity * item.Price, 0)
+    doctor: { uuid: doctor.uuid, name: doctor.name, slug: doctor.slug },
+    appointment: getLinkedAppointment(prescription),
+    totalAmount: details.length
+      ? details.reduce((total, item) => total + item.quantity * item.price, 0)
       : null,
-    NumberOfItems: details.length,
+    numberOfItems: details.length,
   };
 }
 
@@ -129,53 +129,53 @@ function buildView(prescription: Prescription): PrescriptionView | null {
   if (!summary) return null;
   return {
     ...summary,
-    Details: mockPrescriptionDetails
-      .filter((item) => item.PrescriptionUuid === prescription.Uuid)
+    details: mockPrescriptionDetails
+      .filter((item) => item.prescriptionUuid === prescription.uuid)
       .map((detail) => {
         const medicine = mockMedicines.find(
-          (item) => item.Uuid === detail.MedicineUuid,
+          (item) => item.uuid === detail.medicineUuid,
         );
-        return medicine ? { Detail: detail, Medicine: medicine } : null;
+        return medicine ? { detail: detail, medicine: medicine } : null;
       })
-      .filter((item): item is PrescriptionView["Details"][number] => Boolean(item)),
+      .filter((item): item is PrescriptionView["details"][number] => Boolean(item)),
   };
 }
 
 function getLinkedAppointment(
   prescription: Prescription,
 ): LinkedPrescriptionAppointment | null {
-  if (!prescription.AppointmentUuid) return null;
+  if (!prescription.appointmentUuid) return null;
   const appointment = mockAppointments.find(
     (item) =>
-      item.Uuid === prescription.AppointmentUuid &&
-      item.PatientUuid === prescription.PatientProfileUuid &&
-      item.HospitalUuid === prescription.HospitalUuid &&
-      (item.Type !== AppointmentType.Doctor ||
-        item.DoctorUuid === prescription.DoctorProfileUuid) &&
-      item.DeletedAt.getTime() === 0,
+      item.uuid === prescription.appointmentUuid &&
+      item.patientUuid === prescription.patientProfileUuid &&
+      item.hospitalUuid === prescription.hospitalUuid &&
+      (item.type !== AppointmentType.Doctor ||
+        item.doctorUuid === prescription.doctorProfileUuid) &&
+      item.deletedAt.getTime() === 0,
   );
   if (!appointment) return null;
   const type =
-    appointment.Type === AppointmentType.Doctor
+    appointment.type === AppointmentType.Doctor
       ? "doctor"
-      : appointment.Type === AppointmentType.Service
+      : appointment.type === AppointmentType.Service
         ? "medical-service"
         : "hospital";
-  return { Uuid: appointment.Uuid, Type: type };
+  return { uuid: appointment.uuid, type: type };
 }
 
 function getCurrentPatient(headers: unknown) {
   const accountUuid = getHeader(headers, "X-Mock-Account-Uuid");
   const account = mockAccounts.find(
     (item) =>
-      item.Uuid === accountUuid &&
-      item.RoleUuid === ROLE_UUIDS.PATIENT &&
-      item.Status === BaseStatus.Active,
+      item.uuid === accountUuid &&
+      item.roleUuid === ROLE_UUIDS.PATIENT &&
+      item.status === BaseStatus.Active,
   );
   const profile = mockPatientProfiles.find(
-    (item) => item.AccountUuid === account?.Uuid,
+    (item) => item.accountUuid === account?.uuid,
   );
-  return account && profile ? { profileUuid: profile.Uuid } : null;
+  return account && profile ? { profileUuid: profile.uuid } : null;
 }
 
 function getHeader(headers: unknown, name: string) {
@@ -194,9 +194,9 @@ function parsePositiveInteger(value: unknown, fallback: number) {
 }
 
 function unauthorizedResponse(): [number, unknown] {
-  return [403, { Message: "Phiên đăng nhập không hợp lệ." }];
+  return [403, { message: "Phiên đăng nhập không hợp lệ." }];
 }
 
 function notFoundResponse(): [number, unknown] {
-  return [404, { Message: "Không tìm thấy đơn thuốc." }];
+  return [404, { message: "Không tìm thấy đơn thuốc." }];
 }

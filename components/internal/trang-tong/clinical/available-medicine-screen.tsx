@@ -48,8 +48,8 @@ export function AvailableMedicineScreen() {
             .then((res) => {
                 if (Array.isArray(res)) {
                     setDbUnits(res);
-                } else if (res && Array.isArray((res as any).Data)) {
-                    setDbUnits((res as any).Data);
+                } else if (res && Array.isArray((res as any).data)) {
+                    setDbUnits((res as any).data);
                 } else {
                     setDbUnits([]);
                 }

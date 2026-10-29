@@ -34,6 +34,8 @@ const statusLabels: Record<ClinicalAppointmentStatus, string> = {
   CheckedIn: "Đã check-in",
   Done: "Hoàn thành",
   Pending: "Chưa đến",
+  Cancelled: "Đã hủy",
+  Unconfirmed: "Chưa xác nhận",
 };
 
 export function DoctorScheduleScreen() {
@@ -64,22 +66,22 @@ export function DoctorScheduleScreen() {
     const keyword = search.trim().toLocaleLowerCase("vi-VN");
     return state.items.filter(
       (item) =>
-        (!status || item.Status === status) &&
+        (!status || item.status === status) &&
         (!keyword ||
-          item.PatientName.toLocaleLowerCase("vi-VN").includes(keyword) ||
-          item.MedicalCode.toLocaleLowerCase("vi-VN").includes(keyword)),
+          item.patientName.toLocaleLowerCase("vi-VN").includes(keyword) ||
+          item.medicalCode.toLocaleLowerCase("vi-VN").includes(keyword)),
     );
   }, [search, state, status]);
 
   const rows = filteredItems.map((item) => [
-    formatTime(item.AppointmentAt),
-    `${item.PatientName} · ${item.MedicalCode}`,
-    item.TypeLabel,
-    item.RoomName,
-    <AppointmentStatus key={`status-${item.Uuid}`} status={item.Status} />,
+    formatTime(item.appointmentAt),
+    `${item.patientName} · ${item.medicalCode}`,
+    item.typeLabel,
+    item.roomName,
+    <AppointmentStatus key={`status-${item.uuid}`} status={item.status} />,
     <Link
-      key={`action-${item.Uuid}`}
-      href={`/noi-bo/trang-tong/ca-kham/${item.Uuid}`}
+      key={`action-${item.uuid}`}
+      href={`/noi-bo/trang-tong/ca-kham/${item.uuid}`}
       className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
     >
       <Stethoscope aria-hidden="true" />
@@ -172,12 +174,14 @@ function AppointmentStatus({ status }: { status: ClinicalAppointmentStatus }) {
     CheckedIn: "blue",
     Done: "green",
     Pending: "amber",
+    Cancelled: "amber",
+    Unconfirmed: "amber",
   };
   return <StatusPill tone={tones[status]}>{statusLabels[status]}</StatusPill>;
 }
 
 function formatTime(value: Date) {
-  return getVietnamDateTimeParts(value).Time;
+  return getVietnamDateTimeParts(value).time;
 }
 
 function formatSelectedDate(date: string) {

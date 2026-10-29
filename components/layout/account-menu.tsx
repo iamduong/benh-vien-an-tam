@@ -40,25 +40,25 @@ export function AccountMenu({
             type="button"
             variant="outline"
             className="h-10 max-w-52 gap-2 rounded-md border-primary/20 bg-secondary/60 py-1 pr-2 pl-1"
-            aria-label={`Mở menu tài khoản của ${profile.Name}`}
+            aria-label={`Mở menu tài khoản của ${profile.name}`}
           />
         }
       >
         <AccountAvatar
-          key={profile.Avatar}
-          avatar={profile.Avatar}
-          name={profile.Name}
+          key={profile.avatar}
+          avatar={profile.avatar}
+          name={profile.name}
         />
-        <span className="max-w-28 truncate font-semibold">{profile.Name}</span>
+        <span className="max-w-28 truncate font-semibold">{profile.name}</span>
         <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent>
         <DropdownMenuLabel>
           <span className="block truncate font-semibold text-foreground">
-            {profile.Name}
+            {profile.name}
           </span>
-          <span className="mt-0.5 block font-normal">{profile.MedicalCode}</span>
+          <span className="mt-0.5 block font-normal">{profile.medicalCode}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuLinkItem render={<Link href="/tai-khoan" />}>

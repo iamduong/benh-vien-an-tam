@@ -14,6 +14,7 @@ import {
   getStringParam,
   matchesKeyword,
   paginate,
+  paginatePublic,
 } from "@/lib/mocks/query-utils";
 import {
   BaseStatus,
@@ -28,10 +29,37 @@ export function registerHospitalRoutes(mock: AxiosMockAdapter) {
     return [
       200,
       {
-        Data: featuredHospitals.map(withSavedBranchProfile),
-        Message: "Lấy danh sách cơ sở nổi bật thành công.",
+        data: featuredHospitals.map(withSavedBranchProfile),
+        message: "Lấy danh sách cơ sở nổi bật thành công.",
       },
     ];
+  });
+
+  mock.onGet("/public/hospitals").reply(200, {
+    data: mockHospitals
+      .filter((hospital) => hospital.status === BaseStatus.Active)
+      .map(withSavedBranchProfile),
+    message: "Lấy danh sách cơ sở nổi bật thành công.",
+  });
+
+  mock.onGet("/public/hospitals/search").reply((config) => {
+    const keyword = getStringParam(config.params, "q");
+    const department = getStringParam(config.params, "department");
+    const items = mockHospitals.map(withSavedBranchProfile).filter(
+      (hospital) =>
+        hospital.status === BaseStatus.Active &&
+        matchesKeyword(keyword, hospital.name, hospital.address) &&
+        (!department ||
+          getHospitalAssignments(hospital.uuid).departmentUuids.includes(department)),
+    );
+    return [200, {
+      data: paginatePublic(
+        items,
+        getPositiveIntegerParam(config.params, "page", 1),
+        getPositiveIntegerParam(config.params, "pageSize", 8),
+      ),
+      message: "Lấy danh sách cơ sở y tế thành công.",
+    }];
   });
 
   mock.onGet("/hospitals").reply((config) => {
@@ -42,11 +70,11 @@ export function registerHospitalRoutes(mock: AxiosMockAdapter) {
     const pageSize = getPositiveIntegerParam(config.params, "pageSize", 6);
     const items = mockHospitals.map(withSavedBranchProfile).filter(
       (hospital) =>
-        hospital.Status === BaseStatus.Active &&
-        matchesKeyword(name, hospital.Name) &&
-        matchesKeyword(q, hospital.Name, hospital.Address) &&
+        hospital.status === BaseStatus.Active &&
+        matchesKeyword(name, hospital.name) &&
+        matchesKeyword(q, hospital.name, hospital.address) &&
         (!department ||
-          getHospitalAssignments(hospital.Uuid).DepartmentUuids.includes(
+          getHospitalAssignments(hospital.uuid).departmentUuids.includes(
             department,
           )),
     );
@@ -54,29 +82,29 @@ export function registerHospitalRoutes(mock: AxiosMockAdapter) {
     return [
       200,
       {
-        Data: paginate(items, page, pageSize),
-        Message: "Lấy danh sách cơ sở y tế thành công.",
+        data: paginate(items, page, pageSize),
+        message: "Lấy danh sách cơ sở y tế thành công.",
       },
     ];
   });
 
   mock.onGet("/hospitals/options").reply(200, {
-    Data: mockHospitals
-      .filter((hospital) => hospital.Status === BaseStatus.Active)
+    data: mockHospitals
+      .filter((hospital) => hospital.status === BaseStatus.Active)
       .map(withSavedBranchProfile),
-    Message: "Lấy lựa chọn cơ sở y tế thành công.",
+    message: "Lấy lựa chọn cơ sở y tế thành công.",
   });
 
   mock.onGet("/hospitals/branch-profile").reply(() => {
     const hospital = mockHospitals.find(
       (item) =>
-        item.Status === BaseStatus.Active && item.DeletedAt.getTime() === 0,
+        item.status === BaseStatus.Active && item.deletedAt.getTime() === 0,
     );
 
     if (!hospital) {
       return [
         404,
-        { Data: null, Message: "Không tìm thấy hồ sơ chi nhánh mock." },
+        { data: null, message: "Không tìm thấy hồ sơ chi nhánh mock." },
       ];
     }
 
@@ -85,8 +113,8 @@ export function registerHospitalRoutes(mock: AxiosMockAdapter) {
     return [
       200,
       {
-        Data: profile,
-        Message: "Lấy hồ sơ chi nhánh thành công.",
+        data: profile,
+        message: "Lấy hồ sơ chi nhánh thành công.",
       },
     ];
   });
@@ -96,29 +124,29 @@ export function registerHospitalRoutes(mock: AxiosMockAdapter) {
     .reply((config) => {
       const uuid = getHospitalUuid(config.url);
       const hospital = mockHospitals.find(
-        (item) => item.Uuid === uuid && item.DeletedAt.getTime() === 0,
+        (item) => item.uuid === uuid && item.deletedAt.getTime() === 0,
       );
 
       if (!hospital) {
-        return [404, { Data: null, Message: "Không tìm thấy chi nhánh mock." }];
+        return [404, { data: null, message: "Không tìm thấy chi nhánh mock." }];
       }
 
-      const { DepartmentUuids } = getHospitalAssignments(uuid);
+      const { departmentUuids } = getHospitalAssignments(uuid);
       const departments = mockDepartments.filter(
         (item) =>
-          DepartmentUuids.includes(item.Uuid) &&
-          item.Status === BaseStatus.Active,
+          departmentUuids.includes(item.uuid) &&
+          item.status === BaseStatus.Active,
       );
 
       return [
         200,
         {
-          Data: paginate(
+          data: paginate(
             departments,
             getPositiveIntegerParam(config.params, "page", 1),
             getPositiveIntegerParam(config.params, "pageSize", 20),
           ),
-          Message: "Lấy chuyên khoa của chi nhánh thành công.",
+          message: "Lấy chuyên khoa của chi nhánh thành công.",
         },
       ];
     });
@@ -128,29 +156,29 @@ export function registerHospitalRoutes(mock: AxiosMockAdapter) {
     .reply((config) => {
       const uuid = getHospitalUuid(config.url);
       const hospital = mockHospitals.find(
-        (item) => item.Uuid === uuid && item.DeletedAt.getTime() === 0,
+        (item) => item.uuid === uuid && item.deletedAt.getTime() === 0,
       );
 
       if (!hospital) {
-        return [404, { Data: null, Message: "Không tìm thấy chi nhánh mock." }];
+        return [404, { data: null, message: "Không tìm thấy chi nhánh mock." }];
       }
 
-      const { MedicalServiceUuids } = getHospitalAssignments(uuid);
+      const { medicalServiceUuids } = getHospitalAssignments(uuid);
       const services = mockMedicalServices.filter(
         (item) =>
-          MedicalServiceUuids.includes(item.Uuid) &&
-          item.Status === BaseStatus.Active,
+          medicalServiceUuids.includes(item.uuid) &&
+          item.status === BaseStatus.Active,
       );
 
       return [
         200,
         {
-          Data: paginate(
+          data: paginate(
             services,
             getPositiveIntegerParam(config.params, "page", 1),
             getPositiveIntegerParam(config.params, "pageSize", 20),
           ),
-          Message: "Lấy dịch vụ của chi nhánh thành công.",
+          message: "Lấy dịch vụ của chi nhánh thành công.",
         },
       ];
     });
@@ -158,30 +186,30 @@ export function registerHospitalRoutes(mock: AxiosMockAdapter) {
   mock.onPut(/^\/hospitals\/[^/]+$/).reply((config) => {
     const uuid = decodeURIComponent(config.url?.split("/").pop() ?? "");
     const hospital = mockHospitals.find(
-      (item) => item.Uuid === uuid && item.DeletedAt.getTime() === 0,
+      (item) => item.uuid === uuid && item.deletedAt.getTime() === 0,
     );
 
     if (!hospital) {
-      return [404, { Data: null, Message: "Không tìm thấy chi nhánh mock." }];
+      return [404, { data: null, message: "Không tìm thấy chi nhánh mock." }];
     }
 
     const request = parseHospitalUpdateRequest(config.data);
     if (!isValidHospitalUpdateRequest(request)) {
       return [
         400,
-        { Data: null, Message: "Thông tin chi nhánh không hợp lệ." },
+        { data: null, message: "Thông tin chi nhánh không hợp lệ." },
       ];
     }
 
     const updatedAt = new Date();
     saveBranchProfile(request, updatedAt);
-    Object.assign(hospital, request, { UpdatedAt: updatedAt });
+    Object.assign(hospital, request, { updatedAt: updatedAt });
 
     return [
       200,
       {
-        Data: { ...hospital },
-        Message: "Cập nhật thông tin chi nhánh thành công.",
+        data: { ...hospital },
+        message: "Cập nhật thông tin chi nhánh thành công.",
       },
     ];
   });
@@ -189,83 +217,83 @@ export function registerHospitalRoutes(mock: AxiosMockAdapter) {
   mock.onPut(/^\/hospitals\/[^/]+\/assignments$/).reply((config) => {
     const uuid = getHospitalUuid(config.url);
     const hospital = mockHospitals.find(
-      (item) => item.Uuid === uuid && item.DeletedAt.getTime() === 0,
+      (item) => item.uuid === uuid && item.deletedAt.getTime() === 0,
     );
 
     if (!hospital) {
-      return [404, { Data: null, Message: "Không tìm thấy chi nhánh mock." }];
+      return [404, { data: null, message: "Không tìm thấy chi nhánh mock." }];
     }
 
     const selection = parseHospitalAssignments(config.data);
     if (
       !isValidHospitalAssignments(selection) ||
-      !selection.DepartmentUuids.every((id) =>
+      !selection.departmentUuids.every((id) =>
         mockDepartments.some(
-          (item) => item.Uuid === id && item.Status === BaseStatus.Active,
+          (item) => item.uuid === id && item.status === BaseStatus.Active,
         ),
       ) ||
-      !selection.MedicalServiceUuids.every((id) =>
+      !selection.medicalServiceUuids.every((id) =>
         mockMedicalServices.some(
-          (item) => item.Uuid === id && item.Status === BaseStatus.Active,
+          (item) => item.uuid === id && item.status === BaseStatus.Active,
         ),
       )
     ) {
-      return [400, { Data: null, Message: "Phân bổ danh mục không hợp lệ." }];
+      return [400, { data: null, message: "Phân bổ danh mục không hợp lệ." }];
     }
 
     const normalizedSelection = {
-      DepartmentUuids: [...new Set(selection.DepartmentUuids)],
-      MedicalServiceUuids: [...new Set(selection.MedicalServiceUuids)],
+      departmentUuids: [...new Set(selection.departmentUuids)],
+      medicalServiceUuids: [...new Set(selection.medicalServiceUuids)],
     };
     saveHospitalAssignments(uuid, normalizedSelection);
 
     return [
       200,
       {
-        Data: normalizedSelection,
-        Message: "Đã lưu phân bổ chuyên khoa và dịch vụ.",
+        data: normalizedSelection,
+        message: "Đã lưu phân bổ chuyên khoa và dịch vụ.",
       },
     ];
   });
 
   mock
-    .onGet(/^\/hospitals\/(?!featured$|options$|branch-profile$)[^/]+$/)
+    .onGet(/^\/(?:public\/)?hospitals\/(?!featured$|options$|branch-profile$)[^/]+$/)
     .reply((config) => {
       const slug = decodeURIComponent(config.url?.split("/").pop() ?? "");
       const hospital = mockHospitals.map(withSavedBranchProfile).find(
-        (item) => item.Slug === slug && item.Status === BaseStatus.Active,
+        (item) => item.slug === slug && item.status === BaseStatus.Active,
       );
 
       if (!hospital) {
-        return [404, { Data: null, Message: "Không tìm thấy cơ sở y tế." }];
+        return [404, { data: null, message: "Không tìm thấy cơ sở y tế." }];
       }
 
-      const assignments = getHospitalAssignments(hospital.Uuid);
-      const departmentUuids = new Set(assignments.DepartmentUuids);
-      const serviceUuids = new Set(assignments.MedicalServiceUuids);
+      const assignments = getHospitalAssignments(hospital.uuid);
+      const departmentUuids = new Set(assignments.departmentUuids);
+      const serviceUuids = new Set(assignments.medicalServiceUuids);
 
       return [
         200,
         {
-          Data: {
-            Hospital: hospital,
-            Departments: mockDepartments.filter(
+          data: {
+            hospital: hospital,
+            departments: mockDepartments.filter(
               (item) =>
-                item.Status === BaseStatus.Active && departmentUuids.has(item.Uuid),
+                item.status === BaseStatus.Active && departmentUuids.has(item.uuid),
             ),
-            MedicalServices: mockMedicalServices.filter(
+            medicalServices: mockMedicalServices.filter(
               (item) =>
-                item.Status === BaseStatus.Active && serviceUuids.has(item.Uuid),
+                item.status === BaseStatus.Active && serviceUuids.has(item.uuid),
             ),
-            Reviews: mockReviewHospitals
+            reviews: mockReviewHospitals
               .filter(
                 (review) =>
-                  review.HospitalUuid === hospital.Uuid &&
-                  review.Status === BaseStatus.Active,
+                  review.hospitalUuid === hospital.uuid &&
+                  review.status === BaseStatus.Active,
               )
-              .sort((a, b) => b.CreatedAt.getTime() - a.CreatedAt.getTime()),
+              .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
           },
-          Message: "Lấy chi tiết cơ sở y tế thành công.",
+          message: "Lấy chi tiết cơ sở y tế thành công.",
         },
       ];
     });
@@ -278,18 +306,18 @@ function getHospitalUuid(url?: string) {
 function withSavedBranchProfile(hospital: Hospital): Hospital {
   const branchHospital = mockHospitals.find(
     (item) =>
-      item.Status === BaseStatus.Active && item.DeletedAt.getTime() === 0,
+      item.status === BaseStatus.Active && item.deletedAt.getTime() === 0,
   );
   const savedProfile = readSavedBranchProfile();
 
-  if (!savedProfile || hospital.Uuid !== branchHospital?.Uuid) {
+  if (!savedProfile || hospital.uuid !== branchHospital?.uuid) {
     return hospital;
   }
 
   return {
     ...hospital,
     ...savedProfile.profile,
-    UpdatedAt: new Date(savedProfile.updatedAt),
+    updatedAt: new Date(savedProfile.updatedAt),
   };
 }
 
@@ -308,10 +336,10 @@ function isValidHospitalAssignments(
   const selection = value as Partial<HospitalAssignmentSelection>;
 
   return (
-    Array.isArray(selection.DepartmentUuids) &&
-    selection.DepartmentUuids.every((uuid) => typeof uuid === "string") &&
-    Array.isArray(selection.MedicalServiceUuids) &&
-    selection.MedicalServiceUuids.every((uuid) => typeof uuid === "string")
+    Array.isArray(selection.departmentUuids) &&
+    selection.departmentUuids.every((uuid) => typeof uuid === "string") &&
+    Array.isArray(selection.medicalServiceUuids) &&
+    selection.medicalServiceUuids.every((uuid) => typeof uuid === "string")
   );
 }
 
@@ -322,21 +350,21 @@ function isValidHospitalUpdateRequest(
   const request = value as Partial<HospitalUpdateRequest>;
 
   return (
-    typeof request.Name === "string" &&
-    request.Name.trim().length > 0 &&
-    typeof request.Slug === "string" &&
-    request.Slug.trim().length > 0 &&
-    typeof request.Address === "string" &&
-    request.Address.trim().length > 0 &&
-    typeof request.WorkingHour === "string" &&
-    request.WorkingHour.trim().length > 0 &&
-    typeof request.NumberOfRoom === "number" &&
-    Number.isInteger(request.NumberOfRoom) &&
-    request.NumberOfRoom > 0 &&
-    typeof request.Description === "string" &&
-    typeof request.Image === "string" &&
-    typeof request.MapUrl === "string" &&
-    typeof request.DetailService === "string"
+    typeof request.name === "string" &&
+    request.name.trim().length > 0 &&
+    typeof request.slug === "string" &&
+    request.slug.trim().length > 0 &&
+    typeof request.address === "string" &&
+    request.address.trim().length > 0 &&
+    typeof request.workingHour === "string" &&
+    request.workingHour.trim().length > 0 &&
+    typeof request.numberOfRoom === "number" &&
+    Number.isInteger(request.numberOfRoom) &&
+    request.numberOfRoom > 0 &&
+    typeof request.description === "string" &&
+    typeof request.image === "string" &&
+    typeof request.mapUrl === "string" &&
+    typeof request.detailService === "string"
   );
 }
 

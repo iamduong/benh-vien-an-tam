@@ -79,11 +79,11 @@ const unitLabels: Record<MedicineUnit, string> = {
   [MedicineUnit.Sachet]: "Gói",
 };
 
-function isDeleted(item: { DeletedAt: Date }) {
-  return item.DeletedAt.getTime() > 0;
+function isDeleted(item: { deletedAt: Date }) {
+  return item.deletedAt.getTime() > 0;
 }
 
-function matchesVisibility(item: { DeletedAt: Date }, visibility: Visibility) {
+function matchesVisibility(item: { deletedAt: Date }, visibility: Visibility) {
   return visibility === "all" || (visibility === "deleted" ? isDeleted(item) : !isDeleted(item));
 }
 
@@ -100,11 +100,11 @@ function VisibilityFilter({ value, onChange }: { value: Visibility; onChange: (v
   );
 }
 
-function RecordState({ item }: { item: { DeletedAt: Date } }) {
+function RecordState({ item }: { item: { deletedAt: Date } }) {
   return isDeleted(item) ? <StatusPill tone="red">Đã xóa</StatusPill> : <StatusPill tone="green">Hiện hành</StatusPill>;
 }
 
-function DeleteAction({ item, label, onToggle }: { item: { DeletedAt: Date }; label: string; onToggle: () => void }) {
+function DeleteAction({ item, label, onToggle }: { item: { deletedAt: Date }; label: string; onToggle: () => void }) {
   const deleted = isDeleted(item);
   return (
     <Button type="button" size="icon-sm" variant={deleted ? "outline" : "destructive"} title={deleted ? "Khôi phục" : "Xóa"} aria-label={`${deleted ? "Khôi phục" : "Xóa"} ${label}`} onClick={onToggle}>
@@ -158,30 +158,30 @@ function InventoryScreen() {
   const [visibility, setVisibility] = useState<Visibility>("current");
   const visibleInventories = inventories.filter((item) => matchesVisibility(item, visibility));
   const activeInventories = inventories.filter((item) => !isDeleted(item));
-  const belowMinimum = activeInventories.filter((item) => item.Quantity < item.MinimumQuantity).length;
+  const belowMinimum = activeInventories.filter((item) => item.quantity < item.minimumQuantity).length;
   const deletedCount = inventories.length - activeInventories.length;
 
   function toggleDeleted(uuid: string) {
-    setInventories((current) => current.map((item) => item.Uuid === uuid
-      ? { ...item, DeletedAt: isDeleted(item) ? new Date(0) : new Date(), UpdatedAt: new Date() }
+    setInventories((current) => current.map((item) => item.uuid === uuid
+      ? { ...item, deletedAt: isDeleted(item) ? new Date(0) : new Date(), updatedAt: new Date() }
       : item));
   }
 
   const rows = visibleInventories.map((inventory) => {
-    const medicine = mockMedicines.find((item) => item.Uuid === inventory.MedicineUuid);
-    const stockTone = inventory.Quantity === 0 ? "red" : inventory.Quantity < inventory.MinimumQuantity ? "amber" : "green";
-    const stockLabel = inventory.Quantity === 0 ? "Hết hàng" : inventory.Quantity < inventory.MinimumQuantity ? "Dưới ngưỡng" : "Ổn định";
+    const medicine = mockMedicines.find((item) => item.uuid === inventory.medicineUuid);
+    const stockTone = inventory.quantity === 0 ? "red" : inventory.quantity < inventory.minimumQuantity ? "amber" : "green";
+    const stockLabel = inventory.quantity === 0 ? "Hết hàng" : inventory.quantity < inventory.minimumQuantity ? "Dưới ngưỡng" : "Ổn định";
     return [
-      <div key={`${inventory.Uuid}-medicine`}><p className="font-medium">{medicine?.Name ?? "Thuốc không xác định"}</p><p className="mt-1 text-xs text-muted-foreground">{medicine?.Description ?? inventory.MedicineUuid}</p></div>,
-      medicine ? unitLabels[medicine.Unit] : "-",
-      numberFormatter.format(inventory.Quantity),
-      numberFormatter.format(inventory.MinimumQuantity),
-      medicine ? moneyFormatter.format(medicine.Price) : "-",
-      medicine ? moneyFormatter.format(inventory.Quantity * medicine.Price) : "-",
-      <StatusPill key={`${inventory.Uuid}-stock`} tone={stockTone}>{stockLabel}</StatusPill>,
-      dateFormatter.format(inventory.UpdatedAt),
-      <RecordState key={`${inventory.Uuid}-record-state`} item={inventory} />,
-      <DeleteAction key={`${inventory.Uuid}-action`} item={inventory} label={medicine?.Name ?? inventory.Uuid} onToggle={() => toggleDeleted(inventory.Uuid)} />,
+      <div key={`${inventory.uuid}-medicine`}><p className="font-medium">{medicine?.name ?? "Thuốc không xác định"}</p><p className="mt-1 text-xs text-muted-foreground">{medicine?.description ?? inventory.medicineUuid}</p></div>,
+      medicine ? unitLabels[medicine.unit] : "-",
+      numberFormatter.format(inventory.quantity),
+      numberFormatter.format(inventory.minimumQuantity),
+      medicine ? moneyFormatter.format(medicine.price) : "-",
+      medicine ? moneyFormatter.format(inventory.quantity * medicine.price) : "-",
+      <StatusPill key={`${inventory.uuid}-stock`} tone={stockTone}>{stockLabel}</StatusPill>,
+      dateFormatter.format(inventory.updatedAt),
+      <RecordState key={`${inventory.uuid}-record-state`} item={inventory} />,
+      <DeleteAction key={`${inventory.uuid}-action`} item={inventory} label={medicine?.name ?? inventory.uuid} onToggle={() => toggleDeleted(inventory.uuid)} />,
     ];
   });
 
@@ -190,7 +190,7 @@ function InventoryScreen() {
       <PortalPageHeader eyebrow="Tồn theo chi nhánh" title="Tồn kho thuốc" description="Theo dõi số lượng thực tế và ngưỡng tối thiểu của từng thuốc trong kho." actions={<PortalAction>Kiểm kê kho</PortalAction>} />
       <MetricGrid>
         <MetricCard label="Tổng mặt hàng" value={String(inventories.length)} detail={`${activeInventories.length} bản ghi hiện hành`} icon={<Archive className="size-5" />} />
-        <MetricCard label="Tổng số lượng" value={numberFormatter.format(activeInventories.reduce((sum, item) => sum + item.Quantity, 0))} detail="Tất cả đơn vị quy đổi" icon={<Boxes className="size-5" />} tone="cyan" />
+        <MetricCard label="Tổng số lượng" value={numberFormatter.format(activeInventories.reduce((sum, item) => sum + item.quantity, 0))} detail="Tất cả đơn vị quy đổi" icon={<Boxes className="size-5" />} tone="cyan" />
         <MetricCard label="Dưới ngưỡng" value={String(belowMinimum)} detail="Trong các bản ghi hiện hành" icon={<AlertTriangle className="size-5" />} tone="amber" />
         <MetricCard label="Đã xóa" value={String(deletedCount)} detail="Có thể khôi phục bất kỳ lúc nào" icon={<Trash2 className="size-5" />} tone="red" />
       </MetricGrid>
@@ -207,27 +207,27 @@ function ProvidersScreen() {
   const [visibility, setVisibility] = useState<Visibility>("current");
   const visibleProviders = providers.filter((item) => matchesVisibility(item, visibility));
   const deletedCount = providers.filter(isDeleted).length;
-  const activeCount = providers.filter((item) => !isDeleted(item) && item.Status === ProviderStatus.Active).length;
+  const activeCount = providers.filter((item) => !isDeleted(item) && item.status === ProviderStatus.Active).length;
 
   function toggleDeleted(uuid: string) {
-    setProviders((current) => current.map((item) => item.Uuid === uuid
-      ? { ...item, DeletedAt: isDeleted(item) ? new Date(0) : new Date(), UpdatedAt: new Date() }
+    setProviders((current) => current.map((item) => item.uuid === uuid
+      ? { ...item, deletedAt: isDeleted(item) ? new Date(0) : new Date(), updatedAt: new Date() }
       : item));
   }
 
   const rows = visibleProviders.map((provider) => {
-    const providerTickets = mockImportTickets.filter((ticket) => ticket.ProviderUuid === provider.Uuid);
-    const confirmedTickets = providerTickets.filter((ticket) => ticket.Status === ImportTicketStatus.Confirmed).length;
+    const providerTickets = mockImportTickets.filter((ticket) => ticket.providerUuid === provider.uuid);
+    const confirmedTickets = providerTickets.filter((ticket) => ticket.status === ImportTicketStatus.Confirmed).length;
     return [
-      <div key={`${provider.Uuid}-name`}><p className="font-medium">{provider.Name}</p><p className="mt-1 text-xs text-muted-foreground">Tạo ngày {dateFormatter.format(provider.CreatedAt)}</p></div>,
-      <span key={`${provider.Uuid}-address`} className="block max-w-72 whitespace-normal leading-5">{provider.Address}</span>,
-      provider.Hotline,
+      <div key={`${provider.uuid}-name`}><p className="font-medium">{provider.name}</p><p className="mt-1 text-xs text-muted-foreground">Tạo ngày {dateFormatter.format(provider.createdAt)}</p></div>,
+      <span key={`${provider.uuid}-address`} className="block max-w-72 whitespace-normal leading-5">{provider.address}</span>,
+      provider.hotline,
       `${providerTickets.length} phiếu`,
       `${confirmedTickets}/${providerTickets.length}`,
-      <StatusPill key={`${provider.Uuid}-status`} tone={provider.Status === ProviderStatus.Active ? "green" : "amber"}>{provider.Status === ProviderStatus.Active ? "Hoạt động" : "Tạm ngưng"}</StatusPill>,
-      dateFormatter.format(provider.UpdatedAt),
-      <RecordState key={`${provider.Uuid}-record-state`} item={provider} />,
-      <DeleteAction key={`${provider.Uuid}-action`} item={provider} label={provider.Name} onToggle={() => toggleDeleted(provider.Uuid)} />,
+      <StatusPill key={`${provider.uuid}-status`} tone={provider.status === ProviderStatus.Active ? "green" : "amber"}>{provider.status === ProviderStatus.Active ? "Hoạt động" : "Tạm ngưng"}</StatusPill>,
+      dateFormatter.format(provider.updatedAt),
+      <RecordState key={`${provider.uuid}-record-state`} item={provider} />,
+      <DeleteAction key={`${provider.uuid}-action`} item={provider} label={provider.name} onToggle={() => toggleDeleted(provider.uuid)} />,
     ];
   });
 
@@ -236,13 +236,13 @@ function ProvidersScreen() {
       <PortalPageHeader eyebrow="Đối tác cung ứng" title="Nhà cung cấp" description="Quản lý thông tin liên hệ và trạng thái nhà cung cấp phục vụ nhập kho." actions={<PortalAction variant="default"><Plus />Thêm nhà cung cấp</PortalAction>} />
       <MetricGrid>
         <MetricCard label="Tổng nhà cung cấp" value={String(providers.length)} detail={`${activeCount} đang hoạt động`} icon={<Truck className="size-5" />} />
-        <MetricCard label="Phiếu nhập" value={String(mockImportTickets.length)} detail={`${mockImportTickets.filter((item) => item.Status === ImportTicketStatus.Confirmed).length} đã xác nhận`} icon={<ArrowDownToLine className="size-5" />} tone="green" />
-        <MetricCard label="Tạm ngưng" value={String(providers.filter((item) => !isDeleted(item) && item.Status === ProviderStatus.InActive).length)} detail="Không thể chọn cho phiếu mới" icon={<AlertTriangle className="size-5" />} tone="amber" />
+        <MetricCard label="Phiếu nhập" value={String(mockImportTickets.length)} detail={`${mockImportTickets.filter((item) => item.status === ImportTicketStatus.Confirmed).length} đã xác nhận`} icon={<ArrowDownToLine className="size-5" />} tone="green" />
+        <MetricCard label="Tạm ngưng" value={String(providers.filter((item) => !isDeleted(item) && item.status === ProviderStatus.InActive).length)} detail="Không thể chọn cho phiếu mới" icon={<AlertTriangle className="size-5" />} tone="amber" />
         <MetricCard label="Đã xóa" value={String(deletedCount)} detail="Có thể khôi phục bất kỳ lúc nào" icon={<Trash2 className="size-5" />} tone="red" />
       </MetricGrid>
       <PortalSection title="Danh sách nhà cung cấp" description={`${visibleProviders.length} kết quả theo trạng thái xóa`}>
         <PortalToolbar placeholder="Tìm tên, địa chỉ hoặc hotline" filters={[{ label: "Tất cả trạng thái", options: ["Hoạt động", "Tạm ngưng"] }]} action={<VisibilityFilter value={visibility} onChange={setVisibility} />} />
-        {rows.length ? <PortalTable caption="Danh sách nhà cung cấp" columns={["Nhà cung cấp", "Địa chỉ", "Hotline", "Phiếu nhập", "Đã xác nhận", "Trạng thái", "Cập nhật", "Bản ghi", "Thao tác"]} rows={rows} /> : <EmptyTable />}
+        {rows.length ? <PortalTable caption="Danh sách nhà cung cấp" columns={["Nhà cung cấp", "Địa chỉ", "hotline", "Phiếu nhập", "Đã xác nhận", "Trạng thái", "Cập nhật", "Bản ghi", "Thao tác"]} rows={rows} /> : <EmptyTable />}
       </PortalSection>
     </div>
   );
@@ -255,14 +255,14 @@ function StockTicketsScreen() {
   const tickets: Ticket[] = [
     ...importTickets.map((item): Ticket => ({ kind: "import", item })),
     ...exportTickets.map((item): Ticket => ({ kind: "export", item })),
-  ].sort((a, b) => b.item.CreatedAt.getTime() - a.item.CreatedAt.getTime());
+  ].sort((a, b) => b.item.createdAt.getTime() - a.item.createdAt.getTime());
   const visibleTickets = tickets.filter(({ item }) => matchesVisibility(item, visibility));
   const currentTickets = tickets.filter(({ item }) => !isDeleted(item));
   const deletedCount = tickets.length - currentTickets.length;
 
   function toggleDeleted(ticket: Ticket) {
-    const update = <T extends ImportTicket | ExportTicket>(items: T[]) => items.map((item) => item.Uuid === ticket.item.Uuid
-      ? { ...item, DeletedAt: isDeleted(item) ? new Date(0) : new Date(), UpdatedAt: new Date() }
+    const update = <T extends ImportTicket | ExportTicket>(items: T[]) => items.map((item) => item.uuid === ticket.item.uuid
+      ? { ...item, deletedAt: isDeleted(item) ? new Date(0) : new Date(), updatedAt: new Date() }
       : item);
     if (ticket.kind === "import") setImportTickets(update);
     else setExportTickets(update);
@@ -270,39 +270,39 @@ function StockTicketsScreen() {
 
   function ticketDetails(ticket: Ticket) {
     return ticket.kind === "import"
-      ? mockImportTicketDetails.filter((detail) => detail.ImportTicketUuid === ticket.item.Uuid)
-      : mockExportTicketDetails.filter((detail) => detail.ExportTicketUuid === ticket.item.Uuid);
+      ? mockImportTicketDetails.filter((detail) => detail.importTicketUuid === ticket.item.uuid)
+      : mockExportTicketDetails.filter((detail) => detail.exportTicketUuid === ticket.item.uuid);
   }
 
   const rows = visibleTickets.map((ticket) => {
     const details = ticketDetails(ticket);
     const prefix = ticket.kind === "import" ? "NK" : "XK";
-    const code = `${prefix}-${ticket.item.CreatedAt.toISOString().slice(2, 10).replaceAll("-", "")}-${ticket.item.Uuid.slice(-4)}`;
-    const provider = ticket.kind === "import" ? mockProviders.find((item) => item.Uuid === ticket.item.ProviderUuid) : null;
-    const totalQuantity = details.reduce((sum, detail) => sum + detail.Quantity, 0);
-    const totalValue = details.reduce((sum, detail) => sum + detail.Quantity * detail.Price, 0);
+    const code = `${prefix}-${ticket.item.createdAt.toISOString().slice(2, 10).replaceAll("-", "")}-${ticket.item.uuid.slice(-4)}`;
+    const provider = ticket.kind === "import" ? mockProviders.find((item) => item.uuid === ticket.item.providerUuid) : null;
+    const totalQuantity = details.reduce((sum, detail) => sum + detail.quantity, 0);
+    const totalValue = details.reduce((sum, detail) => sum + detail.quantity * detail.price, 0);
     return [
-      <div key={`${ticket.item.Uuid}-code`}><p className="font-medium">{code}</p><p className="mt-1 text-xs text-muted-foreground">{dateFormatter.format(ticket.item.CreatedAt)}</p></div>,
-      <StatusPill key={`${ticket.item.Uuid}-type`} tone={ticket.kind === "import" ? "green" : "blue"}>{ticket.kind === "import" ? "Nhập kho" : "Xuất kho"}</StatusPill>,
-      provider?.Name ?? "Kho / bộ phận nội viện",
-      <div key={`${ticket.item.Uuid}-items`}><p>{details.length} mặt hàng · {numberFormatter.format(totalQuantity)} đơn vị</p><p className="mt-1 max-w-72 whitespace-normal text-xs text-muted-foreground">{ticket.item.Note}</p></div>,
+      <div key={`${ticket.item.uuid}-code`}><p className="font-medium">{code}</p><p className="mt-1 text-xs text-muted-foreground">{dateFormatter.format(ticket.item.createdAt)}</p></div>,
+      <StatusPill key={`${ticket.item.uuid}-type`} tone={ticket.kind === "import" ? "green" : "blue"}>{ticket.kind === "import" ? "Nhập kho" : "Xuất kho"}</StatusPill>,
+      provider?.name ?? "Kho / bộ phận nội viện",
+      <div key={`${ticket.item.uuid}-items`}><p>{details.length} mặt hàng · {numberFormatter.format(totalQuantity)} đơn vị</p><p className="mt-1 max-w-72 whitespace-normal text-xs text-muted-foreground">{ticket.item.note}</p></div>,
       moneyFormatter.format(totalValue),
-      <TicketStatus key={`${ticket.item.Uuid}-status`} status={ticket.item.Status} />,
-      dateFormatter.format(ticket.item.UpdatedAt),
-      <RecordState key={`${ticket.item.Uuid}-record-state`} item={ticket.item} />,
-      <DeleteAction key={`${ticket.item.Uuid}-action`} item={ticket.item} label={code} onToggle={() => toggleDeleted(ticket)} />,
+      <TicketStatus key={`${ticket.item.uuid}-status`} status={ticket.item.status} />,
+      dateFormatter.format(ticket.item.updatedAt),
+      <RecordState key={`${ticket.item.uuid}-record-state`} item={ticket.item} />,
+      <DeleteAction key={`${ticket.item.uuid}-action`} item={ticket.item} label={code} onToggle={() => toggleDeleted(ticket)} />,
     ];
   });
 
-  const importValue = mockImportTicketDetails.reduce((sum, detail) => sum + detail.Quantity * detail.Price, 0);
-  const exportValue = mockExportTicketDetails.reduce((sum, detail) => sum + detail.Quantity * detail.Price, 0);
+  const importValue = mockImportTicketDetails.reduce((sum, detail) => sum + detail.quantity * detail.price, 0);
+  const exportValue = mockExportTicketDetails.reduce((sum, detail) => sum + detail.quantity * detail.price, 0);
 
   return (
     <div className="space-y-6">
       <PortalPageHeader eyebrow="Nghiệp vụ kho" title="Phiếu nhập xuất" description="Tạo và chỉnh sửa phiếu Pending. Việc xác nhận do HOSPITAL_ADMIN thực hiện." actions={<><PortalAction><ArrowUpFromLine />Tạo phiếu xuất</PortalAction><PortalAction variant="default"><ArrowDownToLine />Tạo phiếu nhập</PortalAction></>} />
       <MetricGrid>
-        <MetricCard label="Chờ duyệt" value={String(currentTickets.filter(({ item }) => item.Status === ImportTicketStatus.Pending).length)} detail="Phiếu hiện hành cần xác nhận" icon={<ClipboardCheck className="size-5" />} tone="amber" />
-        <MetricCard label="Đã xác nhận" value={String(currentTickets.filter(({ item }) => item.Status === ImportTicketStatus.Confirmed).length)} detail="Đã cập nhật tồn kho" icon={<PackageCheck className="size-5" />} tone="green" />
+        <MetricCard label="Chờ duyệt" value={String(currentTickets.filter(({ item }) => item.status === ImportTicketStatus.Pending).length)} detail="Phiếu hiện hành cần xác nhận" icon={<ClipboardCheck className="size-5" />} tone="amber" />
+        <MetricCard label="Đã xác nhận" value={String(currentTickets.filter(({ item }) => item.status === ImportTicketStatus.Confirmed).length)} detail="Đã cập nhật tồn kho" icon={<PackageCheck className="size-5" />} tone="green" />
         <MetricCard label="Giá trị nhập / xuất" value={`${moneyFormatter.format(importValue)} / ${moneyFormatter.format(exportValue)}`} detail={`${importTickets.length} phiếu nhập, ${exportTickets.length} phiếu xuất`} icon={<ArrowDownToLine className="size-5" />} />
         <MetricCard label="Đã xóa" value={String(deletedCount)} detail="Có thể khôi phục bất kỳ lúc nào" icon={<Trash2 className="size-5" />} tone="red" />
       </MetricGrid>

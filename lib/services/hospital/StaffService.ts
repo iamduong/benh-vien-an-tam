@@ -2,21 +2,21 @@ import { httpClient } from "@/lib/http/client";
 import type { ApiResponse, PaginatedData } from "@/lib/http/response";
 import { BaseStatus, type Guid } from "@/types/models";
 
-export type StaffRoleCode = "Doctor" | "Staff" | "WarehouseManager";
+export type StaffRoleCode = "doctor" | "Staff" | "WarehouseManager";
 
 export type HospitalStaffMember = {
-  AccountUuid: Guid;
-  DoctorUuid: Guid | null;
+  accountUuid: Guid;
+  doctorUuid: Guid | null;
   DisplayName: string;
-  Phone: string;
+  phone: string;
   RoleCode: StaffRoleCode;
   RoleName: string;
-  DepartmentUuid: Guid | null;
+  departmentUuid: Guid | null;
   DepartmentName: string | null;
-  Specialty: string | null;
-  Status: BaseStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
+  specialty: string | null;
+  status: BaseStatus;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type HospitalStaffQuery = {
@@ -28,19 +28,19 @@ export type HospitalStaffQuery = {
 };
 
 export type CreateHospitalStaffRequest = {
-  Phone: string;
-  Password: string;
+  phone: string;
+  password: string;
   RoleCode: StaffRoleCode;
-  Name?: string;
-  Specialty?: string;
-  Price?: number;
-  DepartmentUuid?: Guid;
+  name?: string;
+  specialty?: string;
+  price?: number;
+  departmentUuid?: Guid;
 };
 
 export type HospitalStaffStatusResult = {
-  AccountUuid: Guid;
-  Status: BaseStatus;
-  UpdatedAt: Date;
+  accountUuid: Guid;
+  status: BaseStatus;
+  updatedAt: Date;
 };
 
 type StaffApiDto = {
@@ -94,8 +94,8 @@ export class StaffService {
       { params: query, signal },
     );
     return {
-      Message: response.data.message,
-      Data: {
+      message: response.data.message,
+      data: {
         Items: response.data.data.map(toStaffMember),
         Page: response.data.pagination.page,
         PageSize: response.data.pagination.pageSize,
@@ -112,18 +112,18 @@ export class StaffService {
     const response = await httpClient.post<StaffApiResponse>(
       `/hospitals/${encodeURIComponent(hospitalUuid)}/staff`,
       {
-        phone: request.Phone,
-        password: request.Password,
+        phone: request.phone,
+        password: request.password,
         roleCode: request.RoleCode,
-        name: request.Name,
-        specialty: request.Specialty,
-        price: request.Price,
-        departmentUuid: request.DepartmentUuid,
+        name: request.name,
+        specialty: request.specialty,
+        price: request.price,
+        departmentUuid: request.departmentUuid,
       },
     );
     return {
-      Message: response.data.message,
-      Data: toStaffMember(response.data.data),
+      message: response.data.message,
+      data: toStaffMember(response.data.data),
     };
   }
 
@@ -137,11 +137,11 @@ export class StaffService {
       { status },
     );
     return {
-      Message: response.data.message,
-      Data: {
-        AccountUuid: response.data.data.accountUuid,
-        Status: response.data.data.status,
-        UpdatedAt: new Date(response.data.data.updatedAt),
+      message: response.data.message,
+      data: {
+        accountUuid: response.data.data.accountUuid,
+        status: response.data.data.status,
+        updatedAt: new Date(response.data.data.updatedAt),
       },
     };
   }
@@ -149,18 +149,18 @@ export class StaffService {
 
 function toStaffMember(staff: StaffApiDto): HospitalStaffMember {
   return {
-    AccountUuid: staff.accountUuid,
-    DoctorUuid: staff.doctorUuid,
+    accountUuid: staff.accountUuid,
+    doctorUuid: staff.doctorUuid,
     DisplayName: staff.displayName,
-    Phone: staff.phone,
+    phone: staff.phone,
     RoleCode: staff.roleCode,
     RoleName: staff.roleName,
-    DepartmentUuid: staff.departmentUuid,
+    departmentUuid: staff.departmentUuid,
     DepartmentName: staff.departmentName,
-    Specialty: staff.specialty,
-    Status: staff.status,
-    CreatedAt: new Date(staff.createdAt),
-    UpdatedAt: new Date(staff.updatedAt),
+    specialty: staff.specialty,
+    status: staff.status,
+    createdAt: new Date(staff.createdAt),
+    updatedAt: new Date(staff.updatedAt),
   };
 }
 

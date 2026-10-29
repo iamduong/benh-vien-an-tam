@@ -7,7 +7,7 @@ export const publicNavigation: NavigationItem[] = [
   { label: "Trang chủ", href: "/" },
   { label: "Cơ sở y tế", href: "/co-so-y-te" },
   { label: "Bác sĩ", href: "/bac-si" },
-  { label: "Dịch vụ", href: "/dich-vu" },
+  { label: "Dịch vụ khám", href: "/dich-vu" },
   { label: "Tìm kiếm", href: "/tim-kiem" },
   { label: "Về chúng tôi", href: "/ve-chung-toi" },
 ];

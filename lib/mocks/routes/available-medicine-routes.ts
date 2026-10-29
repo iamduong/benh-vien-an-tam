@@ -13,10 +13,10 @@ import type { ApiResponse } from "@/lib/http/response";
 function getCombinedMedicines(): MedicineDetailDto[] {
     return mockMedicines.map((med) => {
         const inv = mockMedicineInventories.find(
-            (i) => i.MedicineUuid === med.Uuid
+            (i) => i.medicineUuid === med.uuid
         );
-        const stock = inv ? inv.Quantity : 0;
-        const minStock = inv ? inv.MinimumQuantity : 0;
+        const stock = inv ? inv.quantity : 0;
+        const minStock = inv ? inv.minimumQuantity : 0;
 
         // Tính toán trạng thái tồn kho
         let status: StockStatusFilter = StockStatusFilter.InStock;
@@ -27,16 +27,17 @@ function getCombinedMedicines(): MedicineDetailDto[] {
         }
 
         return {
-            uuid: med.Uuid,
-            name: med.Name,
-            unit: med.Unit,
-            price: med.Price,
+            uuid: med.uuid,
+            name: med.name,
+            unit: med.unit,
+            price: med.price,
             stock,
             minStock,
             status,
-            description: med.Description,
-            isInsured: med.IsInsured,
-            insuranceCap: med.InsuranceCap,
+            description: med.description,
+            isInsured: med.isInsured,
+            insuranceCap: med.insuranceCap,
+            imageUrl: med.image || null,
         };
     });
 }
@@ -44,11 +45,11 @@ function getCombinedMedicines(): MedicineDetailDto[] {
 export function registerAvailableMedicineRoutes(mock: AxiosMockAdapter) {
     // 1. GET /api/AvailableMedicine/units - Lấy danh sách các đơn vị tính
     mock.onGet("/api/AvailableMedicine/units").reply(() => {
-        const units = Array.from(new Set(mockMedicines.map((m) => m.Unit)));
+        const units = Array.from(new Set(mockMedicines.map((m) => m.unit)));
 
         const response: ApiResponse<string[]> = {
-            Data: units,
-            Message: "Lấy danh sách đơn vị tính thành công.",
+            data: units,
+            message: "Lấy danh sách đơn vị tính thành công.",
         };
 
         return [200, response];
@@ -101,8 +102,8 @@ export function registerAvailableMedicineRoutes(mock: AxiosMockAdapter) {
         };
 
         const response: ApiResponse<PaginatedResult<MedicineDto>> = {
-            Data: result,
-            Message: "Lấy danh sách thuốc khả dụng thành công.",
+            data: result,
+            message: "Lấy danh sách thuốc khả dụng thành công.",
         };
 
         return [200, response];
@@ -118,15 +119,15 @@ export function registerAvailableMedicineRoutes(mock: AxiosMockAdapter) {
 
         if (!medicine) {
             const errorResponse: ApiResponse<null> = {
-                Data: null,
-                Message: "Không tìm thấy thông tin thuốc.",
+                data: null,
+                message: "Không tìm thấy thông tin thuốc.",
             };
             return [404, errorResponse];
         }
 
         const response: ApiResponse<MedicineDetailDto> = {
-            Data: medicine,
-            Message: "Lấy thông tin chi tiết thuốc thành công.",
+            data: medicine,
+            message: "Lấy thông tin chi tiết thuốc thành công.",
         };
 
         return [200, response];

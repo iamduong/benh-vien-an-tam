@@ -33,7 +33,7 @@ export function HospitalDetailScreen({ hospitalUuid }: { hospitalUuid: string })
     const controller = new AbortController();
     adminHospitalService.getById(hospitalUuid, controller.signal)
       .then((response) => {
-        const item = response.data ?? response.Data;
+        const item = response.data ?? response.data;
         if (!item) throw new Error("API không trả về dữ liệu cơ sở y tế");
         setHospital(item);
       })
@@ -77,7 +77,7 @@ export function HospitalDetailScreen({ hospitalUuid }: { hospitalUuid: string })
           ) : null}
           <DetailGrid>
             <DetailItem label="Tên cơ sở" value={hospital.name} />
-            <DetailItem label="Slug" value={hospital.slug} />
+            <DetailItem label="slug" value={hospital.slug} />
             <DetailItem label="Địa chỉ" value={hospital.address} />
             <DetailItem label="Số phòng" value={hospital.numberOfRoom} />
             <DetailItem label="Giờ làm việc" value={hospital.workingHour || "Chưa cập nhật"} />

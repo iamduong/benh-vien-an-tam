@@ -63,12 +63,12 @@ import {
 } from "@/lib/services/medicine/AdminMedicineService";
 
 type ManagedRecord = {
-  Uuid: string;
-  Name: string;
-  Status: BaseStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: string;
+  name: string;
+  status: BaseStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 type CatalogConfig<T extends ManagedRecord> = {
@@ -98,7 +98,7 @@ const dateFormatter = new Intl.DateTimeFormat("vi-VN");
 const moneyFormatter = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" });
 
 function isDeleted(item: ManagedRecord) {
-  return item.DeletedAt.getTime() > 0;
+  return item.deletedAt.getTime() > 0;
 }
 
 function statusLabel(status: BaseStatus) {
@@ -107,7 +107,7 @@ function statusLabel(status: BaseStatus) {
 
 function RecordStatus({ item }: { item: ManagedRecord }) {
   if (isDeleted(item)) return <StatusPill tone="red">Đã xóa</StatusPill>;
-  return <StatusPill tone={item.Status === BaseStatus.Active ? "green" : "amber"}>{statusLabel(item.Status)}</StatusPill>;
+  return <StatusPill tone={item.status === BaseStatus.Active ? "green" : "amber"}>{statusLabel(item.status)}</StatusPill>;
 }
 
 function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: CatalogConfig<T> }) {
@@ -124,14 +124,14 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
   const normalizedQuery = query.trim().toLocaleLowerCase("vi");
   const filteredItems = items.filter((item) => {
     const matchesQuery = !normalizedQuery || config.searchText(item).toLocaleLowerCase("vi").includes(normalizedQuery);
-    const matchesStatus = status === "all" || item.Status === status;
+    const matchesStatus = status === "all" || item.status === status;
     const matchesVisibility = visibility === "all" || (visibility === "deleted" ? isDeleted(item) : !isDeleted(item));
     return matchesQuery && matchesStatus && matchesVisibility;
   });
-  const detailItem = items.find((item) => item.Uuid === detailId) ?? null;
-  const activeCount = items.filter((item) => !isDeleted(item) && item.Status === BaseStatus.Active).length;
+  const detailItem = items.find((item) => item.uuid === detailId) ?? null;
+  const activeCount = items.filter((item) => !isDeleted(item) && item.status === BaseStatus.Active).length;
   const deletedCount = items.filter(isDeleted).length;
-  const insuredCount = items.filter((item) => "IsInsured" in item && item.IsInsured).length;
+  const insuredCount = items.filter((item) => "isInsured" in item && item.isInsured).length;
 
   function updateDraft<K extends keyof T>(key: K, value: T[K]) {
     setDraft((current) => current ? { ...current, [key]: value } : current);
@@ -148,16 +148,16 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
       const savedItem = isCreating
         ? config.onCreate
           ? await config.onCreate(draft)
-          : { ...draft, CreatedAt: new Date(), UpdatedAt: new Date() }
+          : { ...draft, createdAt: new Date(), updatedAt: new Date() }
         : config.onSave
           ? await config.onSave(draft)
-          : { ...draft, UpdatedAt: new Date() };
+          : { ...draft, updatedAt: new Date() };
 
       setItems((current) =>
         isCreating
           ? [savedItem, ...current]
           : current.map((item) =>
-              item.Uuid === savedItem.Uuid ? savedItem : item,
+              item.uuid === savedItem.uuid ? savedItem : item,
             ),
       );
 
@@ -180,7 +180,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
     if (!config.onDelete || isSubmitting) return;
 
     const confirmed = window.confirm(
-      `Bạn có chắc muốn xóa "${item.Name}" không?`,
+      `Bạn có chắc muốn xóa "${item.name}" không?`,
     );
 
     if (!confirmed) return;
@@ -194,11 +194,11 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
       // Cập nhật giao diện sau khi API thành công
       setItems((current) =>
         current.map((candidate) =>
-          candidate.Uuid === item.Uuid
+          candidate.uuid === item.uuid
             ? {
                 ...candidate,
-                DeletedAt: new Date(),
-                UpdatedAt: new Date(),
+                deletedAt: new Date(),
+                updatedAt: new Date(),
               }
             : candidate,
         ),
@@ -215,7 +215,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
     if (!config.onRestore || isSubmitting) return;
 
     const confirmed = window.confirm(
-      `Bạn có chắc muốn khôi phục "${item.Name}" không?`,
+      `Bạn có chắc muốn khôi phục "${item.name}" không?`,
     );
 
     if (!confirmed) return;
@@ -226,8 +226,8 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
       await config.onRestore(item);
 
       setItems((current) => current.map((candidate) =>
-        candidate.Uuid === item.Uuid
-          ? { ...candidate, DeletedAt: new Date(0), UpdatedAt: new Date() }
+        candidate.uuid === item.uuid
+          ? { ...candidate, deletedAt: new Date(0), updatedAt: new Date() }
           : candidate,
       ));
 
@@ -241,27 +241,27 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
 
   const rows = filteredItems.map((item) => [
     ...config.renderCells(item),
-    <RecordStatus key={`${item.Uuid}-status`} item={item} />,
-    <div key={`${item.Uuid}-actions`} className="flex items-center justify-end gap-1">
+    <RecordStatus key={`${item.uuid}-status`} item={item} />,
+    <div key={`${item.uuid}-actions`} className="flex items-center justify-end gap-1">
       {config.detailHref ? (
-        <Link href={config.detailHref(item)} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} title="Xem chi tiết" aria-label={`Xem chi tiết ${item.Name}`}>
+        <Link href={config.detailHref(item)} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} title="Xem chi tiết" aria-label={`Xem chi tiết ${item.name}`}>
           <Eye />
         </Link>
       ) : (
-        <Button type="button" variant="ghost" size="icon-sm" title="Xem chi tiết" aria-label={`Xem chi tiết ${item.Name}`} onClick={() => setDetailId(item.Uuid)}>
+        <Button type="button" variant="ghost" size="icon-sm" title="Xem chi tiết" aria-label={`Xem chi tiết ${item.name}`} onClick={() => setDetailId(item.uuid)}>
           <Eye />
         </Button>
       )}
       {config.editHref ? (
-        <Link href={config.editHref(item)} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} title="Chỉnh sửa" aria-label={`Chỉnh sửa ${item.Name}`}>
+        <Link href={config.editHref(item)} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} title="Chỉnh sửa" aria-label={`Chỉnh sửa ${item.name}`}>
           <Pencil />
         </Link>
       ) : (
-        <Button type="button" variant="ghost" size="icon-sm" title="Chỉnh sửa" aria-label={`Chỉnh sửa ${item.Name}`} onClick={() => { setMutationError(null); setDraftMode("edit"); setDraft({ ...item }); }}>
+        <Button type="button" variant="ghost" size="icon-sm" title="Chỉnh sửa" aria-label={`Chỉnh sửa ${item.name}`} onClick={() => { setMutationError(null); setDraftMode("edit"); setDraft({ ...item }); }}>
           <Pencil />
         </Button>
       )}
-      <Button type="button" variant={isDeleted(item) ? "outline" : "destructive"} size="icon-sm" title={isDeleted(item) ? "Khôi phục" : "Xóa"} aria-label={`${isDeleted(item) ? "Khôi phục" : "Xóa"} ${item.Name}`} onClick={isDeleted(item) ? () => restoreItem(item) : () => deleteItem(item)}>
+      <Button type="button" variant={isDeleted(item) ? "outline" : "destructive"} size="icon-sm" title={isDeleted(item) ? "Khôi phục" : "Xóa"} aria-label={`${isDeleted(item) ? "Khôi phục" : "Xóa"} ${item.name}`} onClick={isDeleted(item) ? () => restoreItem(item) : () => deleteItem(item)}>
         {isDeleted(item) ? <RotateCcw /> : <Trash2 />}
       </Button>
     </div>,
@@ -296,7 +296,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
         <MetricCard label="Tổng bản ghi" value={String(items.length)} detail={`${items.length - deletedCount} bản ghi hiện hành`} icon={config.icon} />
         <MetricCard label="Đang hoạt động" value={String(activeCount)} detail="Không bao gồm bản ghi đã xóa" icon={<Activity className="size-5" />} tone="green" />
         <MetricCard label="Đã xóa" value={String(deletedCount)} detail="Có thể khôi phục bất kỳ lúc nào" icon={<Trash2 className="size-5" />} tone="red" />
-        <MetricCard label={"IsInsured" in (items[0] ?? {}) ? "Có bảo hiểm" : "Cập nhật gần đây"} value={"IsInsured" in (items[0] ?? {}) ? String(insuredCount) : String(items.filter((item) => item.UpdatedAt >= new Date("2026-08-14")).length)} detail={"IsInsured" in (items[0] ?? {}) ? "Theo cấu hình danh mục" : "Từ 14/08/2026"} icon={<ShieldCheck className="size-5" />} tone="cyan" />
+        <MetricCard label={"isInsured" in (items[0] ?? {}) ? "Có bảo hiểm" : "Cập nhật gần đây"} value={"isInsured" in (items[0] ?? {}) ? String(insuredCount) : String(items.filter((item) => item.updatedAt >= new Date("2026-08-14")).length)} detail={"isInsured" in (items[0] ?? {}) ? "Theo cấu hình danh mục" : "Từ 14/08/2026"} icon={<ShieldCheck className="size-5" />} tone="cyan" />
       </MetricGrid>
 
       <PortalSection title={`Danh sách ${config.title.toLocaleLowerCase("vi")}`} description={`${filteredItems.length} kết quả theo bộ lọc hiện tại`}>
@@ -329,7 +329,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
           {detailItem ? (
             <>
               <DialogHeader>
-                <DialogTitle>{detailItem.Name}</DialogTitle>
+                <DialogTitle>{detailItem.name}</DialogTitle>
                 <DialogDescription>Chi tiết {config.singular} và trạng thái dữ liệu hiện tại.</DialogDescription>
               </DialogHeader>
               <div className="mt-5 space-y-5">{config.renderDetail(detailItem)}</div>
@@ -402,9 +402,9 @@ function CommonDetail({ item, children }: { item: ManagedRecord; children: React
       <DetailGrid>
         {children}
         <DetailItem label="Trạng thái" value={<RecordStatus item={item} />} />
-        <DetailItem label="Ngày tạo" value={dateFormatter.format(item.CreatedAt)} />
-        <DetailItem label="Cập nhật" value={dateFormatter.format(item.UpdatedAt)} />
-        <DetailItem label="DeletedAt" value={isDeleted(item) ? dateFormatter.format(item.DeletedAt) : "Chưa xóa"} />
+        <DetailItem label="Ngày tạo" value={dateFormatter.format(item.createdAt)} />
+        <DetailItem label="Cập nhật" value={dateFormatter.format(item.updatedAt)} />
+        <DetailItem label="deletedAt" value={isDeleted(item) ? dateFormatter.format(item.deletedAt) : "Chưa xóa"} />
       </DetailGrid>
     </>
   );
@@ -421,21 +421,21 @@ function mapToHospital(item: AdminHospitalItem): Hospital {
       : BaseStatus.InActive;
 
   return {
-    Uuid: item.uuid,
-    Name: item.name ?? "",
-    Address: item.address ?? "",
-    Slug: item.slug ?? "",
-    Image: item.image ?? "",
-    LImage: item.image ?? "",
-    MapUrl: item.mapUrl ?? "",
-    NumberOfRoom: item.numberOfRoom ?? 0,
-    Description: item.description ?? "",
-    DetailService: item.detailService ?? "",
-    WorkingHour: item.workingHour ?? "",
-    Status: status,
-    CreatedAt: item.createdAt ? new Date(item.createdAt) : new Date(),
-    UpdatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
-    DeletedAt: item.deletedAt ? new Date(item.deletedAt) : new Date(0),
+    uuid: item.uuid,
+    name: item.name ?? "",
+    address: item.address ?? "",
+    slug: item.slug ?? "",
+    image: item.image ?? "",
+    lImage: item.image ?? "",
+    mapUrl: item.mapUrl ?? "",
+    numberOfRoom: item.numberOfRoom ?? 0,
+    description: item.description ?? "",
+    detailService: item.detailService ?? "",
+    workingHour: item.workingHour ?? "",
+    status: status,
+    createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+    updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+    deletedAt: item.deletedAt ? new Date(item.deletedAt) : new Date(0),
   };
 }
 
@@ -453,7 +453,7 @@ export function HospitalsManagementScreen() {
       .then((res) => {
         if (!active) return;
 
-        const rawList = res.data ?? res.Data ?? [];
+        const rawList = res.data ?? res.data ?? [];
         setHospitals(rawList.map(mapToHospital));
       })
       .catch((err) => {
@@ -475,11 +475,11 @@ export function HospitalsManagementScreen() {
   }, []);
 
   async function handleDeleteHospital(hospital: Hospital): Promise<void> {
-    await adminHospitalService.delete(hospital.Uuid);
+    await adminHospitalService.delete(hospital.uuid);
   }
 
   async function handleRestoreHospital(hospital: Hospital): Promise<void> {
-    await adminHospitalService.restore(hospital.Uuid);
+    await adminHospitalService.restore(hospital.uuid);
   }
 
   if (loading) return <div className="p-8 text-center text-muted-foreground">Đang tải...</div>;
@@ -493,19 +493,19 @@ export function HospitalsManagementScreen() {
     icon: <HospitalIcon className="size-5" />,
     initialItems: hospitals,
     columns: ["Cơ sở", "Địa chỉ", "Số phòng", "Giờ làm việc", "Cập nhật"],
-    searchText: (item) => `${item.Name} ${item.Slug} ${item.Address}`,
+    searchText: (item) => `${item.name} ${item.slug} ${item.address}`,
     renderCells: (item) => [
-      <div key="name"><div className="font-semibold">{item.Name}</div><div className="mt-1 text-xs text-muted-foreground">/{item.Slug}</div></div>,
-      <span key="address" className="block max-w-72 whitespace-normal">{item.Address}</span>,
-      item.NumberOfRoom,
-      item.WorkingHour,
-      dateFormatter.format(item.UpdatedAt),
+      <div key="name"><div className="font-semibold">{item.name}</div><div className="mt-1 text-xs text-muted-foreground">/{item.slug}</div></div>,
+      <span key="address" className="block max-w-72 whitespace-normal">{item.address}</span>,
+      item.numberOfRoom,
+      item.workingHour,
+      dateFormatter.format(item.updatedAt),
     ],
-    renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="Slug" value={item.Slug} /><DetailItem label="Địa chỉ" value={item.Address} /><DetailItem label="Số phòng" value={item.NumberOfRoom} /><DetailItem label="Giờ làm việc" value={item.WorkingHour} /><DetailItem label="Ảnh đại diện" value={item.Image} /><DetailItem label="Bản đồ" value={<a className="text-primary underline" href={item.MapUrl} target="_blank" rel="noreferrer">Mở Google Maps</a>} /></CommonDetail><MarkdownDetail title="Mô tả" content={item.Description} /><MarkdownDetail title="Chi tiết dịch vụ" content={item.DetailService} /></>,
+    renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="slug" value={item.slug} /><DetailItem label="Địa chỉ" value={item.address} /><DetailItem label="Số phòng" value={item.numberOfRoom} /><DetailItem label="Giờ làm việc" value={item.workingHour} /><DetailItem label="Ảnh đại diện" value={item.image} /><DetailItem label="Bản đồ" value={<a className="text-primary underline" href={item.mapUrl} target="_blank" rel="noreferrer">Mở Google Maps</a>} /></CommonDetail><MarkdownDetail title="Mô tả" content={item.description} /><MarkdownDetail title="Chi tiết dịch vụ" content={item.detailService} /></>,
     renderForm: () => null,
     createHref: "/noi-bo/trang-tong/co-so-y-te/tao-moi",
-    detailHref: (item) => `/noi-bo/trang-tong/co-so-y-te/${item.Uuid}`,
-    editHref: (item) => `/noi-bo/trang-tong/co-so-y-te/${item.Uuid}/chinh-sua`,
+    detailHref: (item) => `/noi-bo/trang-tong/co-so-y-te/${item.uuid}`,
+    editHref: (item) => `/noi-bo/trang-tong/co-so-y-te/${item.uuid}/chinh-sua`,
     onDelete: handleDeleteHospital,
     onRestore: handleRestoreHospital,
   }} />;
@@ -513,40 +513,40 @@ export function HospitalsManagementScreen() {
 
 function mapToDepartment(item: AdminDepartmentItem): Department {
   return {
-    Uuid: item.uuid,
-    Icon: item.icon ?? "",
-    Slug: item.slug ?? "",
-    Name: item.name ?? "",
-    Description: item.description ?? "",
-    Status: item.status,
-    CreatedAt: new Date(item.createdAt),
-    UpdatedAt: new Date(item.updatedAt),
-    DeletedAt: item.deletedAt ? new Date(item.deletedAt) : new Date(0),
+    uuid: item.uuid,
+    icon: item.icon ?? "",
+    slug: item.slug ?? "",
+    name: item.name ?? "",
+    description: item.description ?? "",
+    status: item.status,
+    createdAt: new Date(item.createdAt),
+    updatedAt: new Date(item.updatedAt),
+    deletedAt: item.deletedAt ? new Date(item.deletedAt) : new Date(0),
   };
 }
 
 function mapToDepartmentRequest(item: Department): DepartmentRequest {
   return {
-    icon: item.Icon,
-    slug: item.Slug.trim(),
-    name: item.Name.trim(),
-    description: item.Description,
-    status: item.Status,
+    icon: item.icon,
+    slug: item.slug.trim(),
+    name: item.name.trim(),
+    description: item.description,
+    status: item.status,
   };
 }
 
 function createEmptyDepartment(): Department {
   const now = new Date();
   return {
-    Uuid: "",
-    Icon: "",
-    Slug: "",
-    Name: "",
-    Description: "",
-    Status: BaseStatus.Active,
-    CreatedAt: now,
-    UpdatedAt: now,
-    DeletedAt: new Date(0),
+    uuid: "",
+    icon: "",
+    slug: "",
+    name: "",
+    description: "",
+    status: BaseStatus.Active,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: new Date(0),
   };
 }
 
@@ -621,8 +621,8 @@ export function DepartmentsManagementScreen() {
     ])
       .then(([departmentResponse, iconTemplateResponse]) => {
         if (!active) return;
-        setDepartments((departmentResponse.data ?? departmentResponse.Data ?? []).map(mapToDepartment));
-        setIconTemplates(iconTemplateResponse.data ?? iconTemplateResponse.Data ?? []);
+        setDepartments((departmentResponse.data ?? departmentResponse.data ?? []).map(mapToDepartment));
+        setIconTemplates(iconTemplateResponse.data ?? iconTemplateResponse.data ?? []);
       })
       .catch((requestError) => {
         if (!active) return;
@@ -640,15 +640,15 @@ export function DepartmentsManagementScreen() {
   }, []);
 
   async function saveDepartment(item: Department) {
-    const response = await adminDepartmentService.update(item.Uuid, mapToDepartmentRequest(item));
-    const saved = response.data ?? response.Data;
+    const response = await adminDepartmentService.update(item.uuid, mapToDepartmentRequest(item));
+    const saved = response.data ?? response.data;
     if (!saved) throw new Error("API không trả về chuyên khoa đã cập nhật");
     return mapToDepartment(saved);
   }
 
   async function createDepartment(item: Department) {
     const response = await adminDepartmentService.create(mapToDepartmentRequest(item));
-    const saved = response.data ?? response.Data;
+    const saved = response.data ?? response.data;
     if (!saved) throw new Error("API không trả về chuyên khoa đã tạo");
     return mapToDepartment(saved);
   }
@@ -663,19 +663,19 @@ export function DepartmentsManagementScreen() {
     description: "Quản lý định danh, nội dung mô tả và trạng thái sử dụng của danh mục chuyên khoa gốc.",
     icon: <Stethoscope className="size-5" />,
     initialItems: departments,
-    columns: ["Chuyên khoa", "Slug", "Mô tả", "Ngày tạo", "Cập nhật"],
-    searchText: (item) => `${item.Name} ${item.Slug} ${item.Description}`,
-    renderCells: (item) => [item.Name, item.Slug, <span key="description" className="block max-w-80 truncate">{item.Description}</span>, dateFormatter.format(item.CreatedAt), dateFormatter.format(item.UpdatedAt)],
-    renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="Slug" value={item.Slug} /><DetailItem label="Biểu tượng" value={item.Icon} /></CommonDetail><MarkdownDetail title="Mô tả chuyên khoa" content={item.Description} /></>,
-    renderForm: (item, update) => <><Field label="Tên chuyên khoa"><Input required value={item.Name} onChange={(event) => update("Name", event.target.value)} /></Field><Field label="Slug"><Input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={item.Slug} onChange={(event) => update("Slug", event.target.value)} /></Field><Field label="Trạng thái"><StatusField value={item.Status} onChange={(value) => update("Status", value)} /></Field><IconTemplatePicker templates={iconTemplates} value={item.Icon} onChange={(value) => update("Icon", value)} /><MarkdownField label="Mô tả (Markdown)" value={item.Description} onChange={(value) => update("Description", value)} /></>,
+    columns: ["Chuyên khoa", "slug", "Mô tả", "Ngày tạo", "Cập nhật"],
+    searchText: (item) => `${item.name} ${item.slug} ${item.description}`,
+    renderCells: (item) => [item.name, item.slug, <span key="description" className="block max-w-80 truncate">{item.description}</span>, dateFormatter.format(item.createdAt), dateFormatter.format(item.updatedAt)],
+    renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="slug" value={item.slug} /><DetailItem label="Biểu tượng" value={item.icon} /></CommonDetail><MarkdownDetail title="Mô tả chuyên khoa" content={item.description} /></>,
+    renderForm: (item, update) => <><Field label="Tên chuyên khoa"><Input required value={item.name} onChange={(event) => update("name", event.target.value)} /></Field><Field label="slug"><Input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={item.slug} onChange={(event) => update("slug", event.target.value)} /></Field><Field label="Trạng thái"><StatusField value={item.status} onChange={(value) => update("status", value)} /></Field><IconTemplatePicker templates={iconTemplates} value={item.icon} onChange={(value) => update("icon", value)} /><MarkdownField label="Mô tả (Markdown)" value={item.description} onChange={(value) => update("description", value)} /></>,
     createDraft: () => ({
       ...createEmptyDepartment(),
-      Icon: iconTemplates[0] ?? "",
+      icon: iconTemplates[0] ?? "",
     }),
     onCreate: createDepartment,
     onSave: saveDepartment,
-    onDelete: (item) => adminDepartmentService.delete(item.Uuid),
-    onRestore: (item) => adminDepartmentService.restore(item.Uuid),
+    onDelete: (item) => adminDepartmentService.delete(item.uuid),
+    onRestore: (item) => adminDepartmentService.restore(item.uuid),
   }} />;
 }
 
@@ -688,10 +688,10 @@ export function MedicalServicesManagementScreen() {
     icon: <Activity className="size-5" />,
     initialItems: mockMedicalServices,
     columns: ["Dịch vụ", "Giá", "Giờ thực hiện", "Bảo hiểm", "Nổi bật", "Cập nhật"],
-    searchText: (item) => `${item.Name} ${item.Slug} ${item.Description} ${item.WorkingHour}`,
-    renderCells: (item) => [<div key="name"><div className="font-semibold">{item.Name}</div><div className="mt-1 text-xs text-muted-foreground">/{item.Slug}</div></div>, moneyFormatter.format(item.Price), item.WorkingHour, item.IsInsured ? `${Math.round(item.InsuranceCap * 100)}%` : "Không", item.IsFeatured ? "Có" : "Không", dateFormatter.format(item.UpdatedAt)],
-    renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="Slug" value={item.Slug} /><DetailItem label="Giá tham chiếu" value={moneyFormatter.format(item.Price)} /><DetailItem label="Giờ thực hiện" value={item.WorkingHour} /><DetailItem label="Bảo hiểm" value={item.IsInsured ? `Có, tối đa ${Math.round(item.InsuranceCap * 100)}%` : "Không"} /><DetailItem label="Dịch vụ nổi bật" value={item.IsFeatured ? "Có" : "Không"} /><DetailItem label="Hình ảnh" value={item.Image} /></CommonDetail><MarkdownDetail title="Mô tả" content={item.Description} /><MarkdownDetail title="Chi tiết dịch vụ" content={item.DetailService} /></>,
-    renderForm: (item, update) => <><Field label="Tên dịch vụ"><Input required value={item.Name} onChange={(event) => update("Name", event.target.value)} /></Field><Field label="Slug"><Input required value={item.Slug} onChange={(event) => update("Slug", event.target.value)} /></Field><Field label="Giá tham chiếu"><Input required min={0} type="number" value={item.Price} onChange={(event) => update("Price", Number(event.target.value))} /></Field><Field label="Giờ thực hiện"><Input value={item.WorkingHour} onChange={(event) => update("WorkingHour", event.target.value)} /></Field><Field label="Trạng thái"><StatusField value={item.Status} onChange={(value) => update("Status", value)} /></Field><Field label="Mức chi trả bảo hiểm (0-1)"><Input min={0} max={1} step={0.1} type="number" disabled={!item.IsInsured} value={item.InsuranceCap} onChange={(event) => update("InsuranceCap", Number(event.target.value))} /></Field><Field label="Tùy chọn" wide><div className="flex flex-wrap gap-6 rounded-md border p-3 text-sm"><label className="flex items-center gap-2"><input type="checkbox" checked={item.IsInsured} onChange={(event) => update("IsInsured", event.target.checked)} />Áp dụng bảo hiểm</label><label className="flex items-center gap-2"><input type="checkbox" checked={item.IsFeatured} onChange={(event) => update("IsFeatured", event.target.checked)} />Dịch vụ nổi bật</label></div></Field><MarkdownField label="Mô tả (Markdown)" value={item.Description} onChange={(value) => update("Description", value)} /><MarkdownField label="Chi tiết dịch vụ (Markdown)" value={item.DetailService} onChange={(value) => update("DetailService", value)} /></>,
+    searchText: (item) => `${item.name} ${item.slug} ${item.description} ${item.workingHour}`,
+    renderCells: (item) => [<div key="name"><div className="font-semibold">{item.name}</div><div className="mt-1 text-xs text-muted-foreground">/{item.slug}</div></div>, moneyFormatter.format(item.price), item.workingHour, item.isInsured ? `${Math.round(item.insuranceCap * 100)}%` : "Không", item.isFeatured ? "Có" : "Không", dateFormatter.format(item.updatedAt)],
+    renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="slug" value={item.slug} /><DetailItem label="Giá tham chiếu" value={moneyFormatter.format(item.price)} /><DetailItem label="Giờ thực hiện" value={item.workingHour} /><DetailItem label="Bảo hiểm" value={item.isInsured ? `Có, tối đa ${Math.round(item.insuranceCap * 100)}%` : "Không"} /><DetailItem label="Dịch vụ nổi bật" value={item.isFeatured ? "Có" : "Không"} /><DetailItem label="Hình ảnh" value={item.image} /></CommonDetail><MarkdownDetail title="Mô tả" content={item.description} /><MarkdownDetail title="Chi tiết dịch vụ" content={item.detailService} /></>,
+    renderForm: (item, update) => <><Field label="Tên dịch vụ"><Input required value={item.name} onChange={(event) => update("name", event.target.value)} /></Field><Field label="slug"><Input required value={item.slug} onChange={(event) => update("slug", event.target.value)} /></Field><Field label="Giá tham chiếu"><Input required min={0} type="number" value={item.price} onChange={(event) => update("price", Number(event.target.value))} /></Field><Field label="Giờ thực hiện"><Input value={item.workingHour} onChange={(event) => update("workingHour", event.target.value)} /></Field><Field label="Trạng thái"><StatusField value={item.status} onChange={(value) => update("status", value)} /></Field><Field label="Mức chi trả bảo hiểm (0-1)"><Input min={0} max={1} step={0.1} type="number" disabled={!item.isInsured} value={item.insuranceCap} onChange={(event) => update("insuranceCap", Number(event.target.value))} /></Field><Field label="Tùy chọn" wide><div className="flex flex-wrap gap-6 rounded-md border p-3 text-sm"><label className="flex items-center gap-2"><input type="checkbox" checked={item.isInsured} onChange={(event) => update("isInsured", event.target.checked)} />Áp dụng bảo hiểm</label><label className="flex items-center gap-2"><input type="checkbox" checked={item.isFeatured} onChange={(event) => update("isFeatured", event.target.checked)} />Dịch vụ nổi bật</label></div></Field><MarkdownField label="Mô tả (Markdown)" value={item.description} onChange={(value) => update("description", value)} /><MarkdownField label="Chi tiết dịch vụ (Markdown)" value={item.detailService} onChange={(value) => update("detailService", value)} /></>,
   }} />;
 }
 
@@ -706,49 +706,49 @@ const medicineUnitLabels: Record<MedicineUnit, string> = {
 
 function mapToMedicine(item: AdminMedicineItem): Medicine {
   return {
-    Uuid: item.uuid,
-    Image: item.image ?? "",
-    Name: item.name ?? "",
-    Description: item.description ?? "",
-    Price: item.price ?? 0,
-    Unit: item.unit,
-    Status: item.status,
-    IsInsured: item.isInsured,
-    InsuranceCap: item.insuranceCap ?? 0,
-    CreatedAt: new Date(item.createdAt),
-    UpdatedAt: new Date(item.updatedAt),
-    DeletedAt: item.deletedAt ? new Date(item.deletedAt) : new Date(0),
+    uuid: item.uuid,
+    image: item.image ?? "",
+    name: item.name ?? "",
+    description: item.description ?? "",
+    price: item.price ?? 0,
+    unit: item.unit,
+    status: item.status,
+    isInsured: item.isInsured,
+    insuranceCap: item.insuranceCap ?? 0,
+    createdAt: new Date(item.createdAt),
+    updatedAt: new Date(item.updatedAt),
+    deletedAt: item.deletedAt ? new Date(item.deletedAt) : new Date(0),
   };
 }
 
 function mapToMedicineRequest(item: Medicine): MedicineRequest {
   return {
-    image: item.Image,
-    name: item.Name.trim(),
-    description: item.Description,
-    price: item.Price,
-    unit: item.Unit,
-    status: item.Status,
-    isInsured: item.IsInsured,
-    insuranceCap: item.IsInsured ? item.InsuranceCap : 0,
+    image: item.image,
+    name: item.name.trim(),
+    description: item.description,
+    price: item.price,
+    unit: item.unit,
+    status: item.status,
+    isInsured: item.isInsured,
+    insuranceCap: item.isInsured ? item.insuranceCap : 0,
   };
 }
 
 function createEmptyMedicine(): Medicine {
   const now = new Date();
   return {
-    Uuid: "",
-    Image: "",
-    Name: "",
-    Description: "",
-    Price: 0,
-    Unit: MedicineUnit.Other,
-    Status: BaseStatus.Active,
-    IsInsured: false,
-    InsuranceCap: 0,
-    CreatedAt: now,
-    UpdatedAt: now,
-    DeletedAt: new Date(0),
+    uuid: "",
+    image: "",
+    name: "",
+    description: "",
+    price: 0,
+    unit: MedicineUnit.Other,
+    status: BaseStatus.Active,
+    isInsured: false,
+    insuranceCap: 0,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: new Date(0),
   };
 }
 
@@ -764,7 +764,7 @@ export function MedicinesManagementScreen() {
     adminMedicineService.getAll(controller.signal)
       .then((response) => {
         if (!active) return;
-        setMedicines((response.data ?? response.Data ?? []).map(mapToMedicine));
+        setMedicines((response.data ?? response.data ?? []).map(mapToMedicine));
       })
       .catch((requestError) => {
         if (!active) return;
@@ -782,15 +782,15 @@ export function MedicinesManagementScreen() {
   }, []);
 
   async function saveMedicine(item: Medicine) {
-    const response = await adminMedicineService.update(item.Uuid, mapToMedicineRequest(item));
-    const saved = response.data ?? response.Data;
+    const response = await adminMedicineService.update(item.uuid, mapToMedicineRequest(item));
+    const saved = response.data ?? response.data;
     if (!saved) throw new Error("API không trả về thuốc đã cập nhật");
     return mapToMedicine(saved);
   }
 
   async function createMedicine(item: Medicine) {
     const response = await adminMedicineService.create(mapToMedicineRequest(item));
-    const saved = response.data ?? response.Data;
+    const saved = response.data ?? response.data;
     if (!saved) throw new Error("API không trả về thuốc đã tạo");
     return mapToMedicine(saved);
   }
@@ -806,14 +806,14 @@ export function MedicinesManagementScreen() {
     icon: <PackageSearch className="size-5" />,
     initialItems: medicines,
     columns: ["Thuốc", "Mô tả", "Đơn vị", "Đơn giá", "Bảo hiểm", "Cập nhật"],
-    searchText: (item) => `${item.Name} ${item.Description} ${medicineUnitLabels[item.Unit]}`,
-    renderCells: (item) => [item.Name, <span key="description" className="block max-w-72 whitespace-normal">{item.Description}</span>, medicineUnitLabels[item.Unit], moneyFormatter.format(item.Price), item.IsInsured ? `${Math.round(item.InsuranceCap * 100)}%` : "Không", dateFormatter.format(item.UpdatedAt)],
-    renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="Đơn vị" value={medicineUnitLabels[item.Unit]} /><DetailItem label="Đơn giá" value={moneyFormatter.format(item.Price)} /><DetailItem label="Bảo hiểm" value={item.IsInsured ? `Có, tối đa ${Math.round(item.InsuranceCap * 100)}%` : "Không"} /><DetailItem label="Hình ảnh" value={item.Image || "Chưa cập nhật"} /></CommonDetail><section className="rounded-lg border p-5"><h3 className="mb-2 font-semibold text-[#173b57]">Mô tả thuốc</h3><p className="text-sm leading-6 text-muted-foreground">{item.Description || "Đang cập nhật"}</p></section></>,
-    renderForm: (item, update) => <><Field label="Tên thuốc"><Input required value={item.Name} onChange={(event) => update("Name", event.target.value)} /></Field><Field label="Đơn vị"><select value={item.Unit} onChange={(event) => update("Unit", event.target.value as MedicineUnit)} className="h-10 w-full rounded-md border bg-white px-3 text-sm">{Object.values(MedicineUnit).map((unit) => <option key={unit} value={unit}>{medicineUnitLabels[unit]}</option>)}</select></Field><Field label="Đơn giá"><Input required min={0} type="number" value={item.Price} onChange={(event) => update("Price", Number(event.target.value))} /></Field><Field label="Trạng thái"><StatusField value={item.Status} onChange={(value) => update("Status", value)} /></Field><Field label="Mức chi trả bảo hiểm (0-1)"><Input min={0} max={1} step={0.1} type="number" disabled={!item.IsInsured} value={item.InsuranceCap} onChange={(event) => update("InsuranceCap", Number(event.target.value))} /></Field><Field label="Bảo hiểm"><label className="flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" checked={item.IsInsured} onChange={(event) => update("IsInsured", event.target.checked)} />Áp dụng bảo hiểm</label></Field><Field label="URL hình ảnh" wide><Input value={item.Image} onChange={(event) => update("Image", event.target.value)} /></Field><Field label="Mô tả" wide><Textarea value={item.Description} onChange={(event) => update("Description", event.target.value)} /></Field></>,
+    searchText: (item) => `${item.name} ${item.description} ${medicineUnitLabels[item.unit]}`,
+    renderCells: (item) => [item.name, <span key="description" className="block max-w-72 whitespace-normal">{item.description}</span>, medicineUnitLabels[item.unit], moneyFormatter.format(item.price), item.isInsured ? `${Math.round(item.insuranceCap * 100)}%` : "Không", dateFormatter.format(item.updatedAt)],
+    renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="Đơn vị" value={medicineUnitLabels[item.unit]} /><DetailItem label="Đơn giá" value={moneyFormatter.format(item.price)} /><DetailItem label="Bảo hiểm" value={item.isInsured ? `Có, tối đa ${Math.round(item.insuranceCap * 100)}%` : "Không"} /><DetailItem label="Hình ảnh" value={item.image || "Chưa cập nhật"} /></CommonDetail><section className="rounded-lg border p-5"><h3 className="mb-2 font-semibold text-[#173b57]">Mô tả thuốc</h3><p className="text-sm leading-6 text-muted-foreground">{item.description || "Đang cập nhật"}</p></section></>,
+    renderForm: (item, update) => <><Field label="Tên thuốc"><Input required value={item.name} onChange={(event) => update("name", event.target.value)} /></Field><Field label="Đơn vị"><select value={item.unit} onChange={(event) => update("unit", event.target.value as MedicineUnit)} className="h-10 w-full rounded-md border bg-white px-3 text-sm">{Object.values(MedicineUnit).map((unit) => <option key={unit} value={unit}>{medicineUnitLabels[unit]}</option>)}</select></Field><Field label="Đơn giá"><Input required min={0} type="number" value={item.price} onChange={(event) => update("price", Number(event.target.value))} /></Field><Field label="Trạng thái"><StatusField value={item.status} onChange={(value) => update("status", value)} /></Field><Field label="Mức chi trả bảo hiểm (0-1)"><Input min={0} max={1} step={0.1} type="number" disabled={!item.isInsured} value={item.insuranceCap} onChange={(event) => update("insuranceCap", Number(event.target.value))} /></Field><Field label="Bảo hiểm"><label className="flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" checked={item.isInsured} onChange={(event) => update("isInsured", event.target.checked)} />Áp dụng bảo hiểm</label></Field><Field label="URL hình ảnh" wide><Input value={item.image} onChange={(event) => update("image", event.target.value)} /></Field><Field label="Mô tả" wide><Textarea value={item.description} onChange={(event) => update("description", event.target.value)} /></Field></>,
     createDraft: createEmptyMedicine,
     onCreate: createMedicine,
     onSave: saveMedicine,
-    onDelete: (item) => adminMedicineService.delete(item.Uuid),
-    onRestore: (item) => adminMedicineService.restore(item.Uuid),
+    onDelete: (item) => adminMedicineService.delete(item.uuid),
+    onRestore: (item) => adminMedicineService.restore(item.uuid),
   }} />;
 }

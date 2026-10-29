@@ -103,7 +103,7 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
     appointmentService
       .getBookingContext(controller.signal)
       .then((response) => {
-        if (active) setContext({ status: "success", data: response.Data });
+        if (active) setContext({ status: "success", data: response.data });
       })
       .catch(() => {
         if (active) {
@@ -122,12 +122,12 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
   const selectedTarget =
     context.status === "success"
       ? (type === "hospital"
-          ? context.data.Hospitals
+          ? context.data.hospitals
           : type === "doctor"
-            ? context.data.Doctors
-            : context.data.MedicalServices
+            ? context.data.doctors
+            : context.data.medicalServices
         ).find(
-          (item) => item.Uuid === targetParam || item.Slug === targetParam,
+          (item) => item.uuid === targetParam || item.slug === targetParam,
         ) ?? null
       : null;
   const doctor = type === "doctor" ? selectedTarget as DoctorProfile | null : null;
@@ -136,11 +136,11 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
     : null;
   const serviceHospitals =
     context.status === "success" && medicalService
-      ? context.data.Hospitals.filter((item) =>
-          context.data.HospitalMedicalServices.some(
+      ? context.data.hospitals.filter((item) =>
+          context.data.hospitalMedicalServices.some(
             (relation) =>
-              relation.HospitalUuid === item.Uuid &&
-              relation.MedicalServiceUuid === medicalService.Uuid,
+              relation.hospitalUuid === item.uuid &&
+              relation.medicalServiceUuid === medicalService.uuid,
           ),
         )
       : [];
@@ -148,10 +148,10 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
     type === "hospital"
       ? selectedTarget as Hospital | null
       : type === "doctor" && context.status === "success" && doctor
-        ? context.data.Hospitals.find((item) => item.Uuid === doctor.HospitalUuid) ?? null
+        ? context.data.hospitals.find((item) => item.uuid === doctor.hospitalUuid) ?? null
         : type === "medical-service"
           ? serviceHospitals.find(
-              (item) => item.Uuid === hospitalParam || item.Slug === hospitalParam,
+              (item) => item.uuid === hospitalParam || item.slug === hospitalParam,
             ) ?? null
           : null;
 
@@ -167,27 +167,27 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
   }, [context.status, hospital, router, selectedTarget, type]);
 
   const availabilityKey = selectedTarget && hospital && date
-    ? `${type}:${selectedTarget.Uuid}:${hospital.Uuid}:${date}:${availabilityAttempt}`
+    ? `${type}:${selectedTarget.uuid}:${hospital.uuid}:${date}:${availabilityAttempt}`
     : "";
 
   useEffect(() => {
     if (!session || !selectedTarget || !hospital || !date) return;
     const controller = new AbortController();
     let active = true;
-    const key = `${type}:${selectedTarget.Uuid}:${hospital.Uuid}:${date}:${availabilityAttempt}`;
+    const key = `${type}:${selectedTarget.uuid}:${hospital.uuid}:${date}:${availabilityAttempt}`;
     appointmentService
       .getAvailability(
         {
           type,
-          targetUuid: selectedTarget.Uuid,
-          hospitalUuid: hospital.Uuid,
-          accountUuid: session.Account.Uuid,
+          targetUuid: selectedTarget.uuid,
+          hospitalUuid: hospital.uuid,
+          accountUuid: session.account.uuid,
           date,
         },
         controller.signal,
       )
       .then((response) => {
-        if (active) setAvailability({ status: "success", key, data: response.Data });
+        if (active) setAvailability({ status: "success", key, data: response.data });
       })
       .catch((error) => {
         if (!active) return;
@@ -275,8 +275,8 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
       return;
     }
     if (
-      !currentAvailability?.Slots.some(
-        (slot) => slot.Time === time && slot.IsAvailable,
+      !currentAvailability?.slots.some(
+        (slot) => slot.time === time && slot.isAvailable,
       )
     ) {
       setFormError("Thời gian đã chọn không còn khả dụng.");
@@ -297,23 +297,23 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
     setFormError("");
     try {
       const common = {
-        PatientName: patientName.trim(),
-        Gender: gender,
-        Note: note.trim(),
-        MedicalCode: medicalCode.trim(),
-        AppointmentAt: toAppointmentIso(date, time),
-        AccountUuid: currentSession.Account.Uuid,
-        HospitalUuid: selectedHospital.Uuid,
+        patientName: patientName.trim(),
+        gender: gender,
+        note: note.trim(),
+        medicalCode: medicalCode.trim(),
+        appointmentAt: toAppointmentIso(date, time),
+        accountUuid: currentSession.account.uuid,
+        hospitalUuid: selectedHospital.uuid,
       };
       await appointmentService.create(
         type === "hospital"
-          ? { ...common, Type: "hospital" }
+          ? { ...common, type: "hospital" }
           : type === "doctor"
-            ? { ...common, Type: "doctor", DoctorUuid: selectedTargetEntity.Uuid }
+            ? { ...common, type: "doctor", doctorUuid: selectedTargetEntity.uuid }
             : {
                 ...common,
-                Type: "medical-service",
-                MedicalServiceUuid: selectedTargetEntity.Uuid,
+                type: "medical-service",
+                medicalServiceUuid: selectedTargetEntity.uuid,
               },
       );
       router.replace("/tai-khoan/lich-hen");
@@ -397,7 +397,7 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
               time={time}
               note={note}
               hospitalOptions={type === "medical-service" ? serviceHospitals : []}
-              hospitalUuid={selectedHospital?.Uuid || ""}
+              hospitalUuid={selectedHospital?.uuid || ""}
               availability={currentAvailability}
               availabilityError={availabilityError}
               isLoadingAvailability={Boolean(selectedHospital && date) && !currentAvailability && !availabilityError}
@@ -423,9 +423,9 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
               onGenderChange={setGender}
               onMedicalCodeChange={setMedicalCode}
               onFillFromAccount={() => {
-                setPatientName(currentSession.PatientProfile.Name);
-                setGender(currentSession.PatientProfile.Gender);
-                setMedicalCode(currentSession.PatientProfile.MedicalCode);
+                setPatientName(currentSession.patientProfile.name);
+                setGender(currentSession.patientProfile.gender);
+                setMedicalCode(currentSession.patientProfile.medicalCode);
                 setFormError("");
               }}
               onRetryAvailability={() =>
@@ -462,8 +462,8 @@ function HospitalSummary({ hospital }: { hospital: Hospital }) {
     <aside className="self-start overflow-hidden border border-t-4 border-t-primary bg-card lg:sticky lg:top-32">
       <div className="relative aspect-[16/9] bg-muted">
         <Image
-          src={hospital.Image}
-          alt={`Hình minh họa ${hospital.Name}`}
+          src={hospital.image}
+          alt={`Hình minh họa ${hospital.name}`}
           fill
           sizes="(min-width: 1024px) 36vw, 100vw"
           className="object-cover"
@@ -473,15 +473,15 @@ function HospitalSummary({ hospital }: { hospital: Hospital }) {
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">
           Cơ sở đã chọn
         </p>
-        <h2 className="mt-2 text-xl font-bold leading-7">{hospital.Name}</h2>
-        <HospitalFact icon={MapPin} value={hospital.Address} />
-        <HospitalFact icon={Clock3} value={hospital.WorkingHour} />
-        <HospitalFact icon={DoorOpen} value={`${hospital.NumberOfRoom} phòng`} />
+        <h2 className="mt-2 text-xl font-bold leading-7">{hospital.name}</h2>
+        <HospitalFact icon={MapPin} value={hospital.address} />
+        <HospitalFact icon={Clock3} value={hospital.workingHour} />
+        <HospitalFact icon={DoorOpen} value={`${hospital.numberOfRoom} phòng`} />
         <div className="mt-5 border-t pt-5 text-sm">
-          <SafeMarkdown content={hospital.Description} showImages={false} />
+          <SafeMarkdown content={hospital.description} showImages={false} />
         </div>
         <Link
-          href={`/co-so-y-te/${hospital.Slug}`}
+          href={`/co-so-y-te/${hospital.slug}`}
           className="mt-5 inline-flex text-sm font-semibold text-primary hover:underline"
         >
           Xem chi tiết cơ sở
@@ -502,8 +502,8 @@ function DoctorSummary({
     <aside className="self-start overflow-hidden border border-t-4 border-t-primary bg-card lg:sticky lg:top-32">
       <div className="relative aspect-[16/9] bg-muted">
         <Image
-          src={doctor.Avatar}
-          alt={`Bác sĩ ${doctor.Name}`}
+          src={doctor.avatar}
+          alt={`Bác sĩ ${doctor.name}`}
           fill
           sizes="(min-width: 1024px) 36vw, 100vw"
           className="object-cover object-top"
@@ -513,16 +513,16 @@ function DoctorSummary({
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">
           Bác sĩ đã chọn
         </p>
-        <h2 className="mt-2 text-xl font-bold leading-7">{doctor.Name}</h2>
-        <HospitalFact icon={Stethoscope} value={doctor.Specialty || doctor.DepartmentDisplay} />
-        <HospitalFact icon={Building2} value={hospital.Name} />
-        <HospitalFact icon={MapPin} value={doctor.Workplace || hospital.Address} />
-        <HospitalFact icon={WalletCards} value={`Phí khám: ${formatPrice(doctor.Price)}`} />
+        <h2 className="mt-2 text-xl font-bold leading-7">{doctor.name}</h2>
+        <HospitalFact icon={Stethoscope} value={doctor.specialty || doctor.departmentDisplay} />
+        <HospitalFact icon={Building2} value={hospital.name} />
+        <HospitalFact icon={MapPin} value={doctor.workplace || hospital.address} />
+        <HospitalFact icon={WalletCards} value={`Phí khám: ${formatPrice(doctor.price)}`} />
         <div className="mt-5 border-t pt-5 text-sm">
-          <SafeMarkdown content={doctor.Introduction} showImages={false} />
+          <SafeMarkdown content={doctor.introduction} showImages={false} />
         </div>
         <Link
-          href={`/bac-si/${doctor.Slug}`}
+          href={`/bac-si/${doctor.slug}`}
           className="mt-5 inline-flex text-sm font-semibold text-primary hover:underline"
         >
           Xem chi tiết bác sĩ
@@ -537,8 +537,8 @@ function MedicalServiceSummary({ service }: { service: MedicalService }) {
     <aside className="self-start overflow-hidden border border-t-4 border-t-primary bg-card lg:sticky lg:top-32">
       <div className="relative aspect-[16/9] bg-muted">
         <Image
-          src={service.Image}
-          alt={`Dịch vụ ${service.Name}`}
+          src={service.image}
+          alt={`Dịch vụ ${service.name}`}
           fill
           sizes="(min-width: 1024px) 36vw, 100vw"
           className="object-cover"
@@ -548,14 +548,14 @@ function MedicalServiceSummary({ service }: { service: MedicalService }) {
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">
           Dịch vụ đã chọn
         </p>
-        <h2 className="mt-2 text-xl font-bold leading-7">{service.Name}</h2>
-        <HospitalFact icon={Clock3} value={service.WorkingHour} />
-        <HospitalFact icon={WalletCards} value={`Chi phí: ${formatPrice(service.Price)}`} />
+        <h2 className="mt-2 text-xl font-bold leading-7">{service.name}</h2>
+        <HospitalFact icon={Clock3} value={service.workingHour} />
+        <HospitalFact icon={WalletCards} value={`Chi phí: ${formatPrice(service.price)}`} />
         <div className="mt-5 border-t pt-5 text-sm">
-          <SafeMarkdown content={service.Description} showImages={false} />
+          <SafeMarkdown content={service.description} showImages={false} />
         </div>
         <Link
-          href={`/dich-vu/${service.Slug}`}
+          href={`/dich-vu/${service.slug}`}
           className="mt-5 inline-flex text-sm font-semibold text-primary hover:underline"
         >
           Xem chi tiết dịch vụ
@@ -610,7 +610,7 @@ function BookingForm({
   onRetryAvailability: () => void;
   onNext: () => void;
 }) {
-  const slots = availability?.Slots.filter((slot) => slot.IsAvailable) ?? [];
+  const slots = availability?.slots.filter((slot) => slot.isAvailable) ?? [];
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -675,8 +675,8 @@ function BookingForm({
             <Label htmlFor="service-hospital">Cơ sở thực hiện</Label>
             <Select
               items={hospitalOptions.map((hospital) => ({
-                value: hospital.Uuid,
-                label: hospital.Name,
+                value: hospital.uuid,
+                label: hospital.name,
               }))}
               value={hospitalUuid || null}
               onValueChange={(value) => value && onHospitalChange(value)}
@@ -686,8 +686,8 @@ function BookingForm({
               </SelectTrigger>
               <SelectContent>
                 {hospitalOptions.map((hospital) => (
-                  <SelectItem key={hospital.Uuid} value={hospital.Uuid}>
-                    {hospital.Name}
+                  <SelectItem key={hospital.uuid} value={hospital.uuid}>
+                    {hospital.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -720,18 +720,18 @@ function BookingForm({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label>Giờ khám</Label>
                 <span className="text-xs text-muted-foreground">
-                  Khung giờ: {availability.WorkingHour}
+                  Khung giờ: {availability.workingHour}
                 </span>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
                 {slots.map((slot) => (
                   <Button
-                    key={slot.AppointmentAt}
+                    key={slot.appointmentAt}
                     type="button"
-                    variant={time === slot.Time ? "default" : "outline"}
-                    onClick={() => onTimeChange(slot.Time)}
+                    variant={time === slot.time ? "default" : "outline"}
+                    onClick={() => onTimeChange(slot.time)}
                   >
-                    {slot.Time}
+                    {slot.time}
                   </Button>
                 ))}
               </div>
@@ -816,18 +816,18 @@ function AppointmentReview({
       </div>
 
       <dl className="mt-6 grid gap-x-6 gap-y-5 sm:grid-cols-2">
-        {doctor ? <ReviewField label="Bác sĩ" value={doctor.Name} /> : null}
+        {doctor ? <ReviewField label="Bác sĩ" value={doctor.name} /> : null}
         {medicalService ? (
-          <ReviewField label="Dịch vụ" value={medicalService.Name} />
+          <ReviewField label="Dịch vụ" value={medicalService.name} />
         ) : null}
-        <ReviewField label="Cơ sở y tế" value={hospital.Name} />
+        <ReviewField label="Cơ sở y tế" value={hospital.name} />
         <ReviewField label="Thời gian khám" value={formatAppointmentDateTime(appointmentAt)} />
         <ReviewField label="Người khám" value={patientName} />
         <ReviewField label="Giới tính" value={gender} />
         <ReviewField label="Mã y tế" value={medicalCode} />
         <ReviewField label="Trạng thái sau khi tạo" value="Chờ duyệt" />
         <div className="sm:col-span-2">
-          <ReviewField label="Địa chỉ" value={hospital.Address} />
+          <ReviewField label="Địa chỉ" value={hospital.address} />
         </div>
         <div className="sm:col-span-2">
           <ReviewField label="Ghi chú" value={note.trim() || "Không có"} />

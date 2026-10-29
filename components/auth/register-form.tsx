@@ -44,13 +44,13 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const request: RegisterPatientRequest = {
-      Name: name,
-      Gender: gender as Gender,
-      Birthdate: birthdate,
-      Email: email,
-      Phone: normalizePhone(phone),
-      Password: password,
-      ConfirmPassword: confirmPassword,
+      name: name,
+      gender: gender as Gender,
+      birthdate: birthdate,
+      email: email,
+      phone: normalizePhone(phone),
+      password: password,
+      confirmPassword: confirmPassword,
     };
     const nextErrors = validateRegistration(request);
 
@@ -98,14 +98,14 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
             name="name"
             autoComplete="name"
             value={name}
-            aria-invalid={Boolean(errors.Name)}
-            aria-describedby={errors.Name ? "name-error" : undefined}
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? "name-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => setName(event.target.value)}
             className="h-10"
           />
-          {errors.Name ? (
-            <p id="name-error" className="text-sm text-destructive">{errors.Name}</p>
+          {errors.name ? (
+            <p id="name-error" className="text-sm text-destructive">{errors.name}</p>
           ) : null}
         </div>
 
@@ -120,8 +120,8 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
             <SelectTrigger
               id="gender"
               className="h-10 w-full"
-              aria-invalid={Boolean(errors.Gender)}
-              aria-describedby={errors.Gender ? "gender-error" : undefined}
+              aria-invalid={Boolean(errors.gender)}
+              aria-describedby={errors.gender ? "gender-error" : undefined}
             >
               <SelectValue placeholder="Chọn giới tính" />
             </SelectTrigger>
@@ -133,8 +133,8 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
               ))}
             </SelectContent>
           </Select>
-          {errors.Gender ? (
-            <p id="gender-error" className="text-sm text-destructive">{errors.Gender}</p>
+          {errors.gender ? (
+            <p id="gender-error" className="text-sm text-destructive">{errors.gender}</p>
           ) : null}
         </div>
 
@@ -146,14 +146,14 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
             type="date"
             autoComplete="bday"
             value={birthdate}
-            aria-invalid={Boolean(errors.Birthdate)}
-            aria-describedby={errors.Birthdate ? "birthdate-error" : undefined}
+            aria-invalid={Boolean(errors.birthdate)}
+            aria-describedby={errors.birthdate ? "birthdate-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => setBirthdate(event.target.value)}
             className="h-10"
           />
-          {errors.Birthdate ? (
-            <p id="birthdate-error" className="text-sm text-destructive">{errors.Birthdate}</p>
+          {errors.birthdate ? (
+            <p id="birthdate-error" className="text-sm text-destructive">{errors.birthdate}</p>
           ) : null}
         </div>
 
@@ -165,14 +165,14 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
             type="email"
             autoComplete="email"
             value={email}
-            aria-invalid={Boolean(errors.Email)}
-            aria-describedby={errors.Email ? "email-error" : undefined}
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? "email-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => setEmail(event.target.value)}
             className="h-10"
           />
-          {errors.Email ? (
-            <p id="email-error" className="text-sm text-destructive">{errors.Email}</p>
+          {errors.email ? (
+            <p id="email-error" className="text-sm text-destructive">{errors.email}</p>
           ) : null}
         </div>
 
@@ -186,14 +186,14 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
             autoComplete="tel"
             placeholder="Ví dụ: 0901234567"
             value={phone}
-            aria-invalid={Boolean(errors.Phone)}
-            aria-describedby={errors.Phone ? "register-phone-error" : undefined}
+            aria-invalid={Boolean(errors.phone)}
+            aria-describedby={errors.phone ? "register-phone-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => setPhone(event.target.value)}
             className="h-10"
           />
-          {errors.Phone ? (
-            <p id="register-phone-error" className="text-sm text-destructive">{errors.Phone}</p>
+          {errors.phone ? (
+            <p id="register-phone-error" className="text-sm text-destructive">{errors.phone}</p>
           ) : null}
         </div>
 
@@ -206,8 +206,8 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               value={password}
-              aria-invalid={Boolean(errors.Password)}
-              aria-describedby={errors.Password ? "register-password-error" : undefined}
+              aria-invalid={Boolean(errors.password)}
+              aria-describedby={errors.password ? "register-password-error" : undefined}
               disabled={isSubmitting}
               onChange={(event) => setPassword(event.target.value)}
               className="h-10 pr-11"
@@ -226,8 +226,8 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
               )}
             </button>
           </div>
-          {errors.Password ? (
-            <p id="register-password-error" className="text-sm text-destructive">{errors.Password}</p>
+          {errors.password ? (
+            <p id="register-password-error" className="text-sm text-destructive">{errors.password}</p>
           ) : null}
         </div>
 
@@ -239,14 +239,14 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             value={confirmPassword}
-            aria-invalid={Boolean(errors.ConfirmPassword)}
-            aria-describedby={errors.ConfirmPassword ? "confirm-password-error" : undefined}
+            aria-invalid={Boolean(errors.confirmPassword)}
+            aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => setConfirmPassword(event.target.value)}
             className="h-10"
           />
-          {errors.ConfirmPassword ? (
-            <p id="confirm-password-error" className="text-sm text-destructive">{errors.ConfirmPassword}</p>
+          {errors.confirmPassword ? (
+            <p id="confirm-password-error" className="text-sm text-destructive">{errors.confirmPassword}</p>
           ) : null}
         </div>
       </div>

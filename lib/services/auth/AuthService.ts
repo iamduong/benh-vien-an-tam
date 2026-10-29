@@ -5,13 +5,15 @@ import type { ApiResponse } from "@/lib/http/response";
 import type {
   AuthErrorResponse,
   AuthField,
+  AuthApiSession,
+  AuthLoginResult,
   AuthSession,
   LoginRequest,
   RegisterPatientRequest,
 } from "@/types/auth";
-import { BaseStatus, Gender, type PatientProfile } from "@/types/models";
+import { BaseStatus, Gender, type PatientProfile, type Account } from "@/types/models";
 
-const sessionStorageKey = "an-tam-y-te.patient-session";
+export const AUTH_SESSION_STORAGE_KEY = "BV_ANTAM_SESSION";
 
 export class AuthServiceError extends Error {
   constructor(
@@ -30,7 +32,7 @@ function toAuthError(error: unknown) {
 
   if (axios.isAxiosError<AuthErrorResponse>(error)) {
     const response = error.response?.data;
-    const errors = response?.Errors ?? response?.errors ?? {};
+    const errors = response?.errors ?? response?.errors ?? {};
     const fieldErrors = Object.fromEntries(
       Object.entries(errors).map(([field, messages]) => [
         field,
@@ -39,8 +41,7 @@ function toAuthError(error: unknown) {
     ) as Partial<Record<AuthField, string>>;
 
     return new AuthServiceError(
-      response?.Message ??
-        response?.message ??
+      response?.message ??
         "Không thể kết nối đến hệ thống. Vui lòng thử lại.",
       fieldErrors,
     );
@@ -50,7 +51,6 @@ function toAuthError(error: unknown) {
 }
 
 type ApiEnvelope<T> = {
-  Data?: T;
   data?: T;
 };
 
@@ -60,70 +60,56 @@ type RegisterResultResponse = {
   email: string | null;
 };
 
-type AuthProfileResponse =
-  | {
-      type: "patient";
-      uuid: string;
-      accountUuid: string;
-      avatar: string;
-      name: string;
-      gender: Gender | number;
-      birthdate: string;
-      medicalCode: string;
-      email: string;
-    }
-  | {
-      type: "doctor";
+function mapSession(response: AuthApiSession): AuthLoginResult {
+  const { account, profile, role } = response;
+  const mappedAccount = mapAccount(account);
+
+  if (role) {
+    return {
+      type: "management",
+      session: { ...response, role },
     };
-
-type AuthSessionResponse = {
-  account: {
-    uuid: string;
-    phone: string;
-    roleUuid: string | null;
-    status: BaseStatus | number;
-    hospitalUuid: string | null;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
-  };
-  profile: AuthProfileResponse;
-};
-
-function mapSession(response: AuthSessionResponse): AuthSession {
-  const { account, profile } = response;
+  }
 
   if (profile.type !== "patient") {
     throw new AuthServiceError(
-      "Tài khoản này không thuộc cổng dành cho người bệnh.",
+      "Tài khoản chưa được gán vai trò quản lý hợp lệ.",
     );
   }
 
   return {
-    Account: {
-      Uuid: account.uuid,
-      Phone: account.phone,
-      RoleUuid: account.roleUuid ?? "",
-      Status: mapBaseStatus(account.status),
-      HospitalUuid: account.hospitalUuid,
-      CreatedAt: new Date(account.createdAt),
-      UpdatedAt: new Date(account.updatedAt),
-      DeletedAt: account.deletedAt ? new Date(account.deletedAt) : new Date(0),
-    },
-    PatientProfile: {
-      Uuid: profile.uuid,
-      AccountUuid: profile.accountUuid,
-      Avatar: profile.avatar,
-      Name: profile.name,
-      Gender: mapGender(profile.gender),
-      Birthdate: new Date(profile.birthdate),
-      MedicalCode: profile.medicalCode,
-      Email: profile.email,
+    type: "patient",
+    apiSession: response,
+    session: {
+      account: mappedAccount,
+      patientProfile: {
+        uuid: profile.uuid,
+        accountUuid: profile.accountUuid,
+        avatar: profile.avatar,
+        name: profile.name,
+        gender: mapGender(profile.gender),
+        birthdate: new Date(profile.birthdate),
+        medicalCode: profile.medicalCode,
+        email: profile.email,
+      },
     },
   };
 }
 
-function mapBaseStatus(status: BaseStatus | number): BaseStatus {
+function mapAccount(account: AuthApiSession["account"]): Omit<Account, "password"> {
+  return {
+    uuid: account.uuid,
+    phone: account.phone,
+    roleUuid: account.roleUuid ?? "",
+    status: mapBaseStatus(account.status),
+    hospitalUuid: account.hospitalUuid,
+    createdAt: new Date(account.createdAt),
+    updatedAt: new Date(account.updatedAt),
+    deletedAt: account.deletedAt ? new Date(account.deletedAt) : new Date(0),
+  };
+}
+
+function mapBaseStatus(status: string | number): BaseStatus {
   if (status === 0) return BaseStatus.Active;
   if (status === 1) return BaseStatus.InActive;
   return status as BaseStatus;
@@ -136,49 +122,30 @@ function mapGender(gender: Gender | number): Gender {
   return gender as Gender;
 }
 
-function hydrateSession(value: string): AuthSession | null {
+function hydrateLoginResult(value: string): AuthLoginResult | null {
   try {
-    const session = JSON.parse(value) as AuthSession;
-
-    if (
-      session.Account.Status !== BaseStatus.Active ||
-      !session.Account.Uuid ||
-      !session.PatientProfile?.Uuid
-    ) {
-      return null;
-    }
-
-    return {
-      Account: {
-        ...session.Account,
-        CreatedAt: new Date(session.Account.CreatedAt),
-        UpdatedAt: new Date(session.Account.UpdatedAt),
-        DeletedAt: new Date(session.Account.DeletedAt),
-      },
-      PatientProfile: {
-        ...session.PatientProfile,
-        Birthdate: new Date(session.PatientProfile.Birthdate),
-      },
-    };
+    const session = JSON.parse(value) as AuthApiSession;
+    if (!session.account?.uuid || !session.profile?.type) return null;
+    if (mapBaseStatus(session.account.status) !== BaseStatus.Active) return null;
+    return mapSession(session);
   } catch {
     return null;
   }
 }
 
 export class AuthService {
-  async login(credentials: LoginRequest): Promise<AuthSession> {
+  async login(credentials: LoginRequest): Promise<AuthLoginResult> {
     try {
       const response = await httpClient.post<
-        ApiEnvelope<AuthSessionResponse> | ApiResponse<AuthSession>
+        ApiEnvelope<AuthApiSession>
       >("/auth/login", credentials);
-      const payload = "data" in response.data ? response.data.data : response.data.Data;
+      const payload = response.data.data;
       if (!payload) {
         throw new AuthServiceError("Dữ liệu phiên đăng nhập không hợp lệ.");
       }
-      const session = "account" in payload ? mapSession(payload) : payload;
-
-      localStorage.setItem(sessionStorageKey, JSON.stringify(session));
-      return session;
+      const result = mapSession(payload);
+      localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(payload));
+      return result;
     } catch (error) {
       throw toAuthError(error);
     }
@@ -197,20 +164,20 @@ export class AuthService {
 
   async getCurrentSession(): Promise<AuthSession | null> {
     try {
-      const response = await httpClient.post<ApiEnvelope<AuthSessionResponse>>(
+      const response = await httpClient.post<ApiEnvelope<AuthApiSession>>(
         "/auth/refresh",
       );
-      const payload = response.data.data ?? response.data.Data;
+      const payload = response.data.data;
       if (!payload) {
         throw new AuthServiceError("Dữ liệu phiên đăng nhập không hợp lệ.");
       }
 
-      const session = mapSession(payload);
-      localStorage.setItem(sessionStorageKey, JSON.stringify(session));
-      return session;
+      const result = mapSession(payload);
+      localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(payload));
+      return result.type === "patient" ? result.session : null;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        localStorage.removeItem(sessionStorageKey);
+        localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
         return null;
       }
       throw toAuthError(error);
@@ -223,19 +190,43 @@ export class AuthService {
     } catch (error) {
       throw toAuthError(error);
     } finally {
-      localStorage.removeItem(sessionStorageKey);
+      localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
     }
   }
 
   persistPatientProfile(profile: PatientProfile) {
-    const storedSession = localStorage.getItem(sessionStorageKey);
+    const storedSession = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
     if (!storedSession) return;
-    const session = hydrateSession(storedSession);
-    if (!session || session.Account.Uuid !== profile.AccountUuid) return;
+    const result = hydrateLoginResult(storedSession);
+    if (
+      !result ||
+      result.type !== "patient" ||
+      result.session.account.uuid !== profile.accountUuid
+    ) return;
+    const apiSession: AuthApiSession = {
+      ...result.apiSession,
+      profile: {
+        type: "patient",
+        uuid: profile.uuid,
+        accountUuid: profile.accountUuid,
+        avatar: profile.avatar,
+        name: profile.name,
+        gender: profile.gender,
+        birthdate: profile.birthdate.toISOString(),
+        medicalCode: profile.medicalCode,
+        email: profile.email,
+      },
+    };
     localStorage.setItem(
-      sessionStorageKey,
-      JSON.stringify({ ...session, PatientProfile: profile }),
+      AUTH_SESSION_STORAGE_KEY,
+      JSON.stringify(apiSession),
     );
+  }
+
+  getStoredLoginResult(): AuthLoginResult | null {
+    if (typeof window === "undefined") return null;
+    const value = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+    return value ? hydrateLoginResult(value) : null;
   }
 }
 

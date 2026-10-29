@@ -73,9 +73,9 @@ export function CombinedSearchPage() {
           status: "success",
           key,
           data: {
-            hospitals: hospitals.Data,
-            doctors: doctors.Data,
-            services: services.Data,
+            hospitals: hospitals.data,
+            doctors: doctors.data,
+            services: services.data,
           },
         });
       })
@@ -169,7 +169,7 @@ export function CombinedSearchPage() {
                 >
                   {hospitals.Items.map((hospital) => (
                     <HospitalCard
-                      key={hospital.Uuid}
+                      key={hospital.uuid}
                       hospital={hospital}
                       showBookingAction
                     />
@@ -186,7 +186,7 @@ export function CombinedSearchPage() {
                 >
                   {doctors.Items.map((doctor) => (
                     <DoctorCard
-                      key={doctor.Uuid}
+                      key={doctor.uuid}
                       doctor={doctor}
                       showBookingAction
                     />
@@ -203,7 +203,7 @@ export function CombinedSearchPage() {
                 >
                   {services.Items.map((service) => (
                     <MedicalServiceCard
-                      key={service.Uuid}
+                      key={service.uuid}
                       service={service}
                       showBookingAction
                     />

@@ -47,7 +47,7 @@ export function AppointmentsPage() {
     appointmentService
       .getAll(
         {
-          accountUuid: session.Account.Uuid,
+          accountUuid: session.account.uuid,
           status,
           type,
           from: from || undefined,
@@ -58,7 +58,7 @@ export function AppointmentsPage() {
         controller.signal,
       )
       .then((response) => {
-        if (active) setState({ status: "success", key, data: response.Data });
+        if (active) setState({ status: "success", key, data: response.data });
       })
       .catch(() => {
         if (active) setState({ status: "error", key, message: "Không thể tải lịch hẹn. Vui lòng thử lại." });
@@ -132,22 +132,22 @@ export function AppointmentsPage() {
             {state.data.Items.length ? (
               <div className="space-y-4">
                 {state.data.Items.map((item) => (
-                  <article key={item.Appointment.Uuid} className="rounded-xl border bg-card p-5">
+                  <article key={item.appointment.uuid} className="rounded-xl border bg-card p-5">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-primary">{getAppointmentTypeLabel(item.Type)}</p>
-                          <AppointmentStatusBadge status={item.Appointment.Status} />
+                          <p className="text-xs font-semibold uppercase tracking-wide text-primary">{getAppointmentTypeLabel(item.type)}</p>
+                          <AppointmentStatusBadge status={item.appointment.status} />
                         </div>
-                        <h3 className="mt-3 break-words text-lg font-bold">{item.TargetName}</h3>
+                        <h3 className="mt-3 break-words text-lg font-bold">{item.targetName}</h3>
                         <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                          <CardFact icon={CalendarDays} value={formatAppointmentDateTime(item.Appointment.AppointmentAt)} />
-                          <CardFact icon={Building2} value={item.HospitalName} />
-                          <CardFact icon={Stethoscope} value={`Người khám: ${item.Appointment.PatientName}`} />
-                          <CardFact icon={Clock3} value={item.RoomName ? `Phòng: ${item.RoomName}` : "Phòng: Chưa phân"} />
+                          <CardFact icon={CalendarDays} value={formatAppointmentDateTime(item.appointment.appointmentAt)} />
+                          <CardFact icon={Building2} value={item.hospitalName} />
+                          <CardFact icon={Stethoscope} value={`Người khám: ${item.appointment.patientName}`} />
+                          <CardFact icon={Clock3} value={item.roomName ? `Phòng: ${item.roomName}` : "Phòng: Chưa phân"} />
                         </div>
                       </div>
-                      <Link href={`/tai-khoan/lich-hen/${item.Appointment.Uuid}`} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>
+                      <Link href={`/tai-khoan/lich-hen/${item.appointment.uuid}`} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>
                         Xem chi tiết
                       </Link>
                     </div>

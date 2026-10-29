@@ -21,44 +21,44 @@ export enum Gender {
 }
 
 export type Account = {
-  Uuid: Guid;
-  Phone: string;
-  Password: string;
-  RoleUuid: Guid;
-  Status: BaseStatus;
-  HospitalUuid: Guid | null;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  phone: string;
+  password: string;
+  roleUuid: Guid;
+  status: BaseStatus;
+  hospitalUuid: Guid | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type PatientProfile = {
-  Uuid: Guid;
-  Avatar: string;
-  Name: string;
-  Gender: Gender;
-  Birthdate: Date;
-  MedicalCode: string;
-  Email: string;
-  AccountUuid: Guid;
+  uuid: Guid;
+  avatar: string;
+  name: string;
+  gender: Gender;
+  birthdate: Date;
+  medicalCode: string;
+  email: string;
+  accountUuid: Guid;
 };
 
 export type Hospital = {
-  Uuid: Guid;
-  Image: string;
-  LImage: string;
-  MapUrl: string;
-  Slug: string;
-  Name: string;
-  Address: string;
-  NumberOfRoom: number;
-  Description: string;
-  DetailService: string;
-  WorkingHour: string;
-  Status: BaseStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  image: string;
+  lImage: string;
+  mapUrl: string;
+  slug: string;
+  name: string;
+  address: string;
+  numberOfRoom: number;
+  description: string;
+  detailService: string;
+  workingHour: string;
+  status: BaseStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export enum RoomStatus {
@@ -68,115 +68,115 @@ export enum RoomStatus {
 }
 
 export type Room = {
-  Uuid: Guid;
-  Name: string;
-  Status: RoomStatus;
-  HospitalUuid: Guid;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  name: string;
+  status: RoomStatus;
+  hospitalUuid: Guid;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type DoctorProfile = {
-  Uuid: Guid;
-  Avatar: string;
-  Slug: string;
-  Name: string;
-  Price: number;
-  DepartmentDisplay: string;
-  Introduction: string;
-  Expertise: string;
-  Specialty: string;
-  Workplace: string;
-  IsFeatured: boolean;
-  AccountUuid: Guid;
-  HospitalUuid: Guid;
+  uuid: Guid;
+  avatar: string;
+  slug: string;
+  name: string;
+  price: number;
+  departmentDisplay: string;
+  introduction: string;
+  expertise: string;
+  specialty: string;
+  workplace: string;
+  isFeatured: boolean;
+  accountUuid: Guid;
+  hospitalUuid: Guid;
 };
 
 export type DoctorDepartment = {
-  Uuid: Guid;
-  DoctorUuid: Guid;
-  DepartmentUuid: Guid;
+  uuid: Guid;
+  doctorUuid: Guid;
+  departmentUuid: Guid;
 };
 
 export type Department = {
-  Uuid: Guid;
-  Icon: string;
-  Slug: string;
-  Name: string;
-  Description: string;
-  Status: BaseStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  icon: string;
+  slug: string;
+  name: string;
+  description: string;
+  status: BaseStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type HospitalDepartment = {
-  Uuid: Guid;
-  HospitalUuid: Guid;
-  DepartmentUuid: Guid;
+  uuid: Guid;
+  hospitalUuid: Guid;
+  departmentUuid: Guid;
 };
 
 export type MedicalService = {
-  Uuid: Guid;
-  Image: string;
-  Slug: string;
-  Name: string;
-  Price: number;
-  Description: string;
-  DetailService: string;
-  WorkingHour: string;
-  Status: BaseStatus;
-  IsInsured: boolean;
-  InsuranceCap: number;
-  IsFeatured: boolean;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  image: string;
+  slug: string;
+  name: string;
+  price: number;
+  description: string;
+  detailService: string;
+  workingHour: string;
+  status: BaseStatus;
+  isInsured: boolean;
+  insuranceCap: number;
+  isFeatured: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type HospitalMedicalService = {
-  Uuid: Guid;
-  HospitalUuid: Guid;
-  MedicalServiceUuid: Guid;
+  uuid: Guid;
+  hospitalUuid: Guid;
+  medicalServiceUuid: Guid;
 };
 
 export type HospitalAssignmentSelection = {
-  DepartmentUuids: Guid[];
-  MedicalServiceUuids: Guid[];
+  departmentUuids: Guid[];
+  medicalServiceUuids: Guid[];
 };
 
 export type ReviewHospital = {
-  Uuid: Guid;
-  Content: string;
-  NumberOfStar: number;
-  PatientUuid: Guid;
-  HospitalUuid: Guid;
-  Status: BaseStatus;
-  IsViewed: boolean;
-  CreatedAt: Date;
+  uuid: Guid;
+  content: string;
+  numberOfStar: number;
+  patientUuid: Guid;
+  hospitalUuid: Guid;
+  status: BaseStatus;
+  isViewed: boolean;
+  createdAt: Date;
 };
 
 export type ReviewDoctor = {
-  Uuid: Guid;
-  Content: string;
-  NumberOfStar: number;
-  PatientUuid: Guid;
-  DoctorUuid: Guid;
-  Status: BaseStatus;
-  IsViewed: boolean;
-  CreatedAt: Date;
+  uuid: Guid;
+  content: string;
+  numberOfStar: number;
+  patientUuid: Guid;
+  doctorUuid: Guid;
+  status: BaseStatus;
+  isViewed: boolean;
+  createdAt: Date;
 };
 
 export type ReviewMedicalService = {
-  Uuid: Guid;
-  Content: string;
-  NumberOfStar: number;
-  PatientUuid: Guid;
-  MedicalServiceUuid: Guid;
-  Status: BaseStatus;
-  IsViewed: boolean;
-  CreatedAt: Date;
+  uuid: Guid;
+  content: string;
+  numberOfStar: number;
+  patientUuid: Guid;
+  medicalServiceUuid: Guid;
+  status: BaseStatus;
+  isViewed: boolean;
+  createdAt: Date;
 };
 
 export enum MedicineUnit {
@@ -189,29 +189,29 @@ export enum MedicineUnit {
 }
 
 export type Medicine = {
-  Uuid: Guid;
-  Image: string;
-  Name: string;
-  Description: string;
-  Price: number;
-  Unit: MedicineUnit;
-  Status: BaseStatus;
-  IsInsured: boolean;
-  InsuranceCap: number;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  image: string;
+  name: string;
+  description: string;
+  price: number;
+  unit: MedicineUnit;
+  status: BaseStatus;
+  isInsured: boolean;
+  insuranceCap: number;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type MedicineInventory = {
-  Uuid: Guid;
-  HospitalUuid: Guid;
-  MedicineUuid: Guid;
-  Quantity: number;
-  MinimumQuantity: number;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  hospitalUuid: Guid;
+  medicineUuid: Guid;
+  quantity: number;
+  minimumQuantity: number;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export enum ProviderStatus {
@@ -220,14 +220,14 @@ export enum ProviderStatus {
 }
 
 export type Provider = {
-  Uuid: Guid;
-  Name: string;
-  Address: string;
-  Hotline: string;
-  Status: ProviderStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  name: string;
+  address: string;
+  hotline: string;
+  status: ProviderStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export enum ImportTicketStatus {
@@ -237,23 +237,23 @@ export enum ImportTicketStatus {
 }
 
 export type ImportTicket = {
-  Uuid: Guid;
-  HospitalUuid: Guid;
-  AccountUuid: Guid;
-  ProviderUuid: Guid;
-  Note: string;
-  Status: ImportTicketStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  hospitalUuid: Guid;
+  accountUuid: Guid;
+  providerUuid: Guid;
+  note: string;
+  status: ImportTicketStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type ImportTicketDetail = {
-  Uuid: Guid;
-  ImportTicketUuid: Guid;
-  MedicineUuid: Guid;
-  Quantity: number;
-  Price: number;
+  uuid: Guid;
+  importTicketUuid: Guid;
+  medicineUuid: Guid;
+  quantity: number;
+  price: number;
 };
 
 export enum ExportTicketStatus {
@@ -263,22 +263,22 @@ export enum ExportTicketStatus {
 }
 
 export type ExportTicket = {
-  Uuid: Guid;
-  HospitalUuid: Guid;
-  AccountUuid: Guid;
-  Note: string;
-  Status: ExportTicketStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  hospitalUuid: Guid;
+  accountUuid: Guid;
+  note: string;
+  status: ExportTicketStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type ExportTicketDetail = {
-  Uuid: Guid;
-  ExportTicketUuid: Guid;
-  MedicineUuid: Guid;
-  Quantity: number;
-  Price: number;
+  uuid: Guid;
+  exportTicketUuid: Guid;
+  medicineUuid: Guid;
+  quantity: number;
+  price: number;
 };
 
 export enum PrescriptionStatus {
@@ -288,29 +288,29 @@ export enum PrescriptionStatus {
 }
 
 export type Prescription = {
-  Uuid: Guid;
-  PatientProfileUuid: Guid;
-  DoctorProfileUuid: Guid;
-  HospitalUuid: Guid;
-  Status: PrescriptionStatus;
-  Note: string;
-  AppointmentUuid: Guid | null;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  patientProfileUuid: Guid;
+  doctorProfileUuid: Guid;
+  hospitalUuid: Guid;
+  status: PrescriptionStatus;
+  note: string;
+  appointmentUuid: Guid | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type PrescriptionDetail = {
-  Uuid: Guid;
-  PrescriptionUuid: Guid;
-  MedicineUuid: Guid;
-  Quantity: number;
-  QuantityPerDose: number;
-  DosesPerDay: number;
-  Duration: number;
-  Price: number;
-  IsExternal: boolean;
-  Note: string;
+  uuid: Guid;
+  prescriptionUuid: Guid;
+  medicineUuid: Guid;
+  quantity: number;
+  quantityPerDose: number;
+  dosesPerDay: number;
+  duration: number;
+  price: number;
+  isExternal: boolean;
+  note: string;
 };
 
 export enum AppointmentStatus {
@@ -329,52 +329,52 @@ export enum AppointmentType {
 }
 
 type AppointmentBase = {
-  Uuid: Guid;
-  PatientName: string;
-  Gender: Gender;
-  MedicalCode: string;
-  Note: string;
-  StartTime: Date;
-  AppointmentDate: Date;
-  TimeSlot: Guid;
-  Status: AppointmentStatus;
-  PatientUuid: Guid | null;
-  HospitalUuid: Guid;
-  RoomUuid: Guid | null;
-  DoctorNote: string;
-  TotalPrice: number;
-  IsPaid: boolean;
-  IsWalkIn: boolean;
-  GuestPhone: string | null;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  patientName: string;
+  gender: Gender;
+  medicalCode: string;
+  note: string;
+  startTime: Date;
+  appointmentDate: Date;
+  timeSlot: Guid;
+  status: AppointmentStatus;
+  patientUuid: Guid | null;
+  hospitalUuid: Guid;
+  roomUuid: Guid | null;
+  doctorNote: string;
+  totalPrice: number;
+  isPaid: boolean;
+  isWalkIn: boolean;
+  guestPhone: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type Appointment =
   | (AppointmentBase & {
-      Type: AppointmentType.Hospital;
-      DoctorUuid: null;
-      MedicalServiceUuid: null;
+      type: AppointmentType.Hospital;
+      doctorUuid: null;
+      medicalServiceUuid: null;
     })
   | (AppointmentBase & {
-      Type: AppointmentType.Doctor;
-      DoctorUuid: Guid;
-      MedicalServiceUuid: null;
+      type: AppointmentType.Doctor;
+      doctorUuid: Guid;
+      medicalServiceUuid: null;
     })
   | (AppointmentBase & {
-      Type: AppointmentType.Service;
-      DoctorUuid: null;
-      MedicalServiceUuid: Guid;
+      type: AppointmentType.Service;
+      doctorUuid: null;
+      medicalServiceUuid: Guid;
     });
 
 export type AppointmentMedicalService = {
-  Uuid: Guid;
-  AppointmentUuid: Guid;
-  MedicalServiceUuid: Guid;
-  Price: number;
-  Description: string;
-  Status: AppointmentMedicalServiceStatus;
+  uuid: Guid;
+  appointmentUuid: Guid;
+  medicalServiceUuid: Guid;
+  price: number;
+  description: string;
+  status: AppointmentMedicalServiceStatus;
 };
 
 export enum AppointmentMedicalServiceStatus {
@@ -395,30 +395,30 @@ export enum AccessScope {
 }
 
 export type TimeWorking = {
-  Uuid: Guid;
-  DayOfWeek: number;
-  StartTime: string;
-  EndTime: string;
-  Status: BaseStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  status: BaseStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
-export type DoctorWorking = { Uuid: Guid; DoctorUuid: Guid; WorkingUuid: Guid };
-export type HospitalWorking = { Uuid: Guid; HospitalUuid: Guid; WorkingUuid: Guid };
-export type ServiceWorking = { Uuid: Guid; ServiceUuid: Guid; WorkingUuid: Guid };
+export type DoctorWorking = { uuid: Guid; doctorUuid: Guid; workingUuid: Guid };
+export type HospitalWorking = { uuid: Guid; hospitalUuid: Guid; workingUuid: Guid };
+export type ServiceWorking = { uuid: Guid; serviceUuid: Guid; workingUuid: Guid };
 
 export type Role = {
-  Uuid: Guid;
-  Name: string;
-  Description: string;
-  IsDoctor: boolean;
-  Scope: AccessScope;
-  Status: BaseStatus;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-  DeletedAt: Date;
+  uuid: Guid;
+  name: string;
+  description: string;
+  isDoctor: boolean;
+  scope: AccessScope;
+  status: BaseStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 };
 
 export type Permission = {
@@ -431,8 +431,8 @@ export type Permission = {
 };
 
 export type RolePermission = {
-  Uuid: Guid;
-  RoleUuid: Guid;
-  PermissionUuid: Guid;
-  Action: PermissionAction;
+  uuid: Guid;
+  roleUuid: Guid;
+  permissionUuid: Guid;
+  action: PermissionAction;
 };

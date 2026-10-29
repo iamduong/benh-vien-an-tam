@@ -13,27 +13,27 @@ export type PatientReview =
 
 export type PublicReview = Pick<
   PatientReview,
-  "Uuid" | "Content" | "NumberOfStar" | "CreatedAt"
+  "uuid" | "content" | "numberOfStar" | "createdAt"
 >;
 
 export type ReviewEligibilityTarget = {
-  Type: ReviewTargetType;
-  TargetUuid: string;
-  TargetName: string;
-  Review: PatientReview | null;
+  type: ReviewTargetType;
+  targetUuid: string;
+  targetName: string;
+  review: PatientReview | null;
 };
 
 export type ReviewEligibility = {
-  AppointmentUuid: string;
-  Targets: ReviewEligibilityTarget[];
+  appointmentUuid: string;
+  targets: ReviewEligibilityTarget[];
 };
 
 export type SaveReviewRequest = {
-  NumberOfStar: number;
-  Content: string;
+  numberOfStar: number;
+  content: string;
 };
 
 export type ReviewErrorResponse = {
-  Message?: string;
-  Errors?: Partial<Record<keyof SaveReviewRequest, string>>;
+  message?: string;
+  errors?: Partial<Record<keyof SaveReviewRequest, string>>;
 };

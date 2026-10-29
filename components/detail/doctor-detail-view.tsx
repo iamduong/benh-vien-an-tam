@@ -27,8 +27,8 @@ const sections = [
 ];
 
 export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
-  const { Doctor: doctor, Departments, Hospital: hospital, Reviews } = detail;
-  const bookingHref = `/dat-lich/bac-si?doctor=${doctor.Uuid}`;
+  const { doctor, departments, hospital, reviews } = detail;
+  const bookingHref = `/dat-lich/bac-si?doctor=${doctor.uuid}`;
 
   return (
     <article className="pb-20">
@@ -46,25 +46,25 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
           </Link>
           <ChevronRight aria-hidden="true" className="size-4 shrink-0" />
           <span aria-current="page" className="truncate text-foreground">
-            {doctor.Name}
+            {doctor.name}
           </span>
         </nav>
 
         <div className="mt-6 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]">
           <div className="relative min-h-80 overflow-hidden rounded-2xl border bg-[linear-gradient(145deg,var(--muted),var(--secondary))] sm:min-h-[30rem]">
             <DetailImage
-              src={doctor.Avatar}
+              src={doctor.avatar}
               fallbackSrc="/images/doctor-placeholder.svg"
-              alt={`Bác sĩ ${doctor.Name}`}
+              alt={`Bác sĩ ${doctor.name}`}
             />
           </div>
 
           <section className="flex min-w-0 flex-col rounded-2xl border bg-card p-5 sm:p-7">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-              {displayText(doctor.DepartmentDisplay)}
+              {displayText(doctor.departmentDisplay)}
             </p>
             <h1 className="mt-3 text-balance text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-              {doctor.Name}
+              {doctor.name}
             </h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               Xem thông tin chuyên môn, nơi làm việc và lựa chọn lịch khám phù hợp với nhu cầu của bạn.
@@ -74,22 +74,22 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
               <SummaryFact
                 icon={Stethoscope}
                 label="Chuyên môn"
-                value={displayText(doctor.Specialty)}
+                value={displayText(doctor.specialty)}
               />
               <SummaryFact
                 icon={WalletCards}
                 label="Chi phí dự kiến"
-                value={formatPrice(doctor.Price)}
+                value={formatPrice(doctor.price)}
               />
               <SummaryFact
                 icon={Building2}
                 label="Nơi làm việc"
-                value={displayText(doctor.Workplace)}
+                value={displayText(doctor.workplace)}
               />
               <SummaryFact
                 icon={MapPin}
                 label="Địa chỉ cơ sở"
-                value={displayText(hospital.Address)}
+                value={displayText(hospital.address)}
               />
             </div>
 
@@ -137,11 +137,23 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
       <div className="container-shell mt-8 grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 space-y-7">
           <DetailSection id="gioi-thieu" title="Giới thiệu bác sĩ">
-            <SafeMarkdown content={doctor.Introduction} />
+            {doctor.introduction.trim() ? (
+              <SafeMarkdown content={doctor.introduction} />
+            ) : (
+              <p className="text-sm leading-7 text-muted-foreground">
+                Thông tin giới thiệu của bác sĩ đang được cập nhật.
+              </p>
+            )}
           </DetailSection>
 
           <DetailSection id="chuyen-mon" title="Kinh nghiệm và chuyên môn">
-            <SafeMarkdown content={doctor.Expertise} />
+            {doctor.expertise.trim() ? (
+              <SafeMarkdown content={doctor.expertise} />
+            ) : (
+              <p className="text-sm leading-7 text-muted-foreground">
+                Kinh nghiệm và lĩnh vực chuyên môn đang được cập nhật.
+              </p>
+            )}
           </DetailSection>
 
           <DetailSection
@@ -150,10 +162,10 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
             description="Các chuyên khoa được xác định từ hồ sơ chuyên môn của bác sĩ."
           >
             <RelatedList
-              items={Departments.map((department) => ({
-                href: `/bac-si?department=${department.Uuid}`,
-                title: department.Name,
-                description: department.Description,
+              items={departments.map((department) => ({
+                href: `/chuyen-khoa/${department.slug}`,
+                title: department.name,
+                description: department.description,
               }))}
               emptyMessage="Chuyên khoa đang được cập nhật."
             />
@@ -163,9 +175,9 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
             <RelatedList
               items={[
                 {
-                  href: `/co-so-y-te/${hospital.Slug}`,
-                  title: hospital.Name,
-                  description: `${displayText(hospital.Address)} · ${displayText(hospital.WorkingHour)}`,
+                  href: `/co-so-y-te/${hospital.slug}`,
+                  title: hospital.name,
+                  description: `${displayText(hospital.address)} · ${displayText(hospital.workingHour)}`,
                 },
               ]}
               emptyMessage="Cơ sở làm việc đang được cập nhật."
@@ -174,15 +186,8 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
 
           <DetailSection id="danh-gia" title="Đánh giá từ người bệnh">
             <ReviewList
-              reviews={Reviews.map(
-                ({ Uuid, Content, NumberOfStar, CreatedAt }) => ({
-                  Uuid,
-                  Content,
-                  NumberOfStar,
-                  CreatedAt,
-                }),
-              )}
-              target={{ type: "doctor", uuid: doctor.Uuid }}
+              reviews={reviews}
+              target={{ type: "doctor", uuid: doctor.uuid }}
             />
           </DetailSection>
         </div>
@@ -197,7 +202,7 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
             <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">
               Phí khám dự kiến
               <strong className="mt-1 block text-base text-foreground">
-                {formatPrice(doctor.Price)}
+                {formatPrice(doctor.price)}
               </strong>
             </p>
             <Link
@@ -210,12 +215,12 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
           </div>
           <div className="rounded-xl border bg-card p-5">
             <p className="text-sm font-semibold">Thông tin cơ sở</p>
-            <p className="mt-3 text-sm font-medium leading-6">{hospital.Name}</p>
+            <p className="mt-3 text-sm font-medium leading-6">{hospital.name}</p>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              {hospital.Address}
+              {hospital.address}
             </p>
             <Link
-              href={`/co-so-y-te/${hospital.Slug}`}
+              href={`/co-so-y-te/${hospital.slug}`}
               className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline"
             >
               Xem cơ sở

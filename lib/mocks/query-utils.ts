@@ -1,10 +1,25 @@
-import type { PaginatedData } from "@/lib/http/response";
+import type { PaginatedData, PublicPaginatedData } from "@/lib/http/response";
 
 type QueryParams = Record<string, unknown> | undefined;
 
 export function getStringParam(params: QueryParams, key: string) {
   const value = params?.[key];
   return typeof value === "string" ? value.trim() : "";
+}
+
+export function paginatePublic<T>(
+  items: T[],
+  page: number,
+  pageSize: number,
+): PublicPaginatedData<T> {
+  const result = paginate(items, page, pageSize);
+  return {
+    items: result.Items,
+    page: result.Page,
+    pageSize: result.PageSize,
+    totalItems: result.TotalItems,
+    totalPages: result.TotalPages,
+  };
 }
 
 export function getPositiveIntegerParam(

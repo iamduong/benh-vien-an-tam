@@ -16,14 +16,14 @@ function normalizePhone(phone: string) {
 
 function toPublicAccount(account: Account): PublicAccount {
   return {
-    Uuid: account.Uuid,
-    Phone: account.Phone,
-    RoleUuid: account.RoleUuid,
-    Status: account.Status,
-    HospitalUuid: account.HospitalUuid,
-    CreatedAt: account.CreatedAt,
-    UpdatedAt: account.UpdatedAt,
-    DeletedAt: account.DeletedAt,
+    uuid: account.uuid,
+    phone: account.phone,
+    roleUuid: account.roleUuid,
+    status: account.status,
+    hospitalUuid: account.hospitalUuid,
+    createdAt: account.createdAt,
+    updatedAt: account.updatedAt,
+    deletedAt: account.deletedAt,
   };
 }
 
@@ -34,53 +34,53 @@ function parseBody<T>(data: unknown): T {
 export function registerAuthRoutes(mock: AxiosMockAdapter) {
   mock.onPost("/auth/login").reply((config) => {
     const credentials = parseBody<LoginRequest>(config.data);
-    const phone = normalizePhone(credentials.Phone);
+    const phone = normalizePhone(credentials.phone);
     const account = mockAccounts.find(
-      (candidate) => normalizePhone(candidate.Phone) === phone,
+      (candidate) => normalizePhone(candidate.phone) === phone,
     );
 
-    if (!account || account.Password !== credentials.Password) {
-      return [401, { Message: "Số điện thoại hoặc mật khẩu không đúng." }];
+    if (!account || account.password !== credentials.password) {
+      return [401, { message: "Số điện thoại hoặc mật khẩu không đúng." }];
     }
 
-    if (account.Status === BaseStatus.InActive) {
-      return [403, { Message: "Tài khoản đã bị vô hiệu hóa." }];
+    if (account.status === BaseStatus.InActive) {
+      return [403, { message: "Tài khoản đã bị vô hiệu hóa." }];
     }
 
-    if (account.RoleUuid !== ROLE_UUIDS.PATIENT) {
-      return [403, { Message: "Tài khoản không thuộc phạm vi người bệnh." }];
+    if (account.roleUuid !== ROLE_UUIDS.PATIENT) {
+      return [403, { message: "Tài khoản không thuộc phạm vi người bệnh." }];
     }
 
     const profile = mockPatientProfiles.find(
-      (candidate) => candidate.AccountUuid === account.Uuid,
+      (candidate) => candidate.accountUuid === account.uuid,
     );
 
     if (!profile) {
-      return [409, { Message: "Tài khoản chưa có hồ sơ người bệnh hợp lệ." }];
+      return [409, { message: "Tài khoản chưa có hồ sơ người bệnh hợp lệ." }];
     }
 
     const session: AuthSession = {
-      Account: toPublicAccount(account),
-      PatientProfile: profile,
+      account: toPublicAccount(account),
+      patientProfile: profile,
     };
 
-    return [200, { Data: session, Message: "Đăng nhập thành công." }];
+    return [200, { data: session, message: "Đăng nhập thành công." }];
   });
 
   mock.onPost("/auth/register").reply((config) => {
     const request = parseBody<RegisterPatientRequest>(config.data);
-    const phone = normalizePhone(request.Phone);
+    const phone = normalizePhone(request.phone);
 
     if (
       mockAccounts.some(
-        (candidate) => normalizePhone(candidate.Phone) === phone,
+        (candidate) => normalizePhone(candidate.phone) === phone,
       )
     ) {
       return [
         409,
         {
-          Message: "Không thể tạo tài khoản.",
-          Errors: { Phone: "Số điện thoại đã được sử dụng." },
+          message: "Không thể tạo tài khoản.",
+          errors: { phone: "Số điện thoại đã được sử dụng." },
         },
       ];
     }
@@ -88,35 +88,35 @@ export function registerAuthRoutes(mock: AxiosMockAdapter) {
     const now = new Date();
     const accountUuid = crypto.randomUUID();
     const account: Account = {
-      Uuid: accountUuid,
-      Phone: phone,
-      Password: request.Password,
-      RoleUuid: ROLE_UUIDS.PATIENT,
-      Status: BaseStatus.Active,
-      HospitalUuid: null,
-      CreatedAt: now,
-      UpdatedAt: now,
-      DeletedAt: new Date(0),
+      uuid: accountUuid,
+      phone: phone,
+      password: request.password,
+      roleUuid: ROLE_UUIDS.PATIENT,
+      status: BaseStatus.Active,
+      hospitalUuid: null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: new Date(0),
     };
     const profile = {
-      Uuid: crypto.randomUUID(),
-      Avatar: "",
-      Name: request.Name.trim(),
-      Gender: request.Gender,
-      Birthdate: new Date(`${request.Birthdate}T00:00:00`),
-      MedicalCode: `BN${Date.now().toString().slice(-8)}`,
-      Email: request.Email.trim().toLowerCase(),
-      AccountUuid: accountUuid,
+      uuid: crypto.randomUUID(),
+      avatar: "",
+      name: request.name.trim(),
+      gender: request.gender,
+      birthdate: new Date(`${request.birthdate}T00:00:00`),
+      medicalCode: `BN${Date.now().toString().slice(-8)}`,
+      email: request.email.trim().toLowerCase(),
+      accountUuid: accountUuid,
     };
 
     mockAccounts.push(account);
     mockPatientProfiles.push(profile);
 
-    return [201, { Data: null, Message: "Đăng ký tài khoản thành công." }];
+    return [201, { data: null, message: "Đăng ký tài khoản thành công." }];
   });
 
   mock.onPost("/auth/logout").reply(200, {
-    Data: null,
-    Message: "Đăng xuất thành công.",
+    data: null,
+    message: "Đăng xuất thành công.",
   });
 }

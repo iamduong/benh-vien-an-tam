@@ -14,7 +14,7 @@ import type {
 export class ReviewServiceError extends Error {
   constructor(
     message: string,
-    public readonly fieldErrors: ReviewErrorResponse["Errors"] = {},
+    public readonly fieldErrors: ReviewErrorResponse["errors"] = {},
     public readonly status?: number,
   ) {
     super(message);
@@ -25,9 +25,9 @@ export class ReviewServiceError extends Error {
 function toReviewError(error: unknown) {
   if (axios.isAxiosError<ReviewErrorResponse>(error)) {
     return new ReviewServiceError(
-      error.response?.data?.Message ??
+      error.response?.data?.message ??
         "Không thể kết nối đến hệ thống. Vui lòng thử lại.",
-      error.response?.data?.Errors,
+      error.response?.data?.errors,
       error.response?.status,
     );
   }
@@ -43,11 +43,11 @@ export class ReviewService {
       );
       return {
         ...response.data,
-        Data: {
-          ...response.data.Data,
-          Targets: response.data.Data.Targets.map((target) => ({
+        data: {
+          ...response.data.data,
+          targets: response.data.data.targets.map((target) => ({
             ...target,
-            Review: target.Review ? hydrateReview(target.Review) : null,
+            review: target.review ? hydrateReview(target.review) : null,
           })),
         },
       };
@@ -66,7 +66,7 @@ export class ReviewService {
         `/reviews/${type}/${encodeURIComponent(targetUuid)}`,
         request,
       );
-      return { ...response.data, Data: hydrateReview(response.data.Data) };
+      return { ...response.data, data: hydrateReview(response.data.data) };
     } catch (error) {
       throw toReviewError(error);
     }
@@ -84,9 +84,9 @@ export class ReviewService {
       );
       return {
         ...response.data,
-        Data: response.data.Data.map((review) => ({
+        data: response.data.data.map((review) => ({
           ...review,
-          CreatedAt: new Date(review.CreatedAt),
+          createdAt: new Date(review.createdAt),
         })),
       };
     } catch (error) {
@@ -96,7 +96,7 @@ export class ReviewService {
 }
 
 function hydrateReview<T extends PatientReview>(review: T): T {
-  return { ...review, CreatedAt: new Date(review.CreatedAt) };
+  return { ...review, createdAt: new Date(review.createdAt) };
 }
 
 export const reviewService = new ReviewService();

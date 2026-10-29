@@ -16,7 +16,7 @@ export interface MedicineDto {
 
 export interface MedicineDetailDto extends MedicineDto {
     isInsured: boolean;
-    insuranceCap: string;
+    insuranceCap: number;
     description: string | null;
     imageUrl: string | null;
 }

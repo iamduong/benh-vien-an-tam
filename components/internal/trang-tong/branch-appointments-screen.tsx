@@ -100,17 +100,17 @@ export function BranchAppointmentsScreen() {
     };
     hospitalService
       .getBranchProfile(controller.signal)
-      .then(async ({ Data: hospital }) => {
+      .then(async ({ data: hospital }) => {
         const [firstPage, resourcesResponse] = await Promise.all([
-          branchAppointmentService.getAll(hospital.Uuid, query, controller.signal),
-          branchAppointmentService.getResources(hospital.Uuid, controller.signal),
+          branchAppointmentService.getAll(hospital.uuid, query, controller.signal),
+          branchAppointmentService.getResources(hospital.uuid, controller.signal),
         ]);
         const remainingPages = await Promise.all(
           Array.from(
-            { length: Math.max(firstPage.Data.TotalPages - 1, 0) },
+            { length: Math.max(firstPage.data.TotalPages - 1, 0) },
             (_, index) =>
               branchAppointmentService.getAll(
-                hospital.Uuid,
+                hospital.uuid,
                 { ...query, page: index + 2 },
                 controller.signal,
               ),
@@ -119,18 +119,18 @@ export function BranchAppointmentsScreen() {
         if (!active) return;
 
         const appointments = [
-          ...firstPage.Data.Items,
-          ...remainingPages.flatMap((page) => page.Data.Items),
+          ...firstPage.data.Items,
+          ...remainingPages.flatMap((page) => page.data.Items),
         ];
         setState({
           status: "success",
           hospital,
           appointments,
-          resources: resourcesResponse.Data,
+          resources: resourcesResponse.data,
         });
         setSelected((current) =>
           current
-            ? appointments.find((item) => item.Uuid === current.Uuid) ?? null
+            ? appointments.find((item) => item.uuid === current.uuid) ?? null
             : null,
         );
       })
@@ -175,7 +175,7 @@ export function BranchAppointmentsScreen() {
         ? {
             ...current,
             appointments: current.appointments.map((item) =>
-              item.Uuid === updated.Uuid ? updated : item,
+              item.uuid === updated.uuid ? updated : item,
             ),
           }
         : current,
@@ -184,7 +184,7 @@ export function BranchAppointmentsScreen() {
   }
 
   async function runAction(
-    action: () => Promise<{ Data: BranchAppointment }>,
+    action: () => Promise<{ data: BranchAppointment }>,
     successMessage: string,
   ) {
     if (isSaving) return;
@@ -192,7 +192,7 @@ export function BranchAppointmentsScreen() {
     setMessage("");
     try {
       const response = await action();
-      updateLocal(response.Data);
+      updateLocal(response.data);
       setMessage(successMessage);
     } catch (error) {
       setMessage(getError(error, "Không thể cập nhật lịch hẹn. Vui lòng thử lại."));
@@ -206,7 +206,7 @@ export function BranchAppointmentsScreen() {
     if (!selected) return;
     await runAction(
       () =>
-        branchAppointmentService.assign(hospital.Uuid, selected.Uuid, {
+        branchAppointmentService.assign(hospital.uuid, selected.uuid, {
           doctorUuid: selectedDoctor || null,
           roomUuid: selectedRoom || null,
         }),
@@ -220,8 +220,8 @@ export function BranchAppointmentsScreen() {
     await runAction(
       () =>
         branchAppointmentService.addService(
-          hospital.Uuid,
-          selected.Uuid,
+          hospital.uuid,
+          selected.uuid,
           selectedService,
           serviceDescription,
         ),
@@ -237,8 +237,8 @@ export function BranchAppointmentsScreen() {
     await runAction(
       () =>
         branchAppointmentService.updateNote(
-          hospital.Uuid,
-          selected.Uuid,
+          hospital.uuid,
+          selected.uuid,
           doctorNote,
         ),
       "Đã lưu ghi chú chuyên môn.",
@@ -246,47 +246,47 @@ export function BranchAppointmentsScreen() {
   }
 
   const rows = appointments.map((appointment) => [
-    <div key={`${appointment.Uuid}-date`}>
-      <p>{vietnamDate.format(appointment.AppointmentDate)}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{appointment.Time}</p>
+    <div key={`${appointment.uuid}-date`}>
+      <p>{vietnamDate.format(appointment.appointmentDate)}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{appointment.time}</p>
     </div>,
-    <div key={`${appointment.Uuid}-patient`}>
-      <p className="font-medium">{appointment.PatientName}</p>
-      <p className="mt-1 font-mono text-xs text-muted-foreground">{appointment.MedicalCode}</p>
+    <div key={`${appointment.uuid}-patient`}>
+      <p className="font-medium">{appointment.patientName}</p>
+      <p className="mt-1 font-mono text-xs text-muted-foreground">{appointment.medicalCode}</p>
     </div>,
-    typeLabels[appointment.Type],
-    <div key={`${appointment.Uuid}-assignment`}>
+    typeLabels[appointment.type],
+    <div key={`${appointment.uuid}-assignment`}>
       <p>{appointment.DoctorName ?? "Chưa phân công bác sĩ"}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{appointment.RoomName ?? "Chưa gán phòng"}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{appointment.roomName ?? "Chưa gán phòng"}</p>
     </div>,
     <StatusPill
-      key={`${appointment.Uuid}-status`}
+      key={`${appointment.uuid}-status`}
       tone={
-        appointment.Status === AppointmentStatus.Pending
+        appointment.status === AppointmentStatus.Pending
           ? "amber"
-          : appointment.Status === AppointmentStatus.Approved
+          : appointment.status === AppointmentStatus.Approved
             ? "blue"
-            : appointment.Status === AppointmentStatus.CheckedIn
+            : appointment.status === AppointmentStatus.CheckedIn
             ? "blue"
-            : appointment.Status === AppointmentStatus.Done
+            : appointment.status === AppointmentStatus.Done
               ? "green"
-              : appointment.Status === AppointmentStatus.Unconfirmed
+              : appointment.status === AppointmentStatus.Unconfirmed
                 ? "amber"
                 : "red"
       }
     >
-      {statusLabels[appointment.Status]}
+      {statusLabels[appointment.status]}
     </StatusPill>,
     <Button
-      key={`${appointment.Uuid}-details`}
+      key={`${appointment.uuid}-details`}
       type="button"
       size="sm"
-      variant={selected?.Uuid === appointment.Uuid ? "default" : "outline"}
+      variant={selected?.uuid === appointment.uuid ? "default" : "outline"}
       onClick={() => {
         setSelected(appointment);
-        setSelectedDoctor(appointment.DoctorUuid ?? "");
-        setSelectedRoom(appointment.RoomUuid ?? "");
-        setDoctorNote(appointment.DoctorNote);
+        setSelectedDoctor(appointment.doctorUuid ?? "");
+        setSelectedRoom(appointment.roomUuid ?? "");
+        setDoctorNote(appointment.doctorNote);
         setMessage("");
       }}
     >
@@ -299,7 +299,7 @@ export function BranchAppointmentsScreen() {
       <PortalPageHeader
         eyebrow="Điều phối khám"
         title="Lịch hẹn chi nhánh"
-        description={`Lịch hẹn được giới hạn trong ${hospital.Name}; điều phối bệnh nhân, bác sĩ và phòng theo ca làm việc.`}
+        description={`Lịch hẹn được giới hạn trong ${hospital.name}; điều phối bệnh nhân, bác sĩ và phòng theo ca làm việc.`}
       />
       {message ? (
         <p
@@ -358,37 +358,37 @@ export function BranchAppointmentsScreen() {
 
       {selected ? (
         <PortalSection
-          title={`Chi tiết lịch · ${selected.PatientName}`}
-          description={`${selected.MedicalCode} · ${vietnamDateTime.format(selected.AppointmentDate)} · ${selected.Time}`}
+          title={`Chi tiết lịch · ${selected.patientName}`}
+          description={`${selected.medicalCode} · ${vietnamDateTime.format(selected.appointmentDate)} · ${selected.time}`}
         >
           <div className="grid gap-5 p-5 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Detail label="Giới tính" value={selected.Gender} />
-                <Detail label="Loại lịch" value={typeLabels[selected.Type]} />
-                <Detail label="Điện thoại" value={selected.IsWalkIn ? "Khách vãng lai" : "Tài khoản người bệnh"} />
-                <Detail label="Thanh toán" value={selected.IsPaid ? "Đã thanh toán" : "Chưa thanh toán"} />
+                <Detail label="Giới tính" value={selected.gender} />
+                <Detail label="Loại lịch" value={typeLabels[selected.type]} />
+                <Detail label="Điện thoại" value={selected.isWalkIn ? "Khách vãng lai" : "Tài khoản người bệnh"} />
+                <Detail label="Thanh toán" value={selected.isPaid ? "Đã thanh toán" : "Chưa thanh toán"} />
               </div>
               <div className="border p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ghi chú khi đặt lịch</p>
-                <p className="mt-2 whitespace-pre-wrap text-sm">{selected.Note || "Không có ghi chú."}</p>
+                <p className="mt-2 whitespace-pre-wrap text-sm">{selected.note || "Không có ghi chú."}</p>
               </div>
               <div className="space-y-3 border p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-semibold">Chi phí</p>
-                  <p className="font-semibold">{selected.TotalPrice.toLocaleString("vi-VN")} đ</p>
+                  <p className="font-semibold">{selected.totalPrice.toLocaleString("vi-VN")} đ</p>
                 </div>
                 {selected.Services.map((service) => (
-                  <div key={service.Uuid} className="flex items-center justify-between gap-3 border-t pt-3 text-sm">
+                  <div key={service.uuid} className="flex items-center justify-between gap-3 border-t pt-3 text-sm">
                     <div>
-                      <p>{service.Name}</p>
-                      <p className="text-xs text-muted-foreground">{service.Description || "Không có ghi chú"}</p>
+                      <p>{service.name}</p>
+                      <p className="text-xs text-muted-foreground">{service.description || "Không có ghi chú"}</p>
                     </div>
                     <div className="text-right">
-                      <p>{service.Price.toLocaleString("vi-VN")} đ</p>
-                      {service.Status === AppointmentMedicalServiceStatus.InProgress &&
-                      (selected.Status === AppointmentStatus.Approved ||
-                        selected.Status === AppointmentStatus.CheckedIn) ? (
+                      <p>{service.price.toLocaleString("vi-VN")} đ</p>
+                      {service.status === AppointmentMedicalServiceStatus.InProgress &&
+                      (selected.status === AppointmentStatus.Approved ||
+                        selected.status === AppointmentStatus.CheckedIn) ? (
                         <Button
                           type="button"
                           size="sm"
@@ -396,24 +396,24 @@ export function BranchAppointmentsScreen() {
                           disabled={isSaving}
                           onClick={() =>
                             void runAction(
-                              () => branchAppointmentService.completeService(hospital.Uuid, selected.Uuid, service.Uuid),
-                              `Đã hoàn tất dịch vụ ${service.Name}.`,
+                              () => branchAppointmentService.completeService(hospital.uuid, selected.uuid, service.uuid),
+                              `Đã hoàn tất dịch vụ ${service.name}.`,
                             )
                           }
                         >
                           Hoàn tất dịch vụ
                         </Button>
                       ) : (
-                        <StatusPill tone={service.Status === AppointmentMedicalServiceStatus.Completed ? "green" : "amber"}>
-                          {service.Status === AppointmentMedicalServiceStatus.Completed ? "Đã hoàn tất" : "Đang thực hiện"}
+                        <StatusPill tone={service.status === AppointmentMedicalServiceStatus.Completed ? "green" : "amber"}>
+                          {service.status === AppointmentMedicalServiceStatus.Completed ? "Đã hoàn tất" : "Đang thực hiện"}
                         </StatusPill>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
-              {(selected.Status === AppointmentStatus.Approved ||
-                selected.Status === AppointmentStatus.CheckedIn) ? (
+              {(selected.status === AppointmentStatus.Approved ||
+                selected.status === AppointmentStatus.CheckedIn) ? (
                 <form onSubmit={addService} className="grid gap-3 border p-4 sm:grid-cols-2">
                   <Label className="sm:col-span-2">Thêm dịch vụ phát sinh</Label>
                   <select
@@ -424,8 +424,8 @@ export function BranchAppointmentsScreen() {
                   >
                     <option value="">Chọn dịch vụ</option>
                     {resources.Services.map((service) => (
-                      <option key={service.Uuid} value={service.Uuid}>
-                        {service.Name} · {service.Price.toLocaleString("vi-VN")} đ
+                      <option key={service.uuid} value={service.uuid}>
+                        {service.name} · {service.price.toLocaleString("vi-VN")} đ
                       </option>
                     ))}
                   </select>
@@ -444,9 +444,9 @@ export function BranchAppointmentsScreen() {
             </div>
 
             <div className="space-y-4">
-              {selected.Status !== AppointmentStatus.Done &&
-              selected.Status !== AppointmentStatus.Cancelled &&
-              selected.Status !== AppointmentStatus.Unconfirmed ? (
+              {selected.status !== AppointmentStatus.Done &&
+              selected.status !== AppointmentStatus.Cancelled &&
+              selected.status !== AppointmentStatus.Unconfirmed ? (
                 <>
                   <form onSubmit={assignResources} className="space-y-3 border p-4">
                     <h3 className="font-semibold">Phân công nguồn lực</h3>
@@ -459,8 +459,8 @@ export function BranchAppointmentsScreen() {
                         className="h-10 w-full rounded-md border bg-white px-3 text-sm"
                       >
                         <option value="">Chưa phân công</option>
-                        {resources.Doctors.map((doctor) => (
-                          <option key={doctor.Uuid} value={doctor.Uuid}>{doctor.Name}</option>
+                        {resources.doctors.map((doctor) => (
+                          <option key={doctor.uuid} value={doctor.uuid}>{doctor.name}</option>
                         ))}
                       </select>
                     </div>
@@ -474,7 +474,7 @@ export function BranchAppointmentsScreen() {
                       >
                         <option value="">Chưa gán phòng</option>
                         {resources.Rooms.map((room) => (
-                          <option key={room.Uuid} value={room.Uuid}>{room.Name}</option>
+                          <option key={room.uuid} value={room.uuid}>{room.name}</option>
                         ))}
                       </select>
                     </div>
@@ -496,18 +496,18 @@ export function BranchAppointmentsScreen() {
               ) : (
                 <div className="border p-4">
                   <p className="text-sm font-semibold">Ghi chú bác sĩ</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{selected.DoctorNote || "Chưa có ghi chú."}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{selected.doctorNote || "Chưa có ghi chú."}</p>
                 </div>
               )}
               <div className="flex flex-wrap gap-2 border p-4">
-                {selected.Status === AppointmentStatus.Pending ? (
+                {selected.status === AppointmentStatus.Pending ? (
                   <>
                     <Button
                       type="button"
                       disabled={isSaving}
                       onClick={() =>
                         void runAction(
-                          () => branchAppointmentService.updateStatus(hospital.Uuid, selected.Uuid, AppointmentStatus.Approved),
+                          () => branchAppointmentService.updateStatus(hospital.uuid, selected.uuid, AppointmentStatus.Approved),
                           "Đã duyệt lịch hẹn.",
                         )
                       }
@@ -520,7 +520,7 @@ export function BranchAppointmentsScreen() {
                       disabled={isSaving}
                       onClick={() =>
                         void runAction(
-                          () => branchAppointmentService.updateStatus(hospital.Uuid, selected.Uuid, AppointmentStatus.Cancelled),
+                          () => branchAppointmentService.updateStatus(hospital.uuid, selected.uuid, AppointmentStatus.Cancelled),
                           "Đã hủy lịch hẹn.",
                         )
                       }
@@ -533,7 +533,7 @@ export function BranchAppointmentsScreen() {
                       disabled={isSaving}
                       onClick={() =>
                         void runAction(
-                          () => branchAppointmentService.updateStatus(hospital.Uuid, selected.Uuid, AppointmentStatus.Unconfirmed),
+                          () => branchAppointmentService.updateStatus(hospital.uuid, selected.uuid, AppointmentStatus.Unconfirmed),
                           "Đã đánh dấu lịch không xác nhận.",
                         )
                       }
@@ -542,14 +542,14 @@ export function BranchAppointmentsScreen() {
                     </Button>
                   </>
                 ) : null}
-                {selected.Status === AppointmentStatus.Approved ? (
+                {selected.status === AppointmentStatus.Approved ? (
                   <>
                     <Button
                       type="button"
                       disabled={isSaving}
                       onClick={() =>
                         void runAction(
-                          () => branchAppointmentService.updateStatus(hospital.Uuid, selected.Uuid, AppointmentStatus.CheckedIn),
+                          () => branchAppointmentService.updateStatus(hospital.uuid, selected.uuid, AppointmentStatus.CheckedIn),
                           "Đã check-in; lịch chuyển sang trạng thái đang khám.",
                         )
                       }
@@ -562,7 +562,7 @@ export function BranchAppointmentsScreen() {
                       disabled={isSaving}
                       onClick={() =>
                         void runAction(
-                          () => branchAppointmentService.updateStatus(hospital.Uuid, selected.Uuid, AppointmentStatus.Cancelled),
+                          () => branchAppointmentService.updateStatus(hospital.uuid, selected.uuid, AppointmentStatus.Cancelled),
                           "Đã hủy lịch hẹn.",
                         )
                       }
@@ -571,31 +571,31 @@ export function BranchAppointmentsScreen() {
                     </Button>
                   </>
                 ) : null}
-                {selected.Status === AppointmentStatus.Approved ||
-                selected.Status === AppointmentStatus.CheckedIn ? (
+                {selected.status === AppointmentStatus.Approved ||
+                selected.status === AppointmentStatus.CheckedIn ? (
                   <>
                     <Button
                       type="button"
-                      variant={selected.IsPaid ? "outline" : "secondary"}
+                      variant={selected.isPaid ? "outline" : "secondary"}
                       disabled={isSaving}
                       onClick={() =>
                         void runAction(
-                          () => branchAppointmentService.updatePayment(hospital.Uuid, selected.Uuid, !selected.IsPaid),
-                          selected.IsPaid ? "Đã ghi nhận chưa thanh toán." : "Đã ghi nhận thanh toán tại quầy.",
+                          () => branchAppointmentService.updatePayment(hospital.uuid, selected.uuid, !selected.isPaid),
+                          selected.isPaid ? "Đã ghi nhận chưa thanh toán." : "Đã ghi nhận thanh toán tại quầy.",
                         )
                       }
                     >
-                      {selected.IsPaid ? "Đánh dấu chưa thanh toán" : "Ghi nhận đã thanh toán"}
+                      {selected.isPaid ? "Đánh dấu chưa thanh toán" : "Ghi nhận đã thanh toán"}
                     </Button>
                   </>
                 ) : null}
-                {selected.Status === AppointmentStatus.CheckedIn ? (
+                {selected.status === AppointmentStatus.CheckedIn ? (
                   <Button
                       type="button"
-                      disabled={isSaving || !selected.IsPaid}
+                      disabled={isSaving || !selected.isPaid}
                       onClick={() =>
                         void runAction(
-                          () => branchAppointmentService.complete(hospital.Uuid, selected.Uuid, doctorNote),
+                          () => branchAppointmentService.complete(hospital.uuid, selected.uuid, doctorNote),
                           "Đã hoàn tất lịch và giải phóng phòng khám.",
                         )
                       }

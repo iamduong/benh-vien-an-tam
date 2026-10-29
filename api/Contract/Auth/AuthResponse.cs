@@ -20,7 +20,15 @@ public sealed record LoginResult(
 
 public sealed record AuthSessionResult(
     AuthAccountResult Account,
-    AuthProfileResult Profile
+    AuthProfileResult Profile,
+    AuthRoleResult? Role
+);
+
+public sealed record AuthRoleResult(
+    Guid Uuid,
+    string Name,
+    bool IsDoctor,
+    AccessScope Scope
 );
 
 public sealed record AuthAccountResult(

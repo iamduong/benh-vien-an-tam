@@ -13,6 +13,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/toast/toast-context";
 import { AuthServiceError } from "@/lib/services/auth/AuthService";
+import { getManagementLanding } from "@/lib/auth/management-landing";
 import {
   isNavigationItemActive,
   patientNavigation,
@@ -21,15 +22,23 @@ import {
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
-  const { session, isLoading, logout } = useAuth();
+  const { session, managementSession, isLoading, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const toast = useToast();
-  const isAuthenticated = Boolean(session);
-  const mobileItems = isAuthenticated
+  const managementHref = managementSession
+    ? getManagementLanding(managementSession)
+    : null;
+  const isAuthenticated = Boolean(session || managementSession);
+  const mobileItems = session
     ? [...publicNavigation, ...patientNavigation]
-    : publicNavigation;
+    : managementHref
+      ? [
+          ...publicNavigation,
+          { label: "Cổng quản lý", href: managementHref },
+        ]
+      : publicNavigation;
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -92,10 +101,18 @@ export function SiteHeader() {
             <Skeleton className="h-9 w-24" />
           ) : session ? (
             <AccountMenu
-              profile={session.PatientProfile}
+              profile={session.patientProfile}
               isLoggingOut={isLoggingOut}
               onLogout={handleLogout}
             />
+          ) : managementSession && managementHref ? (
+            <Link
+              href={managementHref}
+              className={cn(buttonVariants(), "h-9 max-w-48 px-4")}
+              title={`Vào cổng làm việc - ${managementSession.role.name}`}
+            >
+              <span className="truncate">{managementSession.role.name}</span>
+            </Link>
           ) : (
             <Link
               href="/dang-nhap"

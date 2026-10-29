@@ -77,8 +77,8 @@ export function PatientHomePage() {
     let active = true;
 
     Promise.all([
-      departmentService.getFeatured(controller.signal),
-      doctorService.getFeatured(controller.signal),
+      departmentService.getFeaturedDepartments(controller.signal),
+      doctorService.getFeaturedDoctor(controller.signal),
       medicalServiceService.getFeatured(controller.signal),
     ])
       .then(([departments, doctors, services]) => {
@@ -86,9 +86,9 @@ export function PatientHomePage() {
         setFeatured({
           status: "success",
           data: {
-            departments: departments.Data,
-            doctors: doctors.Data,
-            services: services.Data,
+            departments: departments.data,
+            doctors: doctors.data,
+            services: services.data,
           },
         });
       })
@@ -114,7 +114,7 @@ export function PatientHomePage() {
       .getBookingContext(controller.signal)
       .then((response) => {
         if (!active) return;
-        setContext({ status: "success", context: response.Data });
+        setContext({ status: "success", context: response.data });
       })
       .catch(() => {
         if (!active) return;
@@ -141,7 +141,7 @@ export function PatientHomePage() {
     appointmentService
       .getAll(
         {
-          accountUuid: session.Account.Uuid,
+          accountUuid: session.account.uuid,
           status: AppointmentStatus.Approved,
           pageSize: 3,
         },
@@ -149,11 +149,11 @@ export function PatientHomePage() {
       )
       .then((response) => {
         if (!active) return;
-        const upcoming = response.Data.Items;
+        const upcoming = response.data.Items;
         return appointmentService
           .getAll(
             {
-              accountUuid: session.Account.Uuid,
+              accountUuid: session.account.uuid,
               status: AppointmentStatus.Done,
               pageSize: 3,
             },
@@ -164,7 +164,7 @@ export function PatientHomePage() {
             setAppointments({
               status: "success",
               upcoming,
-              recent: doneResponse.Data.Items,
+              recent: doneResponse.data.Items,
             });
           });
       })
@@ -186,7 +186,7 @@ export function PatientHomePage() {
 
   return (
     <div className="container-shell py-8 sm:py-12">
-      <WelcomeBanner name={session.PatientProfile.Name} />
+      <WelcomeBanner name={session.patientProfile.name} />
 
       <QuickActions />
 
@@ -493,9 +493,9 @@ function AppointmentList({
   return (
     <ul className="grid min-w-0 gap-3">
       {items.map((item) => (
-        <li key={item.Appointment.Uuid}>
+        <li key={item.appointment.uuid}>
           <Link
-            href={`/tai-khoan/lich-hen/${item.Appointment.Uuid}`}
+            href={`/tai-khoan/lich-hen/${item.appointment.uuid}`}
             className="group flex min-w-0 items-start gap-3 rounded-lg border bg-background/60 p-3 transition hover:border-primary/40 hover:shadow-sm"
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -504,21 +504,21 @@ function AppointmentList({
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-                  {getAppointmentTypeLabel(item.Type)}
+                  {getAppointmentTypeLabel(item.type)}
                 </span>
-                <AppointmentStatusBadge status={item.Appointment.Status} />
+                <AppointmentStatusBadge status={item.appointment.status} />
               </span>
               <span className="mt-1 block break-words text-sm font-semibold group-hover:text-primary">
-                {item.TargetName}
+                {item.targetName}
               </span>
               <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <Clock3 aria-hidden="true" className="size-3.5" />
-                  {formatAppointmentDateTime(item.Appointment.AppointmentAt)}
+                  {formatAppointmentDateTime(item.appointment.appointmentAt)}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <Building2 aria-hidden="true" className="size-3.5" />
-                  {item.HospitalName}
+                  {item.hospitalName}
                 </span>
               </span>
             </span>
@@ -579,12 +579,12 @@ function DepartmentStrip({ departments }: { departments: Department[] }) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {departments.map((department) => (
           <Link
-            key={department.Uuid}
-            href={`/bac-si?department=${department.Uuid}`}
+            key={department.uuid}
+            href={`/bac-si?department=${department.uuid}`}
             className="group flex min-w-0 items-center gap-3 rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-md"
           >
             <Image
-              src={department.Icon}
+              src={department.icon}
               alt=""
               width={48}
               height={48}
@@ -592,7 +592,7 @@ function DepartmentStrip({ departments }: { departments: Department[] }) {
             />
             <span className="min-w-0">
               <span className="block break-words font-semibold leading-6 group-hover:text-primary">
-                {department.Name}
+                {department.name}
               </span>
               <span className="block text-xs leading-5 text-muted-foreground">
                 Tìm bác sĩ theo chuyên khoa
@@ -626,13 +626,13 @@ function DoctorHighlightList({ doctors }: { doctors: DoctorProfile[] }) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {doctors.slice(0, 3).map((doctor) => (
           <article
-            key={doctor.Uuid}
+            key={doctor.uuid}
             className="flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md"
           >
             <div className="relative aspect-[16/9] bg-muted">
               <Image
-                src={doctor.Avatar}
-                alt={`Bác sĩ ${doctor.Name}`}
+                src={doctor.avatar}
+                alt={`Bác sĩ ${doctor.name}`}
                 fill
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 className="object-cover"
@@ -640,26 +640,26 @@ function DoctorHighlightList({ doctors }: { doctors: DoctorProfile[] }) {
             </div>
             <div className="flex flex-1 flex-col p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                {doctor.DepartmentDisplay}
+                {doctor.departmentDisplay}
               </p>
               <h4 className="mt-1 break-words text-base font-semibold">
-                {doctor.Name}
+                {doctor.name}
               </h4>
               <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                {doctor.Specialty}
+                {doctor.specialty}
               </p>
               <p className="mt-3 text-sm font-semibold">
-                {formatPrice(doctor.Price)}
+                {formatPrice(doctor.price)}
               </p>
               <div className="mt-auto flex gap-2 pt-4">
                 <Link
-                  href={`/bac-si/${doctor.Slug}`}
+                  href={`/bac-si/${doctor.slug}`}
                   className={cn(buttonVariants({ variant: "outline" }), "flex-1")}
                 >
                   Xem hồ sơ
                 </Link>
                 <Link
-                  href={`/dat-lich/bac-si?doctor=${doctor.Uuid}`}
+                  href={`/dat-lich/bac-si?doctor=${doctor.uuid}`}
                   className={cn(buttonVariants(), "flex-1")}
                 >
                   Đặt lịch
@@ -694,13 +694,13 @@ function ServiceHighlightList({ services }: { services: MedicalService[] }) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {services.slice(0, 3).map((service) => (
           <article
-            key={service.Uuid}
+            key={service.uuid}
             className="flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md"
           >
             <div className="relative aspect-[16/9] bg-muted">
               <Image
-                src={service.Image}
-                alt={`Minh họa ${service.Name}`}
+                src={service.image}
+                alt={`Minh họa ${service.name}`}
                 fill
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 className="object-cover"
@@ -708,23 +708,23 @@ function ServiceHighlightList({ services }: { services: MedicalService[] }) {
             </div>
             <div className="flex flex-1 flex-col p-4">
               <h4 className="break-words text-base font-semibold leading-6">
-                {service.Name}
+                {service.name}
               </h4>
               <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                {markdownToPlainText(service.Description) || "Đang cập nhật"}
+                {markdownToPlainText(service.description) || "Đang cập nhật"}
               </p>
               <p className="mt-3 text-sm font-semibold">
-                {formatPrice(service.Price)}
+                {formatPrice(service.price)}
               </p>
               <div className="mt-auto flex gap-2 pt-4">
                 <Link
-                  href={`/dich-vu/${service.Slug}`}
+                  href={`/dich-vu/${service.slug}`}
                   className={cn(buttonVariants({ variant: "outline" }), "flex-1")}
                 >
                   Xem chi tiết
                 </Link>
                 <Link
-                  href={`/dat-lich/dich-vu?service=${service.Uuid}`}
+                  href={`/dat-lich/dich-vu?service=${service.uuid}`}
                   className={cn(buttonVariants(), "flex-1")}
                 >
                   Đặt lịch
@@ -739,20 +739,20 @@ function ServiceHighlightList({ services }: { services: MedicalService[] }) {
 }
 
 function ContextHospitalList({ context }: { context: BookingContext }) {
-  if (!context.Hospitals.length) {
+  if (!context.hospitals.length) {
     return <EmptyState message="Chưa có cơ sở đang hoạt động." />;
   }
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {context.Hospitals.slice(0, 6).map((hospital) => (
+      {context.hospitals.slice(0, 6).map((hospital) => (
         <article
-          key={hospital.Uuid}
+          key={hospital.uuid}
           className="flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md"
         >
           <div className="relative aspect-[16/9] bg-muted">
             <Image
-              src={hospital.Image}
-              alt={`Hình minh họa ${hospital.Name}`}
+              src={hospital.image}
+              alt={`Hình minh họa ${hospital.name}`}
               fill
               sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               className="object-cover"
@@ -760,24 +760,24 @@ function ContextHospitalList({ context }: { context: BookingContext }) {
           </div>
           <div className="flex flex-1 flex-col p-4">
             <h4 className="break-words text-base font-semibold leading-6">
-              {hospital.Name}
+              {hospital.name}
             </h4>
             <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">
-              {hospital.Address}
+              {hospital.address}
             </p>
             <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
               <Clock3 aria-hidden="true" className="size-3.5" />
-              {hospital.WorkingHour}
+              {hospital.workingHour}
             </p>
             <div className="mt-auto flex gap-2 pt-4">
               <Link
-                href={`/co-so-y-te/${hospital.Slug}`}
+                href={`/co-so-y-te/${hospital.slug}`}
                 className={cn(buttonVariants({ variant: "outline" }), "flex-1")}
               >
                 Xem chi tiết
               </Link>
               <Link
-                href={`/dat-lich/co-so-y-te?hospital=${hospital.Uuid}`}
+                href={`/dat-lich/co-so-y-te?hospital=${hospital.uuid}`}
                 className={cn(buttonVariants(), "flex-1")}
               >
                 Đặt lịch

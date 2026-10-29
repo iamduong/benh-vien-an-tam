@@ -41,9 +41,9 @@ export function HomeFeaturedSections() {
     let cancelled = false;
 
     Promise.all([
-      departmentService.getFeatured(controller.signal),
-      hospitalService.getFeatured(controller.signal),
-      doctorService.getFeatured(controller.signal),
+      departmentService.getFeaturedDepartments(controller.signal),
+      hospitalService.getFeaturedHospital(controller.signal),
+      doctorService.getFeaturedDoctor(controller.signal),
       medicalServiceService.getFeatured(controller.signal),
     ])
       .then(([departments, hospitals, doctors, medicalServices]) => {
@@ -51,10 +51,10 @@ export function HomeFeaturedSections() {
           setState({
             status: "success",
             data: {
-              departments: departments.Data,
-              hospitals: hospitals.Data,
-              doctors: doctors.Data,
-              medicalServices: medicalServices.Data,
+              departments: departments.data,
+              hospitals: hospitals.data,
+              doctors: doctors.data,
+              medicalServices: medicalServices.data,
             },
           });
         }
@@ -105,7 +105,7 @@ export function HomeFeaturedSections() {
         {departments.length ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {departments.map((department) => (
-              <DepartmentCard key={department.Uuid} department={department} />
+              <DepartmentCard key={department.uuid} department={department} />
             ))}
           </div>
         ) : (
@@ -123,7 +123,7 @@ export function HomeFeaturedSections() {
         {hospitals.length ? (
           <div className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {hospitals.map((hospital) => (
-              <HospitalCard key={hospital.Uuid} hospital={hospital} showBookingAction />
+              <HospitalCard key={hospital.uuid} hospital={hospital} showBookingAction />
             ))}
           </div>
         ) : (
@@ -140,7 +140,7 @@ export function HomeFeaturedSections() {
         {doctors.length ? (
           <div className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {doctors.map((doctor) => (
-              <DoctorCard key={doctor.Uuid} doctor={doctor} showBookingAction />
+              <DoctorCard key={doctor.uuid} doctor={doctor} showBookingAction />
             ))}
           </div>
         ) : (
@@ -158,7 +158,7 @@ export function HomeFeaturedSections() {
         {medicalServices.length ? (
           <div className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {medicalServices.map((service) => (
-              <MedicalServiceCard key={service.Uuid} service={service} showBookingAction />
+              <MedicalServiceCard key={service.uuid} service={service} showBookingAction />
             ))}
           </div>
         ) : (

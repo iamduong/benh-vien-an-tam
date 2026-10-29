@@ -27,8 +27,8 @@ const sections = [
 ];
 
 export function HospitalDetailView({ detail }: { detail: HospitalDetail }) {
-  const { Hospital: hospital, Departments, MedicalServices, Reviews } = detail;
-  const bookingHref = `/dat-lich/co-so-y-te?hospital=${hospital.Uuid}`;
+  const { hospital, departments, medicalServices, reviews } = detail;
+  const bookingHref = `/dat-lich/co-so-y-te?hospital=${hospital.uuid}`;
 
   return (
     <article className="pb-20">
@@ -49,16 +49,16 @@ export function HospitalDetailView({ detail }: { detail: HospitalDetail }) {
           </Link>
           <ChevronRight aria-hidden="true" className="size-4 shrink-0" />
           <span aria-current="page" className="truncate text-foreground">
-            {hospital.Name}
+            {hospital.name}
           </span>
         </nav>
 
         <div className="mt-6 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
           <div className="relative min-h-72 overflow-hidden rounded-2xl border bg-muted sm:min-h-[28rem]">
             <DetailImage
-              src={hospital.Image}
+              src={hospital.image}
               fallbackSrc="/images/hospital-campus-placeholder.svg"
-              alt={`Không gian ${hospital.Name}`}
+              alt={`Không gian ${hospital.name}`}
             />
           </div>
 
@@ -68,14 +68,14 @@ export function HospitalDetailView({ detail }: { detail: HospitalDetail }) {
             </p>
 
             <h1 className="mt-5 text-balance text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
-              {hospital.Name}
+              {hospital.name}
             </h1>
             <div className="mt-5 space-y-3">
-              <SummaryFact icon={MapPin} value={displayText(hospital.Address)} />
-              <SummaryFact icon={Clock3} value={displayText(hospital.WorkingHour)} />
+              <SummaryFact icon={MapPin} value={displayText(hospital.address)} />
+              <SummaryFact icon={Clock3} value={displayText(hospital.workingHour)} />
               <SummaryFact
                 icon={DoorOpen}
-                value={`${hospital.NumberOfRoom} phòng theo thông tin cơ sở`}
+                value={`${hospital.numberOfRoom} phòng theo thông tin cơ sở`}
               />
             </div>
 
@@ -122,7 +122,13 @@ export function HospitalDetailView({ detail }: { detail: HospitalDetail }) {
       <div className="container-shell mt-8 grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 space-y-7">
           <DetailSection id="gioi-thieu" title="Giới thiệu cơ sở">
-            <SafeMarkdown content={hospital.Description} />
+            {hospital.description.trim() ? (
+              <SafeMarkdown content={hospital.description} />
+            ) : (
+              <p className="text-sm leading-7 text-muted-foreground">
+                Thông tin giới thiệu của cơ sở đang được cập nhật.
+              </p>
+            )}
           </DetailSection>
 
           <DetailSection
@@ -131,10 +137,10 @@ export function HospitalDetailView({ detail }: { detail: HospitalDetail }) {
             description="Các khoa đang được liên kết và tiếp nhận tại cơ sở."
           >
             <RelatedList
-              items={Departments.map((department) => ({
-                href: `/co-so-y-te?department=${department.Uuid}`,
-                title: department.Name,
-                description: department.Description,
+              items={departments.map((department) => ({
+                href: `/chuyen-khoa/${department.slug}`,
+                title: department.name,
+                description: department.description,
               }))}
               emptyMessage="Chuyên khoa đang được cập nhật."
             />
@@ -145,46 +151,51 @@ export function HospitalDetailView({ detail }: { detail: HospitalDetail }) {
             title="Dịch vụ đang cung cấp"
           >
             <RelatedList
-              items={MedicalServices.map((service) => ({
-                href: `/dich-vu/${service.Slug}`,
-                title: service.Name,
-                description: `${formatPrice(service.Price)} · ${displayText(service.WorkingHour)}`,
+              items={medicalServices.map((service) => ({
+                href: `/dich-vu/${service.slug}`,
+                title: service.name,
+                description: `${formatPrice(service.price)} · ${displayText(service.workingHour)}`,
               }))}
               emptyMessage="Dịch vụ tại cơ sở đang được cập nhật."
             />
           </DetailSection>
 
           <DetailSection id="huong-dan" title="Hướng dẫn đi khám">
-            <SafeMarkdown content={hospital.DetailService} />
+            {hospital.detailService.trim() ? (
+              <SafeMarkdown content={hospital.detailService} />
+            ) : (
+              <p className="text-sm leading-7 text-muted-foreground">
+                Vui lòng đặt lịch trước và có mặt sớm khoảng 15 phút để hoàn tất thủ tục tiếp nhận.
+              </p>
+            )}
           </DetailSection>
 
           <DetailSection id="vi-tri" title="Vị trí cơ sở">
-            <div className="overflow-hidden rounded-xl border bg-muted">
-              <iframe
-                src={hospital.MapUrl}
-                title={`Bản đồ ${hospital.Name}`}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="h-80 w-full border-0"
-              />
-            </div>
+            {hospital.mapUrl.trim() ? (
+              <div className="overflow-hidden rounded-xl border bg-muted">
+                <iframe
+                  src={hospital.mapUrl}
+                  title={`Bản đồ ${hospital.name}`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-80 w-full border-0"
+                />
+              </div>
+            ) : (
+              <div className="flex h-48 items-center justify-center rounded-xl border border-dashed bg-muted/30 px-6 text-center text-sm text-muted-foreground">
+                Bản đồ của cơ sở đang được cập nhật.
+              </div>
+            )}
             <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-muted-foreground">
               <MapPin aria-hidden="true" className="mt-1 size-4 shrink-0 text-primary" />
-              {hospital.Address}
+              {hospital.address}
             </p>
           </DetailSection>
 
           <DetailSection id="danh-gia" title="Đánh giá từ người bệnh">
             <ReviewList
-              reviews={Reviews.map(
-                ({ Uuid, Content, NumberOfStar, CreatedAt }) => ({
-                  Uuid,
-                  Content,
-                  NumberOfStar,
-                  CreatedAt,
-                }),
-              )}
-              target={{ type: "hospital", uuid: hospital.Uuid }}
+              reviews={reviews}
+              target={{ type: "hospital", uuid: hospital.uuid }}
             />
           </DetailSection>
         </div>
@@ -211,11 +222,11 @@ export function HospitalDetailView({ detail }: { detail: HospitalDetail }) {
           <div className="rounded-xl border bg-card p-5">
             <p className="text-sm font-semibold">Thông tin nhanh</p>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              {Departments.length} chuyên khoa · {MedicalServices.length} dịch vụ
+              {departments.length} chuyên khoa · {medicalServices.length} dịch vụ
             </p>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              {MedicalServices.length
-                ? `Chi phí dịch vụ từ ${formatPrice(Math.min(...MedicalServices.map((item) => item.Price)))}`
+              {medicalServices.length
+                ? `Chi phí dịch vụ từ ${formatPrice(Math.min(...medicalServices.map((item) => item.price)))}`
                 : "Chi phí dịch vụ đang cập nhật"}
             </p>
           </div>

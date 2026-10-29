@@ -87,7 +87,7 @@ export function BookingWizard({ type }: { type: BookingType }) {
     appointmentService
       .getBookingContext(controller.signal)
       .then((response) => {
-        if (!cancelled) setContextState({ status: "success", data: response.Data });
+        if (!cancelled) setContextState({ status: "success", data: response.data });
       })
       .catch(() => {
         if (!cancelled) {
@@ -118,10 +118,10 @@ export function BookingWizard({ type }: { type: BookingType }) {
       ? resolveTargetUuid(type, contextState.data, targetValue)
       : "";
   const availabilityKey = selection && date
-    ? `${type}:${selection.targetUuid}:${selection.hospital.Uuid}:${date}:${availabilityAttempt}`
+    ? `${type}:${selection.targetUuid}:${selection.hospital.uuid}:${date}:${availabilityAttempt}`
     : "";
   const selectedTargetUuid = selection?.targetUuid || "";
-  const selectedHospitalUuid = selection?.hospital.Uuid || "";
+  const selectedHospitalUuid = selection?.hospital.uuid || "";
 
   useEffect(() => {
     if (!selectedTargetUuid || !selectedHospitalUuid || !date || !session) return;
@@ -135,14 +135,14 @@ export function BookingWizard({ type }: { type: BookingType }) {
           type,
           targetUuid: selectedTargetUuid,
           hospitalUuid: selectedHospitalUuid,
-          accountUuid: session.Account.Uuid,
+          accountUuid: session.account.uuid,
           date,
         },
         controller.signal,
       )
       .then((response) => {
         if (!cancelled) {
-          setAvailabilityState({ status: "success", key, data: response.Data });
+          setAvailabilityState({ status: "success", key, data: response.data });
         }
       })
       .catch((error) => {
@@ -270,30 +270,30 @@ export function BookingWizard({ type }: { type: BookingType }) {
     setFormError("");
 
     const common = {
-      PatientName: patientName.trim(),
-      Gender: gender,
-      Note: note.trim(),
-      MedicalCode: medicalCode.trim(),
-      AppointmentAt: toAppointmentIso(date, time),
-      AccountUuid: currentSession.Account.Uuid,
-      HospitalUuid: selection.hospital.Uuid,
+      patientName: patientName.trim(),
+      gender: gender,
+      note: note.trim(),
+      medicalCode: medicalCode.trim(),
+      appointmentAt: toAppointmentIso(date, time),
+      accountUuid: currentSession.account.uuid,
+      hospitalUuid: selection.hospital.uuid,
     };
     const request: CreateAppointmentRequest =
       type === "hospital"
-        ? { ...common, Type: "hospital" }
+        ? { ...common, type: "hospital" }
         : type === "doctor"
-          ? { ...common, Type: "doctor", DoctorUuid: selection.targetUuid }
+          ? { ...common, type: "doctor", doctorUuid: selection.targetUuid }
           : {
               ...common,
-              Type: "medical-service",
-              MedicalServiceUuid: selection.targetUuid,
+              type: "medical-service",
+              medicalServiceUuid: selection.targetUuid,
             };
 
     let submitted = false;
     try {
       const response = await appointmentService.create(request);
       submitted = true;
-      router.push(`/dat-lich/xac-nhan?appointment=${response.Data.Uuid}`);
+      router.push(`/dat-lich/xac-nhan?appointment=${response.data.uuid}`);
     } catch (error) {
       if (
         error instanceof AppointmentServiceError &&
@@ -343,7 +343,7 @@ export function BookingWizard({ type }: { type: BookingType }) {
               type={type}
               context={contextState.data}
               targetValue={resolvedTargetValue}
-              hospitalValue={selection?.hospital.Uuid || ""}
+              hospitalValue={selection?.hospital.uuid || ""}
               onTargetChange={chooseTarget}
               onHospitalChange={(value) =>
                 updateUrl(
@@ -395,9 +395,9 @@ export function BookingWizard({ type }: { type: BookingType }) {
               }}
               onNoteChange={setNote}
               onFillFromAccount={() => {
-                setPatientName(activeSession.PatientProfile.Name);
-                setGender(activeSession.PatientProfile.Gender);
-                setMedicalCode(activeSession.PatientProfile.MedicalCode);
+                setPatientName(activeSession.patientProfile.name);
+                setGender(activeSession.patientProfile.gender);
+                setMedicalCode(activeSession.patientProfile.medicalCode);
                 setFormError("");
                 if (requestedStep > 2) updateUrl({ step: "patient" }, "replace");
               }}
@@ -425,7 +425,7 @@ export function BookingWizard({ type }: { type: BookingType }) {
             <ReviewStep
               type={type}
               targetName={selection.targetName}
-              hospitalName={selection.hospital.Name}
+              hospitalName={selection.hospital.name}
               appointmentAt={toAppointmentIso(date, time)}
               patientName={patientName.trim()}
               gender={gender}
@@ -471,7 +471,7 @@ function BookingSteps({ activeStep }: { activeStep: number }) {
 type Selection = {
   targetUuid: string;
   targetName: string;
-  hospital: BookingContext["Hospitals"][number];
+  hospital: BookingContext["hospitals"][number];
 };
 
 function resolveSelection(
@@ -481,38 +481,38 @@ function resolveSelection(
   hospitalValue: string,
 ): Selection | null {
   if (type === "hospital") {
-    const hospital = context.Hospitals.find(
-      (item) => item.Uuid === targetValue || item.Slug === targetValue,
+    const hospital = context.hospitals.find(
+      (item) => item.uuid === targetValue || item.slug === targetValue,
     );
     return hospital
-      ? { targetUuid: hospital.Uuid, targetName: hospital.Name, hospital }
+      ? { targetUuid: hospital.uuid, targetName: hospital.name, hospital }
       : null;
   }
   if (type === "doctor") {
-    const doctor = context.Doctors.find(
-      (item) => item.Uuid === targetValue || item.Slug === targetValue,
+    const doctor = context.doctors.find(
+      (item) => item.uuid === targetValue || item.slug === targetValue,
     );
-    const hospital = context.Hospitals.find(
-      (item) => item.Uuid === doctor?.HospitalUuid,
+    const hospital = context.hospitals.find(
+      (item) => item.uuid === doctor?.hospitalUuid,
     );
     return doctor && hospital
-      ? { targetUuid: doctor.Uuid, targetName: doctor.Name, hospital }
+      ? { targetUuid: doctor.uuid, targetName: doctor.name, hospital }
       : null;
   }
 
-  const service = context.MedicalServices.find(
-    (item) => item.Uuid === targetValue || item.Slug === targetValue,
+  const service = context.medicalServices.find(
+    (item) => item.uuid === targetValue || item.slug === targetValue,
   );
-  const hospital = context.Hospitals.find(
-    (item) => item.Uuid === hospitalValue,
+  const hospital = context.hospitals.find(
+    (item) => item.uuid === hospitalValue,
   );
-  const validPair = context.HospitalMedicalServices.some(
+  const validPair = context.hospitalMedicalServices.some(
     (item) =>
-      item.MedicalServiceUuid === service?.Uuid &&
-      item.HospitalUuid === hospital?.Uuid,
+      item.medicalServiceUuid === service?.uuid &&
+      item.hospitalUuid === hospital?.uuid,
   );
   return service && hospital && validPair
-    ? { targetUuid: service.Uuid, targetName: service.Name, hospital }
+    ? { targetUuid: service.uuid, targetName: service.name, hospital }
     : null;
 }
 
@@ -523,14 +523,14 @@ function resolveTargetUuid(
 ) {
   const targets =
     type === "hospital"
-      ? context.Hospitals
+      ? context.hospitals
       : type === "doctor"
-        ? context.Doctors
-        : context.MedicalServices;
+        ? context.doctors
+        : context.medicalServices;
   return (
     targets.find(
-      (item) => item.Uuid === targetValue || item.Slug === targetValue,
-    )?.Uuid || ""
+      (item) => item.uuid === targetValue || item.slug === targetValue,
+    )?.uuid || ""
   );
 }
 
@@ -555,18 +555,18 @@ function ContextStep({
 }) {
   const targets =
     type === "hospital"
-      ? context.Hospitals
+      ? context.hospitals
       : type === "doctor"
-        ? context.Doctors
-        : context.MedicalServices;
+        ? context.doctors
+        : context.medicalServices;
   const selectedService =
     type === "medical-service"
-      ? context.MedicalServices.find((item) => item.Uuid === targetValue)
+      ? context.medicalServices.find((item) => item.uuid === targetValue)
       : null;
   const validHospitalUuids = new Set(
-    context.HospitalMedicalServices
-      .filter((item) => item.MedicalServiceUuid === selectedService?.Uuid)
-      .map((item) => item.HospitalUuid),
+    context.hospitalMedicalServices
+      .filter((item) => item.medicalServiceUuid === selectedService?.uuid)
+      .map((item) => item.hospitalUuid),
   );
 
   return (
@@ -579,7 +579,7 @@ function ContextStep({
         <div className="space-y-2">
           <Label htmlFor="booking-target">{getTargetLabel(type)}</Label>
           <Select
-            items={targets.map((item) => ({ value: item.Uuid, label: item.Name }))}
+            items={targets.map((item) => ({ value: item.uuid, label: item.name }))}
             value={targetValue || null}
             onValueChange={(value) => value && onTargetChange(value)}
           >
@@ -588,8 +588,8 @@ function ContextStep({
             </SelectTrigger>
             <SelectContent>
               {targets.map((item) => (
-                <SelectItem key={item.Uuid} value={item.Uuid}>
-                  {item.Name}
+                <SelectItem key={item.uuid} value={item.uuid}>
+                  {item.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -597,16 +597,16 @@ function ContextStep({
         </div>
 
         {type === "doctor" && canContinue ? (
-          <ReadOnlyField label="Cơ sở làm việc" value={context.Hospitals.find((item) => item.Uuid === hospitalValue)?.Name || "Đang cập nhật"} />
+          <ReadOnlyField label="Cơ sở làm việc" value={context.hospitals.find((item) => item.uuid === hospitalValue)?.name || "Đang cập nhật"} />
         ) : null}
 
         {type === "medical-service" && selectedService ? (
           <div className="space-y-2">
             <Label htmlFor="booking-hospital">Cơ sở thực hiện</Label>
             <Select
-              items={context.Hospitals
-                .filter((item) => validHospitalUuids.has(item.Uuid))
-                .map((item) => ({ value: item.Uuid, label: item.Name }))}
+              items={context.hospitals
+                .filter((item) => validHospitalUuids.has(item.uuid))
+                .map((item) => ({ value: item.uuid, label: item.name }))}
               value={hospitalValue || null}
               onValueChange={(value) => value && onHospitalChange(value)}
             >
@@ -614,11 +614,11 @@ function ContextStep({
                 <SelectValue placeholder="Chọn cơ sở thực hiện" />
               </SelectTrigger>
               <SelectContent>
-                {context.Hospitals
-                  .filter((item) => validHospitalUuids.has(item.Uuid))
+                {context.hospitals
+                  .filter((item) => validHospitalUuids.has(item.uuid))
                   .map((item) => (
-                    <SelectItem key={item.Uuid} value={item.Uuid}>
-                      {item.Name}
+                    <SelectItem key={item.uuid} value={item.uuid}>
+                      {item.name}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -690,25 +690,25 @@ function ScheduleStep({
         {availability ? (
           <div>
             <p className="text-sm font-medium">
-              Giờ phục vụ: {availability.WorkingHour}
+              Giờ phục vụ: {availability.workingHour}
             </p>
-            {availability.Slots.some((slot) => slot.IsAvailable) ? (
+            {availability.slots.some((slot) => slot.isAvailable) ? (
               <div
                 role="radiogroup"
                 aria-label="Chọn giờ khám"
                 className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5"
               >
-                {availability.Slots.map((slot) => (
+                {availability.slots.map((slot) => (
                   <Button
-                    key={slot.AppointmentAt}
+                    key={slot.appointmentAt}
                     type="button"
-                    variant={time === slot.Time ? "default" : "outline"}
-                    disabled={!slot.IsAvailable}
+                    variant={time === slot.time ? "default" : "outline"}
+                    disabled={!slot.isAvailable}
                     role="radio"
-                    aria-checked={time === slot.Time}
-                    onClick={() => onTimeChange(slot.Time)}
+                    aria-checked={time === slot.time}
+                    onClick={() => onTimeChange(slot.time)}
                   >
-                    {slot.Time}
+                    {slot.time}
                   </Button>
                 ))}
               </div>
@@ -726,8 +726,8 @@ function ScheduleStep({
         nextDisabled={
           !date ||
           !time ||
-          !availability?.Slots.some(
-            (slot) => slot.Time === time && slot.IsAvailable,
+          !availability?.slots.some(
+            (slot) => slot.time === time && slot.isAvailable,
           )
         }
       />

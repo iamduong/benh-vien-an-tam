@@ -65,7 +65,7 @@ export function isValidDateString(date: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
   const value = new Date(`${date}T12:00:00+07:00`);
   if (Number.isNaN(value.getTime())) return false;
-  return getVietnamDateTimeParts(value).Date === date;
+  return getVietnamDateTimeParts(value).date === date;
 }
 
 export function toAppointmentIso(date: string, time: string) {
@@ -95,8 +95,8 @@ export function getVietnamDateTimeParts(value: Date) {
     parts.find((part) => part.type === type)?.value ?? "";
 
   return {
-    Date: `${get("year")}-${get("month")}-${get("day")}`,
-    Time: `${get("hour")}:${get("minute")}`,
+    date: `${get("year")}-${get("month")}-${get("day")}`,
+    time: `${get("hour")}:${get("minute")}`,
   };
 }
 

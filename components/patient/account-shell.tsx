@@ -27,16 +27,16 @@ export function AccountShell({ children }: { children: ReactNode }) {
         <aside className="self-start border border-t-4 border-t-primary bg-card p-4 lg:sticky lg:top-32 lg:p-5">
           <div className="flex items-center gap-4 border-b pb-4 lg:flex-col lg:text-center">
             <AccountAvatar
-              key={session.PatientProfile.Avatar}
-              avatar={session.PatientProfile.Avatar}
-              name={session.PatientProfile.Name}
+              key={session.patientProfile.avatar}
+              avatar={session.patientProfile.avatar}
+              name={session.patientProfile.name}
             />
             <div className="min-w-0">
               <p className="truncate font-bold lg:text-lg">
-                {session.PatientProfile.Name}
+                {session.patientProfile.name}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {session.PatientProfile.MedicalCode}
+                {session.patientProfile.medicalCode}
               </p>
             </div>
           </div>

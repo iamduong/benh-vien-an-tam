@@ -9,39 +9,39 @@ import {
 } from "@/types/models";
 
 export type BranchAppointmentServiceItem = {
-  Uuid: Guid;
-  MedicalServiceUuid: Guid | null;
-  Name: string;
-  Price: number;
-  Description: string;
-  Status: AppointmentMedicalServiceStatus;
+  uuid: Guid;
+  medicalServiceUuid: Guid | null;
+  name: string;
+  price: number;
+  description: string;
+  status: AppointmentMedicalServiceStatus;
 };
 
 export type BranchAppointment = {
-  Uuid: Guid;
-  PatientName: string;
-  Gender: string;
-  MedicalCode: string;
-  Note: string;
-  AppointmentDate: Date;
-  TimeSlot: Guid | null;
-  Time: string;
-  Type: AppointmentType;
-  Status: AppointmentStatus;
-  PatientUuid: Guid | null;
-  HospitalUuid: Guid;
-  DoctorUuid: Guid | null;
+  uuid: Guid;
+  patientName: string;
+  gender: string;
+  medicalCode: string;
+  note: string;
+  appointmentDate: Date;
+  timeSlot: Guid | null;
+  time: string;
+  type: AppointmentType;
+  status: AppointmentStatus;
+  patientUuid: Guid | null;
+  hospitalUuid: Guid;
+  doctorUuid: Guid | null;
   DoctorName: string | null;
-  MedicalServiceUuid: Guid | null;
+  medicalServiceUuid: Guid | null;
   MedicalServiceName: string | null;
-  RoomUuid: Guid | null;
-  RoomName: string | null;
-  DoctorNote: string;
-  TotalPrice: number;
-  IsPaid: boolean;
-  IsWalkIn: boolean;
-  CreatedAt: Date;
-  UpdatedAt: Date;
+  roomUuid: Guid | null;
+  roomName: string | null;
+  doctorNote: string;
+  totalPrice: number;
+  isPaid: boolean;
+  isWalkIn: boolean;
+  createdAt: Date;
+  updatedAt: Date;
   Services: BranchAppointmentServiceItem[];
 };
 
@@ -56,14 +56,14 @@ export type BranchAppointmentQuery = {
 };
 
 export type BranchAppointmentResources = {
-  Rooms: Array<{ Uuid: Guid; Name: string; Status: RoomStatus }>;
-  Doctors: Array<{ Uuid: Guid; Name: string }>;
-  Services: Array<{ Uuid: Guid; Name: string; Price: number }>;
+  Rooms: Array<{ uuid: Guid; name: string; status: RoomStatus }>;
+  doctors: Array<{ uuid: Guid; name: string }>;
+  Services: Array<{ uuid: Guid; name: string; price: number }>;
   TimeWorkings: Array<{
-    Uuid: Guid;
-    DayOfWeek: number;
-    StartTime: string;
-    EndTime: string;
+    uuid: Guid;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
   }>;
 };
 
@@ -142,27 +142,27 @@ export class BranchAppointmentService {
       { signal },
     );
     return {
-      Message: response.data.message,
-      Data: {
+      message: response.data.message,
+      data: {
         Rooms: response.data.data.rooms.map((room) => ({
-          Uuid: room.uuid,
-          Name: room.name,
-          Status: room.status,
+          uuid: room.uuid,
+          name: room.name,
+          status: room.status,
         })),
-        Doctors: response.data.data.doctors.map((doctor) => ({
-          Uuid: doctor.uuid,
-          Name: doctor.name,
+        doctors: response.data.data.doctors.map((doctor) => ({
+          uuid: doctor.uuid,
+          name: doctor.name,
         })),
         Services: response.data.data.services.map((service) => ({
-          Uuid: service.uuid,
-          Name: service.name,
-          Price: service.price,
+          uuid: service.uuid,
+          name: service.name,
+          price: service.price,
         })),
         TimeWorkings: response.data.data.timeWorkings.map((working) => ({
-          Uuid: working.uuid,
-          DayOfWeek: working.dayOfWeek,
-          StartTime: working.startTime,
-          EndTime: working.endTime,
+          uuid: working.uuid,
+          dayOfWeek: working.dayOfWeek,
+          startTime: working.startTime,
+          endTime: working.endTime,
         })),
       },
     };
@@ -178,8 +178,8 @@ export class BranchAppointmentService {
       { params: query, signal },
     );
     return {
-      Message: response.data.message,
-      Data: {
+      message: response.data.message,
+      data: {
         Items: response.data.data.map(toAppointment),
         Page: response.data.pagination.page,
         PageSize: response.data.pagination.pageSize,
@@ -227,7 +227,7 @@ export class BranchAppointmentService {
       `${this.endpoint(hospitalUuid)}/${encodeURIComponent(uuid)}/services`,
       { medicalServiceUuid, description },
     );
-    return { Message: response.data.message, Data: toAppointment(response.data.data) };
+    return { message: response.data.message, data: toAppointment(response.data.data) };
   }
 
   async completeService(hospitalUuid: Guid, uuid: Guid, serviceUuid: Guid) {
@@ -256,43 +256,43 @@ export class BranchAppointmentService {
       method === "post"
         ? await httpClient.post<AppointmentResponse>(url, body)
         : await httpClient.put<AppointmentResponse>(url, body);
-    return { Message: response.data.message, Data: toAppointment(response.data.data) };
+    return { message: response.data.message, data: toAppointment(response.data.data) };
   }
 }
 
 function toAppointment(item: ApiAppointment): BranchAppointment {
   return {
-    Uuid: item.uuid,
-    PatientName: item.patientName,
-    Gender: item.gender,
-    MedicalCode: item.medicalCode,
-    Note: item.note,
-    AppointmentDate: new Date(item.appointmentDate),
-    TimeSlot: item.timeSlot,
-    Time: item.time,
-    Type: item.type,
-    Status: item.status,
-    PatientUuid: item.patientUuid,
-    HospitalUuid: item.hospitalUuid ?? "",
-    DoctorUuid: item.doctorUuid,
+    uuid: item.uuid,
+    patientName: item.patientName,
+    gender: item.gender,
+    medicalCode: item.medicalCode,
+    note: item.note,
+    appointmentDate: new Date(item.appointmentDate),
+    timeSlot: item.timeSlot,
+    time: item.time,
+    type: item.type,
+    status: item.status,
+    patientUuid: item.patientUuid,
+    hospitalUuid: item.hospitalUuid ?? "",
+    doctorUuid: item.doctorUuid,
     DoctorName: item.doctorName,
-    MedicalServiceUuid: item.medicalServiceUuid,
+    medicalServiceUuid: item.medicalServiceUuid,
     MedicalServiceName: item.medicalServiceName,
-    RoomUuid: item.roomUuid,
-    RoomName: item.roomName,
-    DoctorNote: item.doctorNote,
-    TotalPrice: item.totalPrice,
-    IsPaid: item.isPaid,
-    IsWalkIn: item.isWalkIn,
-    CreatedAt: new Date(item.createdAt),
-    UpdatedAt: new Date(item.updatedAt),
+    roomUuid: item.roomUuid,
+    roomName: item.roomName,
+    doctorNote: item.doctorNote,
+    totalPrice: item.totalPrice,
+    isPaid: item.isPaid,
+    isWalkIn: item.isWalkIn,
+    createdAt: new Date(item.createdAt),
+    updatedAt: new Date(item.updatedAt),
     Services: item.services.map((service) => ({
-      Uuid: service.uuid,
-      MedicalServiceUuid: service.medicalServiceUuid,
-      Name: service.name,
-      Price: service.price,
-      Description: service.description,
-      Status: service.status,
+      uuid: service.uuid,
+      medicalServiceUuid: service.medicalServiceUuid,
+      name: service.name,
+      price: service.price,
+      description: service.description,
+      status: service.status,
     })),
   };
 }

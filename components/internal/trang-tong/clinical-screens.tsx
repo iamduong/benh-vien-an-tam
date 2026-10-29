@@ -17,7 +17,7 @@ export function ClinicalScreens({ slug }: { slug: string }) {
   switch (slug) {
     case "tong-quan": return <DoctorDashboard />;
     case "lich-kham": return <DoctorScheduleScreen />;
-    case "ca-kham": return <AssignedCasesScreen />;
+    case "ca-kham": return null;
     case "don-thuoc": return <DoctorPrescriptionsScreen />;
     case "thuoc-kha-dung": return <AvailableMedicineScreen />;
     case "ho-so-nghe-nghiep": return <DoctorProfileScreen />;

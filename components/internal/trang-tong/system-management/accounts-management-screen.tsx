@@ -111,8 +111,8 @@ export function AccountsManagementScreen() {
     ])
       .then(([accountsResponse, optionsResponse]) => {
         if (!active) return;
-        setAccounts((accountsResponse.data ?? accountsResponse.Data ?? []).map(mapAccount));
-        setOptions(optionsResponse.data ?? optionsResponse.Data ?? emptyOptions);
+        setAccounts((accountsResponse.data ?? accountsResponse.data ?? []).map(mapAccount));
+        setOptions(optionsResponse.data ?? optionsResponse.data ?? emptyOptions);
       })
       .catch((error) => {
         if (!active) return;
@@ -241,7 +241,7 @@ export function AccountsManagementScreen() {
             ...profilePayload,
             password: draft.password,
           });
-      const saved = response.data ?? response.Data;
+      const saved = response.data ?? response.data;
       if (!saved) throw new Error("API không trả về tài khoản");
 
       const mapped = mapAccount(saved);

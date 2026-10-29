@@ -1,8 +1,6 @@
 export type ApiResponse<T> = {
-  Data: T;
-  data?: T;
-  Message: string;
-  message?: string;
+  data: T;
+  message: string;
 };
 
 export type PaginatedData<T> = {
@@ -12,6 +10,24 @@ export type PaginatedData<T> = {
   TotalItems: number;
   TotalPages: number;
 };
+
+export type PublicPaginatedData<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+};
+
+export function fromPublicPagination<T>(data: PublicPaginatedData<T>): PaginatedData<T> {
+  return {
+    Items: data.items,
+    Page: data.page,
+    PageSize: data.pageSize,
+    TotalItems: data.totalItems,
+    TotalPages: data.totalPages,
+  };
+}
 
 export type AsyncState<T> =
   | { status: "idle" }

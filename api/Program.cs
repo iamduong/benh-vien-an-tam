@@ -36,6 +36,11 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApi();
+// builder.Services.AddSwaggerGen(options =>
+// {
+//     options.CustomSchemaIds(type =>
+//         type.FullName?.Replace("+", ".") ?? type.Name);
+// });
 
 // Payment configuration
 builder.Services.Configure<SepaySetting>(builder.Configuration.GetSection("Sepay"));
@@ -61,18 +66,15 @@ builder.Services.AddScoped<PermissionService>();
 builder.Services.AddScoped<RoleService>();
 
 // Services from your current work
-builder.Services.AddScoped<
-    IAvailableMedicineService, AvailableMedicineService>();
-builder.Services.AddScoped<
-    IDoctorProfileService, DoctorProfileService>();
-builder.Services.AddScoped<
-    IPrescriptionService, PrescriptionService>();
-builder.Services.AddScoped<
-    IDoctorAppointmentService, DoctorAppointmentService>();
-builder.Services.AddScoped<
-    IClinicalExaminationService, ClinicalExaminationService>();
-builder.Services.AddScoped<
-    IPrescriptionManagementService, PrescriptionManagementService>();
+builder.Services.AddScoped<IAvailableMedicineService, AvailableMedicineService>();
+builder.Services.AddScoped<IDoctorProfileService, DoctorProfileService>();
+builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
+builder.Services.AddScoped<IDoctorAppointmentService, DoctorAppointmentService>();
+builder.Services.AddScoped<IClinicalExaminationService, ClinicalExaminationService>();
+builder.Services.AddScoped<IPrescriptionManagementService, PrescriptionManagementService>();
+
+// namduong note
+builder.Services.AddScoped<IPublicService, PublicService>();
 
 // PostgreSQL
 builder.Services.AddDbContext<DBContext>(options =>

@@ -11,46 +11,46 @@ import type { PaginatedData } from "@/lib/http/response";
 export type BookingType = "hospital" | "doctor" | "medical-service";
 
 export type BookingContext = {
-  Hospitals: Hospital[];
-  Doctors: DoctorProfile[];
-  MedicalServices: MedicalService[];
-  HospitalMedicalServices: HospitalMedicalService[];
+  hospitals: Hospital[];
+  doctors: DoctorProfile[];
+  medicalServices: MedicalService[];
+  hospitalMedicalServices: HospitalMedicalService[];
 };
 
 export type AvailabilitySlot = {
-  AppointmentAt: string;
-  Time: string;
-  IsAvailable: boolean;
+  appointmentAt: string;
+  time: string;
+  isAvailable: boolean;
 };
 
 export type Availability = {
-  Date: string;
-  WorkingHour: string;
-  Slots: AvailabilitySlot[];
+  date: string;
+  workingHour: string;
+  slots: AvailabilitySlot[];
 };
 
 export type CommonAppointmentRequest = {
-  PatientName: string;
-  Gender: string;
-  Note: string;
-  MedicalCode: string;
-  AppointmentAt: string;
-  AccountUuid: string;
-  HospitalUuid: string;
+  patientName: string;
+  gender: string;
+  note: string;
+  medicalCode: string;
+  appointmentAt: string;
+  accountUuid: string;
+  hospitalUuid: string;
 };
 
 export type HospitalBookingRequest = CommonAppointmentRequest & {
-  Type: "hospital";
+  type: "hospital";
 };
 
 export type DoctorBookingRequest = CommonAppointmentRequest & {
-  Type: "doctor";
-  DoctorUuid: string;
+  type: "doctor";
+  doctorUuid: string;
 };
 
 export type MedicalServiceBookingRequest = CommonAppointmentRequest & {
-  Type: "medical-service";
-  MedicalServiceUuid: string;
+  type: "medical-service";
+  medicalServiceUuid: string;
 };
 
 export type CreateAppointmentRequest =
@@ -59,71 +59,71 @@ export type CreateAppointmentRequest =
   | MedicalServiceBookingRequest;
 
 export type WalkInAppointmentRequest = {
-  Type: BookingType;
-  HospitalUuid: string;
-  TargetUuid: string;
-  PatientName: string;
-  Gender: string;
-  Phone: string;
-  Birthdate: string;
-  MedicalCode: string;
-  Note: string;
-  AppointmentAt: string;
+  type: BookingType;
+  hospitalUuid: string;
+  targetUuid: string;
+  patientName: string;
+  gender: string;
+  phone: string;
+  birthdate: string;
+  medicalCode: string;
+  note: string;
+  appointmentAt: string;
 };
 
 export type WalkInHospitalBookingRequest = Omit<
   WalkInAppointmentRequest,
-  "Type" | "TargetUuid"
+  "type" | "targetUuid"
 >;
 
 export type WalkInDoctorBookingRequest = WalkInAppointmentRequest & {
-  Type: "doctor";
-  DoctorUuid: string;
+  type: "doctor";
+  doctorUuid: string;
 };
 
 export type WalkInMedicalServiceBookingRequest = WalkInAppointmentRequest & {
-  Type: "medical-service";
-  MedicalServiceUuid: string;
+  type: "medical-service";
+  medicalServiceUuid: string;
 };
 
 export type CreateWalkInAppointmentRequest =
-  | (WalkInAppointmentRequest & { Type: "hospital" })
+  | (WalkInAppointmentRequest & { type: "hospital" })
   | WalkInDoctorBookingRequest
   | WalkInMedicalServiceBookingRequest;
 
 type AppointmentViewBase = {
-  Uuid: string;
-  PatientName: string;
-  Gender: Gender;
-  Note: string;
-  MedicalCode: string;
-  AppointmentAt: Date;
-  Status: AppointmentStatus;
-  AccountUuid: string;
-  HospitalUuid: string;
-  RoomUuid: string;
-  IsWalkIn: boolean;
-  GuestPhone: string | null;
-  CreatedAt: Date;
-  UpdatedAt: Date;
+  uuid: string;
+  patientName: string;
+  gender: Gender;
+  note: string;
+  medicalCode: string;
+  appointmentAt: Date;
+  status: AppointmentStatus;
+  accountUuid: string;
+  hospitalUuid: string;
+  roomUuid: string;
+  isWalkIn: boolean;
+  guestPhone: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type Appointment =
   | AppointmentViewBase
-  | (AppointmentViewBase & { DoctorUuid: string })
-  | (AppointmentViewBase & { MedicalServiceUuid: string });
+  | (AppointmentViewBase & { doctorUuid: string })
+  | (AppointmentViewBase & { medicalServiceUuid: string });
 
 export type AppointmentConfirmation = {
-  Type: BookingType;
-  Appointment: Appointment;
-  TargetName: string;
-  HospitalName: string;
+  type: BookingType;
+  appointment: Appointment;
+  targetName: string;
+  hospitalName: string;
 };
 
 export type AppointmentPresentation = AppointmentConfirmation & {
-  HospitalSlug: string;
-  TargetSlug: string;
-  RoomName: string;
+  hospitalSlug: string;
+  targetSlug: string;
+  roomName: string;
 };
 
 export type AppointmentListQuery = {
@@ -139,15 +139,15 @@ export type AppointmentListQuery = {
 export type AppointmentList = PaginatedData<AppointmentPresentation>;
 
 export type RescheduleAppointmentRequest = {
-  AccountUuid: string;
-  AppointmentAt: string;
+  accountUuid: string;
+  appointmentAt: string;
 };
 
 export type CancelAppointmentRequest = {
-  AccountUuid: string;
+  accountUuid: string;
 };
 
 export type AppointmentErrorResponse = {
-  Message?: string;
-  Code?: string;
+  message?: string;
+  code?: string;
 };

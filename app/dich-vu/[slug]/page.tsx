@@ -12,7 +12,7 @@ type Props = {
 
 const getDetail = cache(async (slug: string) => {
   const response = await medicalServiceService.getBySlug(slug);
-  return response?.Data ?? null;
+  return response?.data ?? null;
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -22,8 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!detail) return { title: "Không tìm thấy dịch vụ y tế" };
 
   return {
-    title: detail.MedicalService.Name,
-    description: markdownToPlainText(detail.MedicalService.Description).slice(0, 155),
+    title: detail.medicalService.name,
+    description: markdownToPlainText(detail.medicalService.description).slice(0, 155),
   };
 }
 
