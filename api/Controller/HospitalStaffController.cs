@@ -17,7 +17,7 @@ public sealed class HospitalStaffController(
     DBContext dbContext,
     PasswordHasher passwordHasher) : ControllerBase
 {
-    private const string DoctorRoleCode = "Doctor";
+    private const string DoctorRoleCode = "doctor";
     private const string StaffRoleCode = "Staff";
     private const string WarehouseManagerRoleCode = "WarehouseManager";
 

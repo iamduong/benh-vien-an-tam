@@ -69,25 +69,11 @@ export function BranchAppointmentsScreen() {
   const [serviceDescription, setServiceDescription] = useState("");
   const [doctorNote, setDoctorNote] = useState("");
   const [message, setMessage] = useState("");
-  const [state, setState] = useState<ScreenState>(() =>
-    process.env.NEXT_PUBLIC_USE_MOCK_API === "false"
-      ? {
-          status: "error",
-          message: "Quản lý lịch hẹn chi nhánh hiện chỉ hỗ trợ mock API.",
-        }
-      : { status: "loading" },
-  );
+  const [state, setState] = useState<ScreenState>({ status: "loading" });
 
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-
-    if (process.env.NEXT_PUBLIC_USE_MOCK_API === "false") {
-      return () => {
-        active = false;
-        controller.abort();
-      };
-    }
 
     const query = {
       search: search.trim() || undefined,

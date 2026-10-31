@@ -3,7 +3,7 @@ import { isAxiosError } from "axios";
 import { httpClient } from "@/lib/http/client";
 import type { ApiResponse, PaginatedData } from "@/lib/http/response";
 import type { DepartmentDetail } from "@/types/details";
-import type { Department } from "@/types/models";
+import { BaseStatus, type Department } from "@/types/models";
 
 export class DepartmentService {
   async getBySlug(slug: string): Promise<ApiResponse<DepartmentDetail> | null> {
@@ -19,14 +19,33 @@ export class DepartmentService {
   }
 
   async getAll(
-    query: { page?: number; pageSize?: number; search?: string } = {},
+    query: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      status?: BaseStatus;
+    } = {},
     signal?: AbortSignal,
   ): Promise<ApiResponse<PaginatedData<Department>>> {
-    const response = await httpClient.get<
-      ApiResponse<PaginatedData<Department>>
-    >("/departments", { params: query, signal });
+    const response = await httpClient.get<DepartmentListApiResponse>(
+      "/departments",
+      { params: query, signal },
+    );
 
-    return response.data;
+    if (!("pagination" in response.data)) {
+      return response.data;
+    }
+
+    return {
+      message: response.data.message,
+      data: {
+        Items: response.data.data,
+        Page: response.data.pagination.page,
+        PageSize: response.data.pagination.pageSize,
+        TotalItems: response.data.pagination.totalCount,
+        TotalPages: response.data.pagination.totalPages,
+      },
+    };
   }
 
   async getOptions(signal?: AbortSignal): Promise<ApiResponse<Department[]>> {
@@ -49,3 +68,16 @@ export class DepartmentService {
 }
 
 export const departmentService = new DepartmentService();
+
+type DepartmentListApiResponse =
+  | ApiResponse<PaginatedData<Department>>
+  | {
+      message: string;
+      data: Department[];
+      pagination: {
+        page: number;
+        pageSize: number;
+        totalCount: number;
+        totalPages: number;
+      };
+    };
