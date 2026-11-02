@@ -36,3 +36,30 @@ export interface MedicineQueryDto {
     pageIndex: number;
     pageSize: number;
 }
+
+export interface MedicineUnitDto {
+    id: number;
+    key: string;
+    name: string;
+}
+
+// Dữ liệu nguyên bản nhận từ Backend
+export interface AvailableMedicineApiDto {
+    medicineUuid: string;
+    inventoryUuid: string;
+    name: string;
+    unit: number;
+    unitName: string;
+    price: number;
+    quantity: number;
+    minimumQuantity: number;
+    stockStatus: string;
+}
+
+// Cấu trúc phân trang nguyên bản từ Backend
+export interface AvailableMedicineApiResult {
+    items: AvailableMedicineApiDto[];
+    totalItems: number;
+    pageIndex: number;
+    pageSize: number;
+}
