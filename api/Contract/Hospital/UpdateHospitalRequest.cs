@@ -22,7 +22,7 @@ public sealed class UpdateHospitalRequest
 
     public string MapUrl { get; init; } = string.Empty;
 
-    [Range(0, int.MaxValue, ErrorMessage = "So phong phai la so nguyen khong am")]
+    [Range(1, int.MaxValue, ErrorMessage = "So phong phai lon hon 0")]
     public int NumberOfRoom { get; init; }
 
     public string Description { get; init; } = string.Empty;

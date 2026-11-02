@@ -29,42 +29,70 @@ export type HospitalUpdateRequest = Pick<
   | "workingHour"
 >;
 
+type HospitalApiDto = Omit<
+  Hospital,
+  "createdAt" | "updatedAt" | "deletedAt" | "lImage"
+> & {
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  deletedAt?: string | Date | null;
+  lImage?: string;
+};
+
+type HospitalListApiResponse<T> = {
+  message: string;
+  data: PaginatedData<T> | T[];
+  pagination?: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+};
+
 export class HospitalService {
   async getBranchProfile(
     signal?: AbortSignal,
   ): Promise<ApiResponse<Hospital>> {
-    const response = await httpClient.get<ApiResponse<Hospital>>(
+    const response = await httpClient.get<ApiResponse<HospitalApiDto>>(
       "/hospitals/branch-profile",
       { signal },
     );
 
-    return response.data;
+    return {
+      ...response.data,
+      data: toHospital(response.data.data),
+    };
   }
 
   async updateBranchProfile(
     uuid: string,
     request: HospitalUpdateRequest,
   ): Promise<ApiResponse<Hospital>> {
-    const response = await httpClient.put<ApiResponse<Hospital>>(
+    const response = await httpClient.put<ApiResponse<HospitalApiDto>>(
       `/hospitals/${encodeURIComponent(uuid)}`,
       request,
     );
 
-    return response.data;
+    return {
+      ...response.data,
+      data: toHospital(response.data.data),
+    };
   }
 
   async getAssignedDepartments(
     uuid: string,
     signal?: AbortSignal,
   ): Promise<ApiResponse<PaginatedData<Department>>> {
-    const response = await httpClient.get<
-      ApiResponse<PaginatedData<Department>>
-    >(`/hospitals/${encodeURIComponent(uuid)}/departments`, {
+    const response = await httpClient.get<HospitalListApiResponse<Department>>(
+      `/hospitals/${encodeURIComponent(uuid)}/departments`,
+      {
       params: { page: 1, pageSize: 100 },
       signal,
-    });
+      },
+    );
 
-    return response.data;
+    return toPaginatedResponse(response.data);
   }
 
   async getAssignedMedicalServices(
@@ -72,13 +100,13 @@ export class HospitalService {
     signal?: AbortSignal,
   ): Promise<ApiResponse<PaginatedData<MedicalService>>> {
     const response = await httpClient.get<
-      ApiResponse<PaginatedData<MedicalService>>
+      HospitalListApiResponse<MedicalService>
     >(`/hospitals/${encodeURIComponent(uuid)}/medical-services`, {
       params: { page: 1, pageSize: 100 },
       signal,
     });
 
-    return response.data;
+    return toPaginatedResponse(response.data);
   }
 
   async updateAssignments(
@@ -144,3 +172,44 @@ export class HospitalService {
 }
 
 export const hospitalService = new HospitalService();
+
+function toPaginatedResponse<T>(
+  response: HospitalListApiResponse<T>,
+): ApiResponse<PaginatedData<T>> {
+  if (!Array.isArray(response.data)) {
+    return {
+      message: response.message,
+      data: response.data,
+    };
+  }
+
+  const pagination = response.pagination;
+  if (!pagination) {
+    throw new Error("Hospital list response is missing pagination metadata.");
+  }
+
+  return {
+    message: response.message,
+    data: {
+      Items: response.data,
+      Page: pagination.page,
+      PageSize: pagination.pageSize,
+      TotalItems: pagination.totalCount,
+      TotalPages: pagination.totalPages,
+    },
+  };
+}
+
+function toHospital(hospital: HospitalApiDto): Hospital {
+  return {
+    ...hospital,
+    lImage: hospital.lImage ?? hospital.image,
+    createdAt: asDate(hospital.createdAt),
+    updatedAt: asDate(hospital.updatedAt),
+    deletedAt: hospital.deletedAt ? asDate(hospital.deletedAt) : new Date(0),
+  };
+}
+
+function asDate(value: string | Date): Date {
+  return new Date(value instanceof Date ? value.getTime() : value);
+}

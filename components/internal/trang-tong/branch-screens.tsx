@@ -156,11 +156,14 @@ function HospitalProfileScreen() {
           });
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (active) {
           setState({
             status: "error",
-            message: "Không thể tải thông tin chi nhánh. Vui lòng thử lại.",
+            message: getHospitalSaveError(
+              error,
+              "Không thể tải thông tin chi nhánh. Vui lòng thử lại.",
+            ),
           });
         }
       });
@@ -374,19 +377,6 @@ function AssignmentsScreen() {
     const controller = new AbortController();
     let active = true;
 
-    if (process.env.NEXT_PUBLIC_USE_MOCK_API === "false") {
-      setState({
-        status: "error",
-        message:
-          "Màn hình này hiện chỉ hỗ trợ demo.",
-      });
-
-      return () => {
-        active = false;
-        controller.abort();
-      };
-    }
-
     setState({ status: "loading" });
     hospitalService
       .getBranchProfile(controller.signal)
@@ -399,7 +389,7 @@ function AssignmentsScreen() {
           assignedServiceResponse,
         ] = await Promise.all([
           departmentService.getAll(
-            { page: 1, pageSize: 100 },
+            { page: 1, pageSize: 100, status: BaseStatus.Active },
             controller.signal,
           ),
           medicalServiceService.getAll(
@@ -438,11 +428,14 @@ function AssignmentsScreen() {
           },
         });
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (active) {
           setState({
             status: "error",
-            message: "Không thể tải chuyên khoa và dịch vụ. Vui lòng thử lại.",
+            message: getHospitalSaveError(
+              error,
+              "Không thể tải chuyên khoa và dịch vụ. Vui lòng thử lại.",
+            ),
           });
         }
       });
@@ -560,7 +553,7 @@ function AssignmentsScreen() {
       <PortalPageHeader
         eyebrow={`Phân bổ danh mục · ${state.hospital.name}`}
         title="Chuyên khoa và dịch vụ"
-        description="Chọn danh mục đang được cung cấp tại chi nhánh. Thay đổi hiện demo."
+        description="Chọn danh mục đang được cung cấp tại chi nhánh."
         actions={
           <>
             <Button
@@ -722,25 +715,11 @@ function RoomsScreen() {
     | { status: "loading" }
     | { status: "error"; message: string }
     | { status: "success"; hospital: Hospital; rooms: Room[] }
-  >(() =>
-    process.env.NEXT_PUBLIC_USE_MOCK_API === "false"
-      ? {
-          status: "error",
-          message: "Quản lý phòng khám hiện chỉ hỗ trợ mock API.",
-        }
-      : { status: "loading" },
-  );
+  >({ status: "loading" });
 
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-
-    if (process.env.NEXT_PUBLIC_USE_MOCK_API === "false") {
-      return () => {
-        active = false;
-        controller.abort();
-      };
-    }
 
     hospitalService
       .getBranchProfile(controller.signal)
@@ -804,14 +783,10 @@ function RoomsScreen() {
     return (
       <ErrorState
         message={state.message}
-        onRetry={
-          process.env.NEXT_PUBLIC_USE_MOCK_API === "false"
-            ? undefined
-            : () => {
-                setState({ status: "loading" });
-                setAttempt((current) => current + 1);
-              }
-        }
+        onRetry={() => {
+          setState({ status: "loading" });
+          setAttempt((current) => current + 1);
+        }}
       />
     );
   }
@@ -1079,25 +1054,11 @@ function StaffAccountsScreen() {
         staff: HospitalStaffMember[];
         departments: Department[];
       }
-  >(() =>
-    process.env.NEXT_PUBLIC_USE_MOCK_API === "false"
-      ? {
-          status: "error",
-          message: "Quản lý nhân sự hiện chỉ hỗ trợ mock API.",
-        }
-      : { status: "loading" },
-  );
+  >({ status: "loading" });
 
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-
-    if (process.env.NEXT_PUBLIC_USE_MOCK_API === "false") {
-      return () => {
-        active = false;
-        controller.abort();
-      };
-    }
 
     hospitalService
       .getBranchProfile(controller.signal)
@@ -1159,14 +1120,10 @@ function StaffAccountsScreen() {
     return (
       <ErrorState
         message={state.message}
-        onRetry={
-          process.env.NEXT_PUBLIC_USE_MOCK_API === "false"
-            ? undefined
-            : () => {
-                setState({ status: "loading" });
-                setAttempt((current) => current + 1);
-              }
-        }
+        onRetry={() => {
+          setState({ status: "loading" });
+          setAttempt((current) => current + 1);
+        }}
       />
     );
   }
@@ -1690,7 +1647,13 @@ function getHospitalSaveError(
   error: unknown,
   fallback = "Không thể lưu thông tin chi nhánh. Vui lòng thử lại.",
 ) {
-  if (isAxiosError<{ message?: string }>(error)) {
+  if (isAxiosError<{ error?: string; message?: string }>(error)) {
+    if (error.response?.data?.error === "HOSPITAL_SLUG_ALREADY_EXISTS") {
+      return "Slug này đã được sử dụng cho một chi nhánh khác.";
+    }
+    if (error.response?.data?.error === "ROOM_CAPACITY_BELOW_CURRENT_USAGE") {
+      return "Số phòng không thể thấp hơn số phòng đang được quản lý.";
+    }
     return error.response?.data?.message ?? fallback;
   }
 
