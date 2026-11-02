@@ -36,7 +36,11 @@ public class DoctorProfileController : ControllerBase
             return NotFound(new { message = "Không tìm thấy thông tin hồ sơ bác sĩ." });
         }
 
-        return Ok(profile);
+        return Ok(new
+        {
+            data = profile,
+            message = "Lấy thông tin hồ sơ bác sĩ thành công."
+        });
     }
 
     [HttpPut("me")]

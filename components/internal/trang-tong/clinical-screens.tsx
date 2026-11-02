@@ -6,12 +6,8 @@ import { DoctorPrescriptionsScreen } from "@/components/internal/trang-tong/clin
 import { AvailableMedicineScreen } from "@/components/internal/trang-tong/clinical/available-medicine-screen";
 import DoctorProfileScreen from "@/components/internal/trang-tong/clinical/doctor-profile-screen";
 
-
-import { DetailGrid, DetailItem, MetricCard, MetricGrid, PortalAction, PortalPageHeader, PortalSection, PortalTable, PortalToolbar, ProgressList, StatusPill } from "../portal-ui";
-import { Activity, CalendarCheck2, CheckCircle2, Clock3, FilePlus2, Pill, Save } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@base-ui/react";
+import { MetricCard, MetricGrid, PortalAction, PortalPageHeader, PortalSection, PortalTable, ProgressList, StatusPill } from "../portal-ui";
+import { CalendarCheck2, CheckCircle2, Clock3, Pill } from "lucide-react";
 
 export function ClinicalScreens({ slug }: { slug: string }) {
   switch (slug) {
@@ -59,9 +55,4 @@ function DoctorDashboard() {
       </div>
     </div>
   );
-}
-
-function Field({ label, defaultValue, type = "text" }: { label: string; defaultValue: string; type?: string }) {
-  const id = `doctor-${label.toLowerCase().replaceAll(" ", "-")}`;
-  return <div className="space-y-2"><Label htmlFor={id}>{label}</Label><Input id={id} type={type} defaultValue={defaultValue} /></div>;
 }

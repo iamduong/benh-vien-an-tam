@@ -143,178 +143,172 @@ export function DoctorPrescriptionsScreen() {
 
         const renderCell = (content: ReactNode, isFirst = false) => (
             <div
-        onClick= {() => setSelectedUuid(isSelected ? null : item.uuid)
-}
-className = {`-mx-5 -my-4 flex items-center px-5 py-4 ${cellStyle} ${isFirst ? "font-semibold text-foreground" : ""
-    }`}
-      >
-{ content }
-    </div>
-    );
-
-const formattedDate = item.createdAt
-    ? new Date(item.createdAt).toLocaleString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-    })
-    : "—";
-
-return [
-    renderCell(item.rxCode, true),
-    renderCell(item.patientName),
-    renderCell(formattedDate),
-    renderCell(item.medicineCount.toString()),
-    renderCell(`${item.totalAmount.toLocaleString("vi-VN")} đ`),
-    renderCell(
-        <StatusPill tone={ statusToneMap[item.status] || "amber" } >
-        { statusLabelMap[item.status] || item.status }
-    </StatusPill>
-    ),
-];
-  });
-
-return (
-    <div className= "space-y-6" >
-    <PortalPageHeader
-        eyebrow="Đơn do tôi kê"
-title = "Đơn thuốc"
-description = "Quản lý đơn thuốc thuộc các ca được phân công; đơn đã thanh toán chỉ được xem."
-    />
-
-    <MetricGrid>
-    <MetricCard
-          label="Đơn tháng này"
-value = { metrics?.monthlyCount?.toString() ?? "—"}
-detail = {
-    metrics?.monthlyDiffFromLastMonth !== undefined
-    ? `${metrics.monthlyDiffFromLastMonth >= 0 ? "Tăng" : "Giảm"} ${Math.abs(
-        metrics.monthlyDiffFromLastMonth
-    )} đơn so với tháng trước`
-    : "Đang tải..."
-          }
-trend = {
-    metrics?.monthlyDiffFromLastMonth !== undefined &&
-    metrics.monthlyDiffFromLastMonth < 0
-    ? "down"
-    : "up"
-          }
-icon = {< Pill className = "size-5" />}
-        />
-    < MetricCard
-label = "Chưa thanh toán"
-value = { metrics?.unpaidCount?.toString() ?? "—"}
-detail = "Có thể chỉnh sửa hoặc hủy"
-icon = {< Clock3 className = "size-5" />}
-tone = "amber"
-    />
-    <MetricCard
-          label="Đã thanh toán"
-value = { metrics?.paidCount?.toString() ?? "—"}
-detail = "Chỉ đọc"
-icon = {< CheckCircle2 className = "size-5" />}
-tone = "green"
-    />
-    <MetricCard
-          label="Đã hủy"
-value = { metrics?.cancelledCount?.toString() ?? "—"}
-detail = "Đều có ghi nhận lý do"
-icon = {< Activity className = "size-5" />}
-tone = "red"
-    />
-    </MetricGrid>
-
-    < PortalSection title = "Danh sách đơn thuốc" >
-    {/* Custom Toolbar */ }
-        < div className = "flex flex-wrap items-center justify-between gap-4 border-b p-4" >
-            <div className="flex flex-wrap items-center gap-3" >
-            {/* Ô tìm kiếm */ }
-                < input
-type = "text"
-placeholder = "Tìm mã đơn hoặc bệnh nhân..."
-className = "h-9 w-64 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-value = { searchTerm }
-onChange = {(e) => setSearchTerm(e.target.value)}
-            />
-
-{/* Bộ chọn ngày cụ thể (mặc định là hôm nay) */ }
-<input
-              type="date"
-className = "h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-value = { selectedDate }
-onChange = {(e) => setSelectedDate(e.target.value)}
-            />
-
-{/* Lọc trạng thái */ }
-<select
-              className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-value = { statusFilter }
-onChange = {(e) => setStatusFilter(e.target.value)}
+                onClick={() => setSelectedUuid(isSelected ? null : item.uuid)}
+                className={`-mx-5 -my-4 flex items-center px-5 py-4 ${cellStyle} ${isFirst ? "font-semibold text-foreground" : ""
+                    }`}
             >
-    <option value="Tất cả trạng thái" > Tất cả trạng thái </option>
-        < option value = "Unpaid" > Chưa thanh toán </option>
-            < option value = "Paid" > Đã thanh toán </option>
-                < option value = "Cancelled" > Đã hủy </option>
-                    </select>
+                {content}
+            </div>
+        );
+
+        const formattedDate = item.createdAt
+            ? new Date(item.createdAt).toLocaleString("vi-VN", {
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+            })
+            : "—";
+
+        return [
+            renderCell(item.rxCode, true),
+            renderCell(item.patientName),
+            renderCell(formattedDate),
+            renderCell(item.medicineCount.toString()),
+            renderCell(`${item.totalAmount.toLocaleString("vi-VN")} đ`),
+            renderCell(
+                <StatusPill tone={statusToneMap[item.status] || "amber"}>
+                    {statusLabelMap[item.status] || item.status}
+                </StatusPill>
+            ),
+        ];
+    });
+
+    return (
+        <div className="space-y-6">
+            <PortalPageHeader
+                eyebrow="Đơn do tôi kê"
+                title="Đơn thuốc"
+                description="Quản lý đơn thuốc thuộc các ca được phân công; đơn đã thanh toán chỉ được xem."
+            />
+
+            <MetricGrid>
+                <MetricCard
+                    label="Đơn tháng này"
+                    value={metrics?.monthlyCount?.toString() ?? "—"}
+                    detail={
+                        metrics?.monthlyDiffFromLastMonth !== undefined
+                            ? `${metrics.monthlyDiffFromLastMonth >= 0 ? "Tăng" : "Giảm"} ${Math.abs(
+                                metrics.monthlyDiffFromLastMonth
+                            )} đơn so với tháng trước`
+                            : "Đang tải..."
+                    }
+                    trend={
+                        metrics?.monthlyDiffFromLastMonth !== undefined &&
+                            metrics.monthlyDiffFromLastMonth < 0
+                            ? "down"
+                            : "up"
+                    }
+                    icon={<Pill className="size-5" />}
+                />
+                <MetricCard
+                    label="Chưa thanh toán"
+                    value={metrics?.unpaidCount?.toString() ?? "—"}
+                    detail="Có thể chỉnh sửa hoặc hủy"
+                    icon={<Clock3 className="size-5" />}
+                    tone="amber"
+                />
+                <MetricCard
+                    label="Đã thanh toán"
+                    value={metrics?.paidCount?.toString() ?? "—"}
+                    detail="Chỉ đọc"
+                    icon={<CheckCircle2 className="size-5" />}
+                    tone="green"
+                />
+                <MetricCard
+                    label="Đã hủy"
+                    value={metrics?.cancelledCount?.toString() ?? "—"}
+                    detail="Đều có ghi nhận lý do"
+                    icon={<Activity className="size-5" />}
+                    tone="red"
+                />
+            </MetricGrid>
+
+            <PortalSection title="Danh sách đơn thuốc">
+                {/* Custom Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b p-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Ô tìm kiếm */}
+                        <input
+                            type="text"
+                            placeholder="Tìm mã đơn hoặc bệnh nhân..."
+                            className="h-9 w-64 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+
+                        {/* Bộ chọn ngày cụ thể (mặc định là hôm nay) */}
+                        <input
+                            type="date"
+                            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                        />
+
+                        {/* Lọc trạng thái */}
+                        <select
+                            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="Tất cả trạng thái">Tất cả trạng thái</option>
+                            <option value="Unpaid">Chưa thanh toán</option>
+                            <option value="Paid">Đã thanh toán</option>
+                            <option value="Cancelled">Đã hủy</option>
+                        </select>
                     </div>
 
                     <div>
-{/* Nút Xem chi tiết xuất hiện ở góc phải khi chọn 1 hàng */ }
-{
-    selectedUuid && (
-        <PortalAction
-                variant="default"
-    onClick = {() => handleOpenDetail(selectedUuid)
-}
-              >
-    Xem chi tiết
-        </PortalAction>
-            )}
-</div>
-    </div>
-
-{
-    listLoading ? (
-        <div className= "flex items-center justify-center p-12 text-slate-500 space-x-2" >
-        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-            <span className="text-sm" > Đang tải danh sách đơn thuốc...</span>
+                        {/* Nút Xem chi tiết xuất hiện ở góc phải khi chọn 1 hàng */}
+                        {selectedUuid && (
+                            <PortalAction
+                                variant="default"
+                                onClick={() => handleOpenDetail(selectedUuid)}
+                            >
+                                Xem chi tiết
+                            </PortalAction>
+                        )}
+                    </div>
                 </div>
-        ) : listError ? (
-        <div className= "p-8 text-center text-sm text-red-600" > { listError } </div>
-        ) : rows.length === 0 ? (
-        <div className= "p-8 text-center text-sm text-slate-500" >
-        Không tìm thấy đơn thuốc nào trong ngày đã chọn.
-          </div>
-        ) : (
-        <PortalTable
-            caption= "Đơn thuốc của bác sĩ"
-    columns = {
-        [
-        "Mã đơn",
-        "Bệnh nhân",
-        "Ngày kê",
-        "Số thuốc",
-        "Tổng tiền",
-        "Trạng thái",
-            ]}
-    rows = { rows }
-        />
-        )
-}
-</PortalSection>
 
-{/* Cửa sổ Modal Chi tiết đơn thuốc */ }
-<PrescriptionDetailModal
-        isOpen={ isModalOpen }
-data = { detailData }
-isLoading = { detailLoading }
-onClose = {() => {
-    setIsModalOpen(false);
-    setDetailData(null);
-}}
-onCancel = { handleCancelPrescription }
-    />
-    </div>
-  );
+                {listLoading ? (
+                    <div className="flex items-center justify-center p-12 text-slate-500 space-x-2">
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                        <span className="text-sm">Đang tải danh sách đơn thuốc...</span>
+                    </div>
+                ) : listError ? (
+                    <div className="p-8 text-center text-sm text-red-600">{listError}</div>
+                ) : rows.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-slate-500">
+                        Không tìm thấy đơn thuốc nào trong ngày đã chọn.
+                    </div>
+                ) : (
+                    <PortalTable
+                        caption="Đơn thuốc của bác sĩ"
+                        columns={[
+                            "Mã đơn",
+                            "Bệnh nhân",
+                            "Ngày kê",
+                            "Số thuốc",
+                            "Tổng tiền",
+                            "Trạng thái",
+                        ]}
+                        rows={rows}
+                    />
+                )}
+            </PortalSection>
+
+            {/* Cửa sổ Modal Chi tiết đơn thuốc */}
+            <PrescriptionDetailModal
+                isOpen={isModalOpen}
+                data={detailData}
+                isLoading={detailLoading}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setDetailData(null);
+                }}
+                onCancel={handleCancelPrescription}
+            />
+        </div>
+    );
 }

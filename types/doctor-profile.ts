@@ -21,7 +21,7 @@ export type DoctorProfileResponse = {
  */
 export type UpdateDoctorProfilePayload = {
     name: string;
-    specialty: string;
+    specialty: string | null;
     workplace: string;
     introduction: string;
     expertise: string;

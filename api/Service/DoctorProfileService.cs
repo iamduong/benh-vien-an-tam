@@ -57,7 +57,7 @@ public class DoctorProfileService : IDoctorProfileService
 
         // Chỉ cập nhật các trường được phép ở Khối "Thông tin bác sĩ"
         profile.Name = request.Name;
-        profile.Specialty = request.Specialty;
+        profile.Specialty = request.Specialty ?? string.Empty;
         profile.Workplace = request.Workplace;
         profile.Introduction = request.Introduction;
         profile.Expertise = request.Expertise;
