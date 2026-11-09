@@ -1,10 +1,10 @@
 "use client";
 
+import { isAxiosError } from "axios";
 import { CalendarClock, Check, FilePenLine, Pencil, Plus, RotateCcw, Send, Trash2, X } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { mockDoctorWorkings } from "@/data/mocks/doctor-workings";
-import { mockHospitalWorkings } from "@/data/mocks/hospital-workings";
 import { mockServiceWorkings } from "@/data/mocks/service-workings";
 import { mockTimeWorkings } from "@/data/mocks/time-workings";
 import { PortalAction, PortalPageHeader, PortalSection, PortalTable, StatusPill } from "@/components/internal/portal-ui";
@@ -12,6 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  hospitalWorkingService,
+  type HospitalWorkingData,
+  type HospitalWorkingSlot,
+} from "@/lib/services/hospital/HospitalWorkingService";
 import {
   adminTimeWorkingService,
   type AdminTimeWorkingItem,
@@ -171,15 +176,231 @@ export function DoctorWorkingScreen() {
 }
 
 export function HospitalWorkingScreen() {
+  const [data, setData] = useState<HospitalWorkingData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedWorkingUuid, setSelectedWorkingUuid] = useState("");
+  const [editing, setEditing] = useState<{ uuid: string; workingUuid: string } | null>(null);
+
+  const refresh = useCallback(async (signal?: AbortSignal, showLoading = false) => {
+    if (showLoading) setLoading(true);
+    setLoadError(null);
+    try {
+      const response = await hospitalWorkingService.getBranchWorkings(signal);
+      setData(response.data);
+    } catch (requestError) {
+      if (signal?.aborted) return;
+      console.error("Không thể tải giờ làm việc của chi nhánh:", requestError);
+      setLoadError(getWorkingError(requestError, "Không tải được giờ làm việc của chi nhánh."));
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    hospitalWorkingService.getBranchWorkings(controller.signal)
+      .then((response) => {
+        if (controller.signal.aborted) return;
+        setData(response.data);
+        setLoadError(null);
+      })
+      .catch((requestError: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("Không thể tải giờ làm việc của chi nhánh:", requestError);
+        setLoadError(getWorkingError(requestError, "Không tải được giờ làm việc của chi nhánh."));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
+
+  const assignedWorkings = data?.assignedWorkings ?? [];
+  const addableWorkings = getAssignableWorkings(data, null);
+
+  async function addWorking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const workingUuid = selectedWorkingUuid || addableWorkings[0]?.uuid;
+    if (!workingUuid || submitting) return;
+
+    setSubmitting(true);
+    setActionError(null);
+    setSuccess(null);
+    try {
+      await hospitalWorkingService.add(workingUuid);
+      await refresh();
+      setSelectedWorkingUuid("");
+      setSuccess("Đã thêm khung giờ làm việc cho chi nhánh.");
+    } catch (requestError) {
+      console.error("Không thể thêm giờ làm việc cho chi nhánh:", requestError);
+      setActionError(getWorkingError(requestError, "Không thể thêm khung giờ làm việc."));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function updateWorking() {
+    if (!editing || submitting) return;
+
+    setSubmitting(true);
+    setActionError(null);
+    setSuccess(null);
+    try {
+      await hospitalWorkingService.update(editing.uuid, editing.workingUuid);
+      await refresh();
+      setEditing(null);
+      setSuccess("Đã cập nhật khung giờ làm việc.");
+    } catch (requestError) {
+      console.error("Không thể cập nhật giờ làm việc của chi nhánh:", requestError);
+      setActionError(getWorkingError(requestError, "Không thể cập nhật khung giờ làm việc."));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function deleteWorking(working: HospitalWorkingSlot) {
+    if (submitting || !window.confirm("Xóa khung giờ này khỏi lịch làm việc của chi nhánh?")) return;
+
+    setSubmitting(true);
+    setActionError(null);
+    setSuccess(null);
+    try {
+      await hospitalWorkingService.delete(working.uuid);
+      await refresh();
+      if (editing?.uuid === working.uuid) setEditing(null);
+      setSuccess("Đã xóa khung giờ khỏi lịch làm việc của chi nhánh.");
+    } catch (requestError) {
+      console.error("Không thể xóa giờ làm việc của chi nhánh:", requestError);
+      setActionError(getWorkingError(requestError, "Không thể xóa khung giờ làm việc."));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const rows = assignedWorkings.map((working) => {
+    const isEditing = editing?.uuid === working.uuid;
+    const editableOptions = getAssignableWorkings(data, working.uuid);
+    return [
+      dayNames[working.dayOfWeek],
+      isEditing ? (
+        <select
+          key={`${working.uuid}-select`}
+          value={editing.workingUuid}
+          onChange={(event) => setEditing((current) => current
+            ? { ...current, workingUuid: event.target.value }
+            : current)}
+          className="h-9 min-w-48 rounded-md border bg-background px-3 text-sm"
+          aria-label="Khung giờ mới"
+        >
+          {editableOptions.map((option) => (
+            <option key={option.uuid} value={option.uuid}>{formatWorking(option)}</option>
+          ))}
+        </select>
+      ) : `${working.startTime.slice(0, 5)} - ${working.endTime.slice(0, 5)}`,
+      <StatusPill key={`${working.uuid}-status`} tone="green">Đang áp dụng</StatusPill>,
+      <div key={`${working.uuid}-actions`} className="flex gap-2">
+        {isEditing ? (
+          <>
+            <Button type="button" size="sm" disabled={submitting || editableOptions.length === 0} onClick={() => void updateWorking()}>Lưu</Button>
+            <Button type="button" size="sm" variant="outline" disabled={submitting} onClick={() => setEditing(null)}>Hủy</Button>
+          </>
+        ) : (
+          <>
+            <Button type="button" size="icon-sm" variant="ghost" disabled={submitting} aria-label="Sửa khung giờ" onClick={() => setEditing({ uuid: working.uuid, workingUuid: working.workingUuid })}><Pencil /></Button>
+            <Button type="button" size="icon-sm" variant="ghost" disabled={submitting} aria-label="Xóa khung giờ" onClick={() => void deleteWorking(working)}><Trash2 /></Button>
+          </>
+        )}
+      </div>,
+    ];
+  });
+
   return (
-    <AssignmentScreen
-      eyebrow="Lịch hoạt động cơ sở"
-      title="Giờ làm việc bệnh viện"
-      description="Cấu hình khung giờ tiếp nhận và gửi thay đổi lịch hoạt động để phê duyệt."
-      assignmentCount={mockHospitalWorkings.length}
-      admin
-    />
+    <div className="space-y-6">
+      <PortalPageHeader
+        eyebrow="Lịch hoạt động cơ sở"
+        title="Giờ làm việc bệnh viện"
+        description="Chọn các khung giờ có sẵn để cấu hình lịch hoạt động của chi nhánh. Thay đổi được lưu trực tiếp và tải lại từ hệ thống."
+        actions={<StatusPill tone="blue">{assignedWorkings.length} khung giờ</StatusPill>}
+      />
+      {actionError ? <p role="alert" className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{actionError}</p> : null}
+      {loadError ? (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span>{loadError}</span>
+          <Button type="button" size="sm" variant="outline" onClick={() => void refresh(undefined, true)}>Thử tải lại</Button>
+        </div>
+      ) : null}
+      {success ? <p role="status" className="border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</p> : null}
+      <PortalSection title="Lịch đang áp dụng" description="Các khung giờ này được lưu theo chi nhánh của tài khoản đang đăng nhập.">
+        {loading ? <p className="p-5 text-sm text-muted-foreground">Đang tải giờ làm việc...</p> : assignedWorkings.length ? (
+          <PortalTable caption="Giờ làm việc của chi nhánh" columns={["Ngày", "Khung giờ", "Trạng thái", "Thao tác"]} rows={rows} />
+        ) : (
+          <p className="p-5 text-sm text-muted-foreground">Chi nhánh chưa cấu hình khung giờ làm việc.</p>
+        )}
+      </PortalSection>
+      <PortalSection title="Thêm khung giờ" description="Danh sách lựa chọn được lấy từ danh mục khung giờ đang hoạt động.">
+        {loading ? <p className="p-5 text-sm text-muted-foreground">Đang tải danh mục khung giờ...</p> : (
+          <form onSubmit={(event) => void addWorking(event)} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1 space-y-2">
+              <Label htmlFor="branch-working-slot">Khung giờ làm việc</Label>
+              <select
+                id="branch-working-slot"
+                value={selectedWorkingUuid || addableWorkings[0]?.uuid || ""}
+                onChange={(event) => setSelectedWorkingUuid(event.target.value)}
+                disabled={submitting || addableWorkings.length === 0}
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                {addableWorkings.map((working) => (
+                  <option key={working.uuid} value={working.uuid}>{formatWorking(working)}</option>
+                ))}
+              </select>
+              {addableWorkings.length === 0 ? <p className="text-sm text-muted-foreground">Không còn khung giờ khả dụng để thêm.</p> : null}
+            </div>
+            <Button type="submit" disabled={submitting || addableWorkings.length === 0}>
+              <Plus />{submitting ? "Đang lưu..." : "Thêm khung giờ"}
+            </Button>
+          </form>
+        )}
+      </PortalSection>
+    </div>
   );
+}
+
+function getAssignableWorkings(
+  data: HospitalWorkingData | null,
+  excludedAssignmentUuid: string | null,
+) {
+  if (!data) return [];
+  return data.availableWorkings.filter((candidate) =>
+    !data.assignedWorkings.some((assigned) =>
+      assigned.uuid !== excludedAssignmentUuid &&
+      assigned.dayOfWeek === candidate.dayOfWeek &&
+      assigned.startTime.slice(0, 5) < candidate.endTime.slice(0, 5) &&
+      candidate.startTime.slice(0, 5) < assigned.endTime.slice(0, 5),
+    ),
+  );
+}
+
+function formatWorking(working: HospitalWorkingSlot) {
+  return `${dayNames[working.dayOfWeek]} - ${working.startTime.slice(0, 5)} đến ${working.endTime.slice(0, 5)}`;
+}
+
+function getWorkingError(error: unknown, fallback: string) {
+  if (isAxiosError(error)) {
+    const responseData: unknown = error.response?.data;
+    if (
+      typeof responseData === "object" &&
+      responseData !== null &&
+      "message" in responseData &&
+      typeof responseData.message === "string"
+    ) {
+      return responseData.message;
+    }
+  }
+  return error instanceof Error ? error.message : fallback;
 }
 
 export function ServiceWorkingScreen() {
