@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text;
 using api.Contract.Hospital;
 using api.Lib;
@@ -17,29 +16,27 @@ public sealed class HospitalStaffController(
     DBContext dbContext,
     PasswordHasher passwordHasher) : ControllerBase
 {
-    private const string DoctorRoleCode = "doctor";
-    private const string StaffRoleCode = "Staff";
-    private const string WarehouseManagerRoleCode = "WarehouseManager";
-
     [HttpGet]
     public async Task<IActionResult> GetStaff(
         Guid hospitalUuid,
         [FromQuery] string? search = null,
-        [FromQuery] string? role = null,
+        [FromQuery] Guid? roleUuid = null,
         [FromQuery] BaseStatus? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 100,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(hospitalUuid, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var roles = await GetStaffRoles(cancellationToken);
         if (roles.Count == 0)
-            return Conflict(new { message = "Staff roles are not configured", error = "STAFF_ROLES_NOT_CONFIGURED" });
+            return Ok(new
+            {
+                message = "Fetched successfully",
+                data = Array.Empty<HospitalStaffResponse>(),
+                pagination = new { page, pageSize, totalCount = 0, totalPages = 0 }
+            });
 
         var allowedRoleIds = roles.Keys.ToHashSet();
         var accounts = await dbContext.Accounts
@@ -85,7 +82,7 @@ public sealed class HospitalStaffController(
                 : doctorDepartments
                     .FirstOrDefault(relation => relation.DoctorUuid == doctor.Uuid)?
                     .DepartmentUuid;
-            var doctorRole = roles[account.RoleUuid!.Value];
+            var role = roles[account.RoleUuid!.Value];
 
             return new HospitalStaffResponse
             {
@@ -93,8 +90,8 @@ public sealed class HospitalStaffController(
                 DoctorUuid = doctor?.Uuid,
                 DisplayName = doctor?.Name ?? account.Phone,
                 Phone = account.Phone,
-                RoleCode = doctorRole.Code,
-                RoleName = doctorRole.Name,
+                RoleUuid = role.Uuid,
+                RoleName = role.Name,
                 DepartmentUuid = departmentUuid,
                 DepartmentName = departmentUuid.HasValue &&
                     departments.TryGetValue(departmentUuid.Value, out var department)
@@ -107,7 +104,7 @@ public sealed class HospitalStaffController(
             };
         })
         .Where(item =>
-            (string.IsNullOrWhiteSpace(role) || item.RoleCode == role) &&
+            (!roleUuid.HasValue || item.RoleUuid == roleUuid.Value) &&
             (string.IsNullOrWhiteSpace(search) ||
                 item.DisplayName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ||
                 item.Phone.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ||
@@ -135,7 +132,11 @@ public sealed class HospitalStaffController(
         CreateHospitalStaffRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(hospitalUuid, cancellationToken))
+        var hospital = await dbContext.Hospitals
+            .FirstOrDefaultAsync(item =>
+                item.Uuid == hospitalUuid && item.DeletedAt == null,
+                cancellationToken);
+        if (hospital is null)
             return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
 
         var phone = request.Phone.Trim();
@@ -143,12 +144,11 @@ public sealed class HospitalStaffController(
             return Conflict(new { message = "Phone number is already in use", error = "PHONE_ALREADY_EXISTS" });
 
         var roles = await GetStaffRoles(cancellationToken);
-        var selectedRole = roles.FirstOrDefault(role => role.Value.Code == request.RoleCode);
-        if (selectedRole.Key == Guid.Empty)
+        if (!roles.TryGetValue(request.RoleUuid, out var selectedRole))
             return BadRequest(new { message = "Staff role is invalid", error = "INVALID_STAFF_ROLE" });
 
         Department? department = null;
-        if (request.RoleCode == DoctorRoleCode)
+        if (IsDoctorRole(selectedRole))
         {
             if (string.IsNullOrWhiteSpace(request.Name) ||
                 request.Name.Trim().Length < 2 ||
@@ -171,15 +171,13 @@ public sealed class HospitalStaffController(
                 return BadRequest(new { message = "Department is not assigned to this hospital", error = "DEPARTMENT_NOT_ASSIGNED" });
         }
 
-        var hospital = await dbContext.Hospitals
-            .FirstAsync(item => item.Uuid == hospitalUuid, cancellationToken);
         var now = DateTime.UtcNow;
         var account = new Account
         {
             Uuid = Guid.NewGuid(),
             Phone = phone,
             Password = passwordHasher.Hash(request.Password),
-            RoleUuid = selectedRole.Key,
+            RoleUuid = selectedRole.Uuid,
             Status = BaseStatus.Active,
             HospitalUuid = hospitalUuid,
             CreatedAt = now,
@@ -187,7 +185,7 @@ public sealed class HospitalStaffController(
         };
 
         DoctorProfile? doctor = null;
-        if (request.RoleCode == DoctorRoleCode)
+        if (IsDoctorRole(selectedRole))
         {
             doctor = new DoctorProfile
             {
@@ -222,7 +220,7 @@ public sealed class HospitalStaffController(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var response = ToResponse(account, selectedRole.Value, doctor, department);
+        var response = ToResponse(account, selectedRole, doctor, department);
         return StatusCode(StatusCodes.Status201Created,
             new { message = "Created successfully", data = response });
     }
@@ -252,9 +250,6 @@ public sealed class HospitalStaffController(
         Guid accountUuid,
         CancellationToken cancellationToken)
     {
-        if (!await HasBranchAccess(hospitalUuid, cancellationToken))
-            return null;
-
         var roleIds = (await GetStaffRoles(cancellationToken)).Keys.ToArray();
         return await dbContext.Accounts
             .Where(account =>
@@ -266,57 +261,37 @@ public sealed class HospitalStaffController(
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    private async Task<bool> HasBranchAccess(Guid hospitalUuid, CancellationToken cancellationToken)
-    {
-        var accountIdClaim = User.FindFirstValue("uuid");
-        if (!Guid.TryParse(accountIdClaim, out var accountUuid))
-            return false;
-
-        return await dbContext.Hospitals.AnyAsync(
-            hospital => hospital.Uuid == hospitalUuid &&
-                        hospital.DeletedAt == null &&
-                        dbContext.Accounts.Any(account =>
-                            account.Uuid == accountUuid &&
-                            account.HospitalUuid == hospitalUuid &&
-                            account.DeletedAt == null &&
-                            account.Status == BaseStatus.Active &&
-                            account.RoleUuid.HasValue &&
-                            dbContext.Roles.Any(role =>
-                                role.Uuid == account.RoleUuid.Value &&
-                                role.Status == BaseStatus.Active &&
-                                role.DeletedAt == null &&
-                                (role.Name.ToLower().Contains("admin") ||
-                                 role.Name.ToLower().Contains("quản trị")))),
-            cancellationToken);
-    }
-
-    private async Task<Dictionary<Guid, (string Code, string Name)>> GetStaffRoles(
+    private async Task<Dictionary<Guid, Role>> GetStaffRoles(
         CancellationToken cancellationToken)
     {
         var roles = await dbContext.Roles
-            .Where(role => role.DeletedAt == null && role.Status == BaseStatus.Active)
+            .Where(role => role.DeletedAt == null &&
+                role.Status == BaseStatus.Active &&
+                role.Scope == AccessScope.Hospital)
             .ToListAsync(cancellationToken);
         return roles
-            .Select(role => (Role: role, Code: ResolveRoleCode(role)))
-            .Where(item => item.Code is not null)
-            .ToDictionary(item => item.Role.Uuid, item => (item.Code!, item.Role.Name));
+            .Where(IsSupportedStaffRole)
+            .ToDictionary(role => role.Uuid);
     }
 
-    private static string? ResolveRoleCode(Role role)
+    private static bool IsSupportedStaffRole(Role role)
     {
         var normalized = role.Name.Trim().ToLowerInvariant();
-        if (role.IsDoctor || normalized.Contains("doctor") || normalized.Contains("bác sĩ"))
-            return DoctorRoleCode;
-        if (normalized.Contains("warehouse") || normalized.Contains("kho"))
-            return WarehouseManagerRoleCode;
-        if (normalized.Contains("staff") || normalized.Contains("tiếp nhận"))
-            return StaffRoleCode;
-        return null;
+        return IsDoctorRole(role) ||
+            normalized.Contains("warehouse") ||
+            normalized.Contains("kho") ||
+            normalized.Contains("staff") ||
+            normalized.Contains("tiếp nhận");
     }
+
+    private static bool IsDoctorRole(Role role) =>
+        role.IsDoctor ||
+        role.Name.Trim().Contains("doctor", StringComparison.OrdinalIgnoreCase) ||
+        role.Name.Trim().Contains("bác sĩ", StringComparison.OrdinalIgnoreCase);
 
     private static HospitalStaffResponse ToResponse(
         Account account,
-        (string Code, string Name) role,
+        Role role,
         DoctorProfile? doctor,
         Department? department) =>
         new()
@@ -325,7 +300,7 @@ public sealed class HospitalStaffController(
             DoctorUuid = doctor?.Uuid,
             DisplayName = doctor?.Name ?? account.Phone,
             Phone = account.Phone,
-            RoleCode = role.Code,
+            RoleUuid = role.Uuid,
             RoleName = role.Name,
             DepartmentUuid = department?.Uuid,
             DepartmentName = department?.Name,

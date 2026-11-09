@@ -2,14 +2,12 @@ import { httpClient } from "@/lib/http/client";
 import type { ApiResponse, PaginatedData } from "@/lib/http/response";
 import { BaseStatus, type Guid } from "@/types/models";
 
-export type StaffRoleCode = "doctor" | "Staff" | "WarehouseManager";
-
 export type HospitalStaffMember = {
   accountUuid: Guid;
   doctorUuid: Guid | null;
   DisplayName: string;
   phone: string;
-  RoleCode: StaffRoleCode;
+  roleUuid: Guid;
   RoleName: string;
   departmentUuid: Guid | null;
   DepartmentName: string | null;
@@ -21,7 +19,7 @@ export type HospitalStaffMember = {
 
 export type HospitalStaffQuery = {
   search?: string;
-  role?: StaffRoleCode;
+  roleUuid?: Guid;
   status?: BaseStatus;
   page?: number;
   pageSize?: number;
@@ -30,7 +28,7 @@ export type HospitalStaffQuery = {
 export type CreateHospitalStaffRequest = {
   phone: string;
   password: string;
-  RoleCode: StaffRoleCode;
+  roleUuid: Guid;
   name?: string;
   specialty?: string;
   price?: number;
@@ -48,7 +46,7 @@ type StaffApiDto = {
   doctorUuid: Guid | null;
   displayName: string;
   phone: string;
-  roleCode: StaffRoleCode;
+  roleUuid: Guid;
   roleName: string;
   departmentUuid: Guid | null;
   departmentName: string | null;
@@ -114,7 +112,7 @@ export class StaffService {
       {
         phone: request.phone,
         password: request.password,
-        roleCode: request.RoleCode,
+        roleUuid: request.roleUuid,
         name: request.name,
         specialty: request.specialty,
         price: request.price,
@@ -153,7 +151,7 @@ function toStaffMember(staff: StaffApiDto): HospitalStaffMember {
     doctorUuid: staff.doctorUuid,
     DisplayName: staff.displayName,
     phone: staff.phone,
-    RoleCode: staff.roleCode,
+    roleUuid: staff.roleUuid,
     RoleName: staff.roleName,
     departmentUuid: staff.departmentUuid,
     DepartmentName: staff.departmentName,

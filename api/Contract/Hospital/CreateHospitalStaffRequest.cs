@@ -11,7 +11,7 @@ public sealed class CreateHospitalStaffRequest
     public string Password { get; init; } = string.Empty;
 
     [Required]
-    public string RoleCode { get; init; } = string.Empty;
+    public Guid RoleUuid { get; init; }
 
     [StringLength(100, MinimumLength = 2)]
     public string? Name { get; init; }
