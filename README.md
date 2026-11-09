@@ -20,6 +20,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Backend API
+
+The frontend proxies `/api/*` requests to the ASP.NET API. Run the API with
+`dotnet run --launch-profile http` from `api/`; it listens on
+`http://localhost:5212` by default. To use another backend origin, set
+`API_BACKEND_ORIGIN` in the Next.js server environment (for example,
+`https://api.example.com`) and restart the frontend.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

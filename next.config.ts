@@ -16,6 +16,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    const apiOrigin = (process.env.API_BACKEND_ORIGIN ?? "http://localhost:5212")
+      .replace(/\/$/, "");
+
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${apiOrigin}/api/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
