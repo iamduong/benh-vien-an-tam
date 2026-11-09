@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Activity,
   BedDouble,
   CalendarCheck2,
   CircleDollarSign,
@@ -11,7 +10,6 @@ import {
   Plus,
   RotateCcw,
   ShieldAlert,
-  Star,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
@@ -36,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { HospitalWorkingScreen } from "@/components/internal/trang-tong/working-hours-screens";
+import { HospitalReviewsScreen as HospitalReviewsManagementScreen } from "@/components/internal/trang-tong/hospital-reviews-screen";
 import { BranchAppointmentsScreen } from "@/components/internal/trang-tong/branch-appointments-screen";
 import { markdownToPlainText } from "@/lib/format";
 import {
@@ -1555,34 +1554,7 @@ function HospitalInventoryScreen() {
 }
 
 function HospitalReviewsScreen() {
-  return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Chất lượng dịch vụ" title="Đánh giá người bệnh" description="Kiểm duyệt đánh giá liên quan đến cơ sở, bác sĩ và dịch vụ tại chi nhánh." />
-      <MetricGrid>
-        <MetricCard label="Điểm trung bình" value="4,7/5" detail="Từ 1.248 đánh giá" icon={<Star className="size-5" />} tone="amber" />
-        <MetricCard label="Chưa xem" value="12" detail="5 đánh giá trong hôm nay" icon={<ShieldAlert className="size-5" />} />
-        <MetricCard label="Đang hiển thị" value="1.196" detail="95,8% tổng đánh giá" icon={<ClipboardCheck className="size-5" />} tone="green" />
-        <MetricCard label="Đã ẩn" value="52" detail="Có lý do kiểm duyệt" icon={<Activity className="size-5" />} tone="red" />
-      </MetricGrid>
-      <PortalSection title="Hàng chờ kiểm duyệt">
-        <PortalToolbar placeholder="Tìm nội dung đánh giá" filters={[{ label: "Tất cả đối tượng", options: ["Cơ sở", "Bác sĩ", "Dịch vụ"] }, { label: "Số sao", options: ["5 sao", "4 sao", "1-3 sao"] }]} />
-        <div className="grid gap-4 p-5 lg:grid-cols-2">
-          {[
-            ["Nguyễn T. L.", "5", "BS. Nguyễn Hoàng Minh", "Bác sĩ tư vấn kỹ, quy trình tiếp nhận nhanh và rõ ràng."],
-            ["Trần V. P.", "4", "Siêu âm tổng quát", "Thời gian chờ hơi lâu nhưng nhân viên hỗ trợ nhiệt tình."],
-            ["Lê M. C.", "5", "BV Đa khoa Thành Phố", "Cơ sở sạch sẽ, đặt lịch trước nên không phải chờ nhiều."],
-            ["Phạm T. H.", "2", "Khoa Nhi", "Khó tìm khu vực phòng khám, cần bổ sung biển hướng dẫn."],
-          ].map(([name, stars, target, content]) => (
-            <article key={`${name}-${target}`} className="border p-5">
-              <div className="flex items-start justify-between gap-4"><div><p className="font-semibold">{name}</p><p className="mt-1 text-xs text-muted-foreground">{target}</p></div><StatusPill tone={Number(stars) >= 4 ? "green" : "amber"}>{stars} sao</StatusPill></div>
-              <p className="mt-4 text-sm leading-6 text-muted-foreground">{content}</p>
-              <div className="mt-4 flex gap-2"><PortalAction variant="default">Hiển thị</PortalAction><PortalAction>Ẩn đánh giá</PortalAction></div>
-            </article>
-          ))}
-        </div>
-      </PortalSection>
-    </div>
-  );
+  return <HospitalReviewsManagementScreen />;
 }
 
 function HospitalReportsScreen() {

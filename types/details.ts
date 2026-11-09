@@ -13,6 +13,8 @@ export type HospitalDetail = {
   departments: Department[];
   medicalServices: MedicalService[];
   reviews: ReviewHospital[];
+  averageRating?: number | null;
+  reviewCount?: number;
 };
 
 export type DoctorDetail = {
@@ -20,13 +22,17 @@ export type DoctorDetail = {
   departments: Department[];
   hospital: Hospital;
   reviews: ReviewDoctor[];
+  averageRating?: number | null;
+  reviewCount?: number;
 };
 
 export type MedicalServiceDetail = {
   medicalService: MedicalService;
   hospitals: Hospital[];
   reviews: ReviewMedicalService[];
-};
+  averageRating?: number | null;
+  reviewCount?: number;
+}
 
 export type DepartmentDetail = {
   department: Department;

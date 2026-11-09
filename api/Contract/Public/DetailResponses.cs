@@ -28,6 +28,8 @@ public class HospitalDetailResponse
     public DepartmentResponse[] Departments { get; set; } = [];
     public MedicalServicePublicResponse[] MedicalServices { get; set; } = [];
     public PublicReviewResponse[] Reviews { get; set; } = [];
+    public double? AverageRating { get; set; }
+    public int ReviewCount { get; set; }
 }
 
 public class DoctorDetailResponse
@@ -36,6 +38,8 @@ public class DoctorDetailResponse
     public DepartmentResponse[] Departments { get; set; } = [];
     public HospitalResponse Hospital { get; set; } = new();
     public PublicReviewResponse[] Reviews { get; set; } = [];
+    public double? AverageRating { get; set; }
+    public int ReviewCount { get; set; }
 }
 
 public class DepartmentDetailResponse
@@ -50,4 +54,6 @@ public class MedicalServiceDetailResponse
     public MedicalServicePublicResponse MedicalService { get; set; } = new();
     public HospitalResponse[] Hospitals { get; set; } = [];
     public PublicReviewResponse[] Reviews { get; set; } = [];
+    public double? AverageRating { get; set; }
+    public int ReviewCount { get; set; }
 }

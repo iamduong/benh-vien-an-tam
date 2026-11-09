@@ -187,6 +187,8 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
           <DetailSection id="danh-gia" title="Đánh giá từ người bệnh">
             <ReviewList
               reviews={reviews}
+              initialAverageRating={detail.averageRating}
+              initialReviewCount={detail.reviewCount}
               target={{ type: "doctor", uuid: doctor.uuid }}
             />
           </DetailSection>
