@@ -3,6 +3,7 @@ using api.Contract.Clinical;
 using api.Lib;
 using api.Model.Enum;
 using api.Service.Interfaces;
+using System.Globalization;
 
 namespace api.Service;
 
@@ -14,11 +15,27 @@ public class DoctorAppointmentService(DBContext dbContext) : IDoctorAppointmentS
         var query = dbContext.Appointments
             .Where(x => x.DeletedAt == null && x.DoctorUuid == doctorUuid);
 
-        if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var parsedDate))
+        if (!string.IsNullOrWhiteSpace(date) &&
+    DateOnly.TryParseExact(
+        date,
+        "yyyy-MM-dd",
+        CultureInfo.InvariantCulture,
+        DateTimeStyles.None,
+        out var selectedDate))
         {
-            var startOfDay = parsedDate.Date;
-            var endOfDay = startOfDay.AddDays(1);
-            query = query.Where(x => x.AppointmentDate >= startOfDay && x.AppointmentDate < endOfDay);
+            // Ngày bắt đầu theo giờ Việt Nam (UTC+7)
+            var startOfDayLocal = new DateTimeOffset(
+                selectedDate.ToDateTime(TimeOnly.MinValue),
+                TimeSpan.FromHours(7)
+            );
+
+            // Chuyển sang UTC
+            var startOfDayUtc = startOfDayLocal.UtcDateTime;
+            var endOfDayUtc = startOfDayLocal.AddDays(1).UtcDateTime;
+
+            query = query.Where(x =>
+                x.AppointmentDate >= startOfDayUtc &&
+                x.AppointmentDate < endOfDayUtc);
         }
 
         var items = await query

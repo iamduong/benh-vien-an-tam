@@ -5,47 +5,67 @@ import {
     MedicineDto,
     MedicineQueryDto,
     PaginatedResult,
+    MedicineUnitDto,
+    StockStatusFilter,
+    AvailableMedicineApiDto,
 } from "@/types/medicine";
+
+const mapStockStatus = (status: string): StockStatusFilter => {
+    switch (status) {
+        case "Còn hàng":
+            return StockStatusFilter.InStock;
+
+        case "Sắp hết":
+            return StockStatusFilter.LowStock;
+
+        case "Hết hàng":
+            return StockStatusFilter.OutOfStock;
+
+        default:
+            return StockStatusFilter.InStock;
+    }
+};
+
+const mapMedicine = (item: AvailableMedicineApiDto): MedicineDto => ({
+    uuid: item.medicineUuid,
+    name: item.name,
+    unit: item.unitName,
+    price: item.price,
+    stock: item.quantity,
+    minStock: item.minimumQuantity,
+    status: mapStockStatus(item.stockStatus),
+});
 
 export const MedicineService = {
     getAvailableMedicines: async (
         query: MedicineQueryDto
     ): Promise<PaginatedResult<MedicineDto>> => {
-        const response = await httpClient.get<ApiResponse<PaginatedResult<MedicineDto>>>(
-            "/api/AvailableMedicine",
-            {
-                params: {
-                    pageIndex: query.pageIndex,
-                    pageSize: query.pageSize,
-                    search: query.search || undefined,
-                    unit: query.unit || undefined,
-                    stockStatus: query.stockStatus || undefined,
-                },
-            }
-        );
+        const response = await httpClient.get("/AvailableMedicine", {
+            params: query,
+        });
 
-        const resData = response.data as any;
-        if (resData && resData.data) {
-            return resData.data;
-        }
-        return resData || { items: [], pageIndex: 1, pageSize: 5, totalCount: 0, totalPages: 1 };
+        const data = response.data;
+
+        return {
+            items: data.items.map(mapMedicine),
+            totalCount: data.totalItems,
+            pageIndex: data.pageIndex,
+            pageSize: data.pageSize,
+            totalPages: Math.ceil(data.totalItems / data.pageSize),
+        };
     },
 
-    getMedicineUnits: async (): Promise<string[]> => {
-        const response = await httpClient.get<ApiResponse<string[]>>(
-            "/api/AvailableMedicine/units"
+    getMedicineUnits: async (): Promise<MedicineUnitDto[]> => {
+        const response = await httpClient.get<MedicineUnitDto[]>(
+            "/AvailableMedicine/units"
         );
 
-        const resData = response.data as any;
-        if (resData && resData.data && Array.isArray(resData.data)) {
-            return resData.data;
-        }
-        return Array.isArray(resData) ? resData : [];
+        return response.data;
     },
 
     getMedicineDetail: async (uuid: string): Promise<MedicineDetailDto> => {
         const response = await httpClient.get<ApiResponse<MedicineDetailDto>>(
-            `/api/AvailableMedicine/${uuid}`
+            `/AvailableMedicine/${uuid}`
         );
 
         const resData = response.data as any;

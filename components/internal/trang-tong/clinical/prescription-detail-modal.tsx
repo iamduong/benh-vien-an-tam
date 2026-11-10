@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { StatusPill } from "@/components/internal/portal-ui";
@@ -333,9 +333,9 @@ export function PrescriptionDetailModal({
         <span className="text-xs font-semibold text-slate-600" >
             Ghi chú / Dặn dò của bác sĩ:
 </span>
-    < p className = "text-sm text-slate-700 italic" >
-        "{data.note || "Không có ghi chú thêm."}"
-            </p>
+    <p className="text-sm text-slate-700 italic">
+        {data.note || "Không có ghi chú thêm."}
+    </p>
             </div>
 
             < div className = "w-full md:w-auto text-right space-y-1 border-t md:border-t-0 pt-3 md:pt-0" >

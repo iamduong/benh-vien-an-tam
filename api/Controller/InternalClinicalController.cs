@@ -22,11 +22,30 @@ public class InternalClinicalController(
     }
 
     [HttpGet("appointments")]
-    public async Task<IActionResult> GetAppointments([FromQuery] string? date, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAppointments(
+    [FromQuery] string? date,
+    CancellationToken cancellationToken)
     {
-        var doctorUuid = GetCurrentDoctorUuid();
-        var result = await appointmentService.GetAppointmentsAsync(doctorUuid, date, cancellationToken);
-        return ApiResponse<object>.RequestSuccess(result, "Lấy danh sách ca khám thành công.");
+        var uuidClaim = User.FindFirst("uuid")?.Value;
+
+        if (!Guid.TryParse(uuidClaim, out var doctorUuid))
+        {
+            return Unauthorized(new
+            {
+                message = "Không tìm thấy UUID bác sĩ hợp lệ trong tài khoản."
+            });
+        }
+
+        var result = await appointmentService.GetAppointmentsAsync(
+            doctorUuid,
+            date,
+            cancellationToken
+        );
+
+        return ApiResponse<object>.RequestSuccess(
+            result,
+            "Lấy danh sách ca khám thành công."
+        );
     }
 
     [HttpGet("appointments/{uuid}")]
