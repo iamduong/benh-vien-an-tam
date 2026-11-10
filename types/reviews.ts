@@ -14,7 +14,7 @@ export type PatientReview =
 export type PublicReview = Pick<
   PatientReview,
   "uuid" | "content" | "numberOfStar" | "createdAt"
->;
+> & { patientName?: string };
 
 export type ReviewEligibilityTarget = {
   type: ReviewTargetType;

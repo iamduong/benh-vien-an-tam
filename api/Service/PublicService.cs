@@ -354,9 +354,14 @@ public class PublicService(DBContext context) : IPublicService
                 InsuranceCap = medicalService.InsuranceCap
             }).ToArrayAsync();
 
-        var reviews = await context.ReviewHospitals
+        var hospitalReviews = context.ReviewHospitals
             .AsNoTracking()
-            .Where(x => x.HospitalUuid == hospital.Uuid && x.Status == BaseStatus.Active)
+            .Where(x => x.HospitalUuid == hospital.Uuid && x.Status == BaseStatus.Active && !x.IsViewed);
+        var reviewCount = await hospitalReviews.CountAsync();
+        var averageRating = RoundAverage(await hospitalReviews
+            .Select(x => (double?)x.NumberOfStar)
+            .AverageAsync());
+        var reviews = await hospitalReviews
             .OrderByDescending(x => x.CreatedAt)
             .Take(20)
             .Select(x => new PublicReviewResponse
@@ -373,7 +378,9 @@ public class PublicService(DBContext context) : IPublicService
             Hospital = hospital,
             Departments = departments,
             MedicalServices = medicalServices,
-            Reviews = reviews
+            Reviews = reviews,
+            AverageRating = averageRating,
+            ReviewCount = reviewCount
         };
     }
 
@@ -450,9 +457,14 @@ public class PublicService(DBContext context) : IPublicService
                 Description = department.Description
             }).ToArrayAsync();
 
-        var reviews = await context.ReviewDoctors
+        var doctorReviews = context.ReviewDoctors
             .AsNoTracking()
-            .Where(x => x.DoctorUuid == doctor.Uuid && x.Status == BaseStatus.Active)
+            .Where(x => x.DoctorUuid == doctor.Uuid && x.Status == BaseStatus.Active && !x.IsViewed);
+        var reviewCount = await doctorReviews.CountAsync();
+        var averageRating = RoundAverage(await doctorReviews
+            .Select(x => (double?)x.NumberOfStar)
+            .AverageAsync());
+        var reviews = await doctorReviews
             .OrderByDescending(x => x.CreatedAt)
             .Take(20)
             .Select(x => new PublicReviewResponse
@@ -469,7 +481,9 @@ public class PublicService(DBContext context) : IPublicService
             Doctor = doctor,
             Departments = departments,
             Hospital = hospital,
-            Reviews = reviews
+            Reviews = reviews,
+            AverageRating = averageRating,
+            ReviewCount = reviewCount
         };
     }
 
@@ -597,10 +611,16 @@ public class PublicService(DBContext context) : IPublicService
                 WorkingHour = hospital.WorkingHour
             }).ToArrayAsync();
 
-        var reviews = await context.ReviewMedicalServices
+        var serviceReviews = context.ReviewMedicalServices
             .AsNoTracking()
             .Where(x => x.MedicalServiceUuid == medicalService.Uuid
-                && x.Status == BaseStatus.Active)
+                && x.Status == BaseStatus.Active
+                && !x.IsViewed);
+        var reviewCount = await serviceReviews.CountAsync();
+        var averageRating = RoundAverage(await serviceReviews
+            .Select(x => (double?)x.NumberOfStar)
+            .AverageAsync());
+        var reviews = await serviceReviews
             .OrderByDescending(x => x.CreatedAt)
             .Take(20)
             .Select(x => new PublicReviewResponse
@@ -616,12 +636,19 @@ public class PublicService(DBContext context) : IPublicService
         {
             MedicalService = medicalService,
             Hospitals = hospitals,
-            Reviews = reviews
+            Reviews = reviews,
+            AverageRating = averageRating,
+            ReviewCount = reviewCount
         };
     }
 
     private static Guid? ParseIdentifier(string identifier) =>
         Guid.TryParse(identifier, out var uuid) ? uuid : null;
+
+    private static double? RoundAverage(double? average) =>
+        average.HasValue
+            ? Math.Round(average.Value * 2, MidpointRounding.AwayFromZero) / 2
+            : null;
 
     private static (int Page, int PageSize) NormalizePagination(int page, int pageSize) =>
         (Math.Max(page, 1), Math.Clamp(pageSize, 1, 24));

@@ -44,6 +44,7 @@ import { mockHospitals } from "@/data/mocks/hospitals";
 import { mockRooms } from "@/data/mocks/rooms";
 import { formatDate } from "@/lib/format";
 import { AppointmentStatus, RoomStatus } from "@/types/models";
+import { HospitalReviewsScreen as HospitalReviewsManagementScreen } from "@/components/internal/trang-tong/hospital-reviews-screen";
 
 export function ReceptionScreens({ slug }: { slug: string }) {
   switch (slug) {
@@ -607,18 +608,5 @@ function PaymentDispensingScreen() {
 }
 
 function StaffReviewsScreen() {
-  return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Quyền được giao" title="Hỗ trợ kiểm duyệt đánh giá" description="Đánh dấu đã xem và ẩn nội dung vi phạm theo quyền được quản trị viên chi nhánh cấp." />
-      <PortalSection title="Đánh giá chưa xem" description="12 đánh giá đang chờ xử lý">
-        <PortalToolbar placeholder="Tìm nội dung" filters={[{ label: "Tất cả số sao", options: ["5 sao", "4 sao", "1-3 sao"] }]} />
-        <PortalTable caption="Đánh giá chưa xem" columns={["Người đánh giá", "Đối tượng", "Nội dung", "Điểm", "Ngày tạo"]} rows={[
-          ["Nguyễn T. L.", "BS. Nguyễn Hoàng Minh", "Bác sĩ tư vấn kỹ, dễ hiểu.", <StatusPill key="1" tone="green">5 sao</StatusPill>, "23/09 09:20"],
-          ["Trần V. P.", "Siêu âm tổng quát", "Thời gian chờ hơi lâu.", <StatusPill key="2" tone="green">4 sao</StatusPill>, "23/09 08:42"],
-          ["Lê M. C.", "BV Đa khoa Thành Phố", "Quy trình tiếp nhận thuận tiện.", <StatusPill key="3" tone="green">5 sao</StatusPill>, "22/09 18:10"],
-          ["Phạm T. H.", "Khoa Nhi", "Khó tìm khu vực phòng khám.", <StatusPill key="4" tone="amber">2 sao</StatusPill>, "22/09 16:34"],
-        ]} />
-      </PortalSection>
-    </div>
-  );
+  return <HospitalReviewsManagementScreen />;
 }

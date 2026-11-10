@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Activity,
   BedDouble,
   CalendarCheck2,
   CircleDollarSign,
@@ -11,7 +10,6 @@ import {
   Plus,
   RotateCcw,
   ShieldAlert,
-  Star,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
@@ -36,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { HospitalWorkingScreen } from "@/components/internal/trang-tong/working-hours-screens";
+import { HospitalReviewsScreen as HospitalReviewsManagementScreen } from "@/components/internal/trang-tong/hospital-reviews-screen";
 import { BranchAppointmentsScreen } from "@/components/internal/trang-tong/branch-appointments-screen";
 import { markdownToPlainText } from "@/lib/format";
 import {
@@ -46,12 +45,13 @@ import { roomService } from "@/lib/services/hospital/RoomService";
 import {
   staffService,
   type HospitalStaffMember,
-  type StaffRoleCode,
 } from "@/lib/services/hospital/StaffService";
+import { roleService, type RoleItem } from "@/lib/services/permission/RoleService";
 import { departmentService } from "@/lib/services/department/DepartmentService";
 import { medicalServiceService } from "@/lib/services/medical-service/MedicalServiceService";
 import {
   BaseStatus,
+  AccessScope,
   RoomStatus,
   type Department,
   type Hospital,
@@ -1036,11 +1036,11 @@ function StaffAccountsScreen() {
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<StaffRoleCode | "all">("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<BaseStatus | "all">("all");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [roleCode, setRoleCode] = useState<StaffRoleCode>("Staff");
+  const [roleUuid, setRoleUuid] = useState("");
   const [doctorName, setDoctorName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [doctorPrice, setDoctorPrice] = useState("");
@@ -1053,6 +1053,7 @@ function StaffAccountsScreen() {
         hospital: Hospital;
         staff: HospitalStaffMember[];
         departments: Department[];
+        roles: RoleItem[];
       }
   >({ status: "loading" });
 
@@ -1063,14 +1064,18 @@ function StaffAccountsScreen() {
     hospitalService
       .getBranchProfile(controller.signal)
       .then(async ({ data: hospital }) => {
-        const [staffResponse, departmentsResponse] = await Promise.all([
+        const [staffResponse, departmentsResponse, allRoles] = await Promise.all([
           staffService.getAll(
             hospital.uuid,
             { page: 1, pageSize: 100 },
             controller.signal,
           ),
           hospitalService.getAssignedDepartments(hospital.uuid, controller.signal),
+          roleService.getAll("", BaseStatus.Active, controller.signal),
         ]);
+        const roles = allRoles.filter(
+          (role) => role.scope === AccessScope.Hospital && isStaffRole(role),
+        );
         const remainingPages = await Promise.all(
           Array.from(
             { length: Math.max(staffResponse.data.TotalPages - 1, 0) },
@@ -1092,7 +1097,11 @@ function StaffAccountsScreen() {
               ...remainingPages.flatMap((page) => page.data.Items),
             ],
             departments: departmentsResponse.data.Items,
+            roles,
           });
+          setRoleUuid((current) =>
+            current || roles.find((role) => !isDoctorStaffRole(role))?.uuid || roles[0]?.uuid || "",
+          );
         }
       })
       .catch((error: unknown) => {
@@ -1128,10 +1137,10 @@ function StaffAccountsScreen() {
     );
   }
 
-  const { hospital, staff, departments } = state;
+  const { hospital, staff, departments, roles } = state;
   const normalizedSearch = search.trim().toLocaleLowerCase("vi");
   const filteredStaff = staff.filter((member) => {
-    const matchesRole = roleFilter === "all" || member.RoleCode === roleFilter;
+    const matchesRole = roleFilter === "all" || member.roleUuid === roleFilter;
     const matchesStatus =
       statusFilter === "all" || member.status === statusFilter;
     const searchText =
@@ -1145,7 +1154,7 @@ function StaffAccountsScreen() {
   function resetForm() {
     setPhone("");
     setPassword("");
-    setRoleCode("Staff");
+    setRoleUuid(roles.find((role) => !isDoctorStaffRole(role))?.uuid ?? roles[0]?.uuid ?? "");
     setDoctorName("");
     setSpecialty("");
     setDoctorPrice("");
@@ -1162,8 +1171,8 @@ function StaffAccountsScreen() {
       const response = await staffService.create(hospital.uuid, {
         phone: phone.trim(),
         password: password,
-        RoleCode: roleCode,
-        ...(roleCode === "doctor"
+        roleUuid,
+        ...(isDoctorStaffRole(roles.find((role) => role.uuid === roleUuid))
           ? {
               name: doctorName.trim(),
               specialty: specialty.trim(),
@@ -1240,16 +1249,14 @@ function StaffAccountsScreen() {
     </div>,
     <StatusPill
       key={`${member.accountUuid}-role`}
-      tone={member.RoleCode === "doctor" ? "blue" : member.RoleCode === "Staff" ? "green" : "amber"}
+      tone={getStaffRoleTone(roles.find((role) => role.uuid === member.roleUuid))}
     >
-      {getStaffRoleLabel(member.RoleCode)}
+      {member.RoleName}
     </StatusPill>,
     member.DepartmentName ??
-      (member.RoleCode === "WarehouseManager"
-        ? "Kho thuốc"
-        : member.RoleCode === "Staff"
-          ? "Tiếp nhận"
-          : "Chưa gán chuyên khoa"),
+      (isDoctorStaffRole(roles.find((role) => role.uuid === member.roleUuid))
+        ? "Chưa gán chuyên khoa"
+        : "Nhân sự chi nhánh"),
     <StatusPill
       key={`${member.accountUuid}-status`}
       tone={member.status === BaseStatus.Active ? "green" : "red"}
@@ -1307,6 +1314,11 @@ function StaffAccountsScreen() {
           title="Tạo tài khoản nhân sự"
           description="Tài khoản được gán vào đúng chi nhánh hiện tại. Mật khẩu được dùng để khởi tạo thông tin đăng nhập."
         >
+          {roles.length === 0 ? (
+            <p role="alert" className="px-5 pt-4 text-sm text-destructive">
+              Chưa cấu hình vai trò nhân sự thuộc phạm vi chi nhánh.
+            </p>
+          ) : null}
           <form onSubmit={handleCreate} className="grid gap-4 p-5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="staff-phone">Số điện thoại</Label>
@@ -1340,19 +1352,20 @@ function StaffAccountsScreen() {
               <Label htmlFor="staff-role">Vai trò</Label>
               <select
                 id="staff-role"
-                value={roleCode}
+                value={roleUuid}
                 onChange={(event) =>
-                  setRoleCode(event.currentTarget.value as StaffRoleCode)
+                  setRoleUuid(event.currentTarget.value)
                 }
                 disabled={isSaving}
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="doctor">Bác sĩ (Doctor)</option>
-                <option value="Staff">Tiếp nhận (Staff)</option>
-                <option value="WarehouseManager">Quản lý kho</option>
+                <option value="">Chọn vai trò</option>
+                {roles.map((role) => (
+                  <option key={role.uuid} value={role.uuid}>{role.name}</option>
+                ))}
               </select>
             </div>
-            {roleCode === "doctor" ? (
+            {isDoctorStaffRole(roles.find((role) => role.uuid === roleUuid)) ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="staff-doctor-name">Họ tên bác sĩ</Label>
@@ -1428,7 +1441,12 @@ function StaffAccountsScreen() {
             <div className="flex gap-2 sm:col-span-2">
               <Button
                 type="submit"
-                disabled={isSaving || (roleCode === "doctor" && departments.length === 0)}
+                disabled={
+                  isSaving ||
+                  !roleUuid ||
+                  (isDoctorStaffRole(roles.find((role) => role.uuid === roleUuid)) &&
+                    departments.length === 0)
+                }
               >
                 {isSaving ? "Đang tạo..." : "Tạo tài khoản"}
               </Button>
@@ -1463,14 +1481,14 @@ function StaffAccountsScreen() {
             aria-label="Lọc theo vai trò"
             value={roleFilter}
             onChange={(event) =>
-              setRoleFilter(event.currentTarget.value as StaffRoleCode | "all")
+              setRoleFilter(event.currentTarget.value)
             }
             className="h-9 rounded-md border bg-white px-3 text-sm"
           >
             <option value="all">Tất cả vai trò</option>
-            <option value="doctor">Bác sĩ (Doctor)</option>
-            <option value="Staff">Tiếp nhận (Staff)</option>
-            <option value="WarehouseManager">Quản lý kho</option>
+            {roles.map((role) => (
+              <option key={role.uuid} value={role.uuid}>{role.name}</option>
+            ))}
           </select>
           <select
             aria-label="Lọc theo trạng thái"
@@ -1536,34 +1554,7 @@ function HospitalInventoryScreen() {
 }
 
 function HospitalReviewsScreen() {
-  return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Chất lượng dịch vụ" title="Đánh giá người bệnh" description="Kiểm duyệt đánh giá liên quan đến cơ sở, bác sĩ và dịch vụ tại chi nhánh." />
-      <MetricGrid>
-        <MetricCard label="Điểm trung bình" value="4,7/5" detail="Từ 1.248 đánh giá" icon={<Star className="size-5" />} tone="amber" />
-        <MetricCard label="Chưa xem" value="12" detail="5 đánh giá trong hôm nay" icon={<ShieldAlert className="size-5" />} />
-        <MetricCard label="Đang hiển thị" value="1.196" detail="95,8% tổng đánh giá" icon={<ClipboardCheck className="size-5" />} tone="green" />
-        <MetricCard label="Đã ẩn" value="52" detail="Có lý do kiểm duyệt" icon={<Activity className="size-5" />} tone="red" />
-      </MetricGrid>
-      <PortalSection title="Hàng chờ kiểm duyệt">
-        <PortalToolbar placeholder="Tìm nội dung đánh giá" filters={[{ label: "Tất cả đối tượng", options: ["Cơ sở", "Bác sĩ", "Dịch vụ"] }, { label: "Số sao", options: ["5 sao", "4 sao", "1-3 sao"] }]} />
-        <div className="grid gap-4 p-5 lg:grid-cols-2">
-          {[
-            ["Nguyễn T. L.", "5", "BS. Nguyễn Hoàng Minh", "Bác sĩ tư vấn kỹ, quy trình tiếp nhận nhanh và rõ ràng."],
-            ["Trần V. P.", "4", "Siêu âm tổng quát", "Thời gian chờ hơi lâu nhưng nhân viên hỗ trợ nhiệt tình."],
-            ["Lê M. C.", "5", "BV Đa khoa Thành Phố", "Cơ sở sạch sẽ, đặt lịch trước nên không phải chờ nhiều."],
-            ["Phạm T. H.", "2", "Khoa Nhi", "Khó tìm khu vực phòng khám, cần bổ sung biển hướng dẫn."],
-          ].map(([name, stars, target, content]) => (
-            <article key={`${name}-${target}`} className="border p-5">
-              <div className="flex items-start justify-between gap-4"><div><p className="font-semibold">{name}</p><p className="mt-1 text-xs text-muted-foreground">{target}</p></div><StatusPill tone={Number(stars) >= 4 ? "green" : "amber"}>{stars} sao</StatusPill></div>
-              <p className="mt-4 text-sm leading-6 text-muted-foreground">{content}</p>
-              <div className="mt-4 flex gap-2"><PortalAction variant="default">Hiển thị</PortalAction><PortalAction>Ẩn đánh giá</PortalAction></div>
-            </article>
-          ))}
-        </div>
-      </PortalSection>
-    </div>
-  );
+  return <HospitalReviewsManagementScreen />;
 }
 
 function HospitalReportsScreen() {
@@ -1706,15 +1697,30 @@ function getStaffError(error: unknown, fallback: string) {
     : fallback;
 }
 
-function getStaffRoleLabel(roleCode: StaffRoleCode) {
-  switch (roleCode) {
-    case "doctor":
-      return "Bác sĩ";
-    case "Staff":
-      return "Tiếp nhận";
-    case "WarehouseManager":
-      return "Quản lý kho";
-  }
+function isStaffRole(role: RoleItem) {
+  const name = role.name.trim().toLocaleLowerCase("vi");
+  return (
+    isDoctorStaffRole(role) ||
+    name.includes("warehouse") ||
+    name.includes("kho") ||
+    name.includes("staff") ||
+    name.includes("tiếp nhận")
+  );
+}
+
+function isDoctorStaffRole(role: RoleItem | undefined) {
+  return Boolean(
+    role &&
+      (role.isDoctor ||
+        role.name.toLocaleLowerCase("vi").includes("doctor") ||
+        role.name.toLocaleLowerCase("vi").includes("bác sĩ")),
+  );
+}
+
+function getStaffRoleTone(role: RoleItem | undefined): "blue" | "green" | "amber" {
+  if (isDoctorStaffRole(role)) return "blue";
+  const name = role?.name.toLocaleLowerCase("vi") ?? "";
+  return name.includes("kho") || name.includes("warehouse") ? "amber" : "green";
 }
 
 function Field({

@@ -78,7 +78,9 @@ export class ReviewService {
     signal?: AbortSignal,
   ) {
     try {
-      const response = await httpClient.get<ApiResponse<PublicReview[]>>(
+      const response = await httpClient.get<
+        ApiResponse<PublicReview[]> & { averageRating: number | null; reviewCount: number }
+      >(
         "/reviews/public",
         { params: { type, targetUuid }, signal },
       );

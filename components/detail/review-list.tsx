@@ -9,12 +9,18 @@ import type { PublicReview, ReviewTargetType } from "@/types/reviews";
 
 export function ReviewList({
   reviews: initialReviews,
+  initialAverageRating,
+  initialReviewCount,
   target,
 }: {
   reviews: PublicReview[];
+  initialAverageRating?: number | null;
+  initialReviewCount?: number;
   target: { type: ReviewTargetType; uuid: string };
 }) {
   const [reviews, setReviews] = useState(initialReviews);
+  const [averageRating, setAverageRating] = useState(initialAverageRating ?? null);
+  const [reviewCount, setReviewCount] = useState(initialReviewCount ?? initialReviews.length);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -22,7 +28,11 @@ export function ReviewList({
     reviewService
       .getPublic(target.type, target.uuid, controller.signal)
       .then((response) => {
-        if (active) setReviews(response.data);
+        if (active) {
+          setReviews(response.data);
+          setAverageRating(response.averageRating);
+          setReviewCount(response.reviewCount);
+        }
       })
       .catch(() => {
         // Keep the server-rendered reviews when the client refresh cannot complete.
@@ -33,11 +43,6 @@ export function ReviewList({
     };
   }, [target.type, target.uuid]);
 
-  const averageRating = reviews.length
-    ? reviews.reduce((total, review) => total + review.numberOfStar, 0) /
-      reviews.length
-    : null;
-
   if (!reviews.length) {
     return <p className="text-sm text-muted-foreground">Chưa có đánh giá công khai.</p>;
   }
@@ -46,7 +51,7 @@ export function ReviewList({
     <div>
       <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-amber-600">
         <Star aria-hidden="true" className="size-5 fill-current" />
-        {averageRating?.toFixed(1)} trên 5 · {reviews.length} đánh giá
+        {averageRating?.toFixed(1)} trên 5 · {reviewCount} đánh giá
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {reviews.map((review) => (
@@ -67,7 +72,7 @@ export function ReviewList({
               {review.content || "Đang cập nhật"}
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
-              Người bệnh · {formatDate(review.createdAt)}
+              {review.patientName ?? "Người bệnh"} · {formatDate(review.createdAt)}
             </p>
           </article>
         ))}

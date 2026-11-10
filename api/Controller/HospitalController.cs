@@ -18,8 +18,7 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var hospitalUuid = User.GetHospitalUuid();
-        if (!hospitalUuid.HasValue ||
-            !await HasBranchAccess(hospitalUuid.Value, cancellationToken))
+        if (!hospitalUuid.HasValue)
             return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
 
         var hospital = await dbContext.Hospitals
@@ -180,9 +179,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         UpdateHospitalRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         var hospital = await dbContext.Hospitals
             .Where(x => x.Uuid == id && x.DeletedAt == null)
             .FirstOrDefaultAsync(cancellationToken);
@@ -244,9 +240,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         UpdateHospitalAssignmentsRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         if (request.DepartmentUuids is null || request.MedicalServiceUuids is null)
             return BadRequest(new { message = "Both assignment lists are required", error = "INVALID_HOSPITAL_ASSIGNMENT" });
 
@@ -327,9 +320,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
@@ -380,9 +370,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
@@ -442,9 +429,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         [FromQuery] bool includeDeleted = false,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         var hospitalExists = await dbContext.Hospitals
             .AnyAsync(x => x.Uuid == id && x.DeletedAt == null, cancellationToken);
         if (!hospitalExists)
@@ -504,9 +488,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetRoom(Guid id, Guid roomId, CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         var room = await dbContext.Rooms
             .Where(x => x.Uuid == roomId && x.HospitalUuid == id && x.DeletedAt == null)
             .FirstOrDefaultAsync(cancellationToken);
@@ -535,9 +516,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         CreateRoomRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         var hospital = await dbContext.Hospitals
             .Where(x => x.Uuid == id && x.DeletedAt == null)
             .FirstOrDefaultAsync(cancellationToken);
@@ -585,9 +563,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         UpdateRoomRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         var room = await dbContext.Rooms
             .Where(x => x.Uuid == roomId && x.HospitalUuid == id && x.DeletedAt == null)
             .FirstOrDefaultAsync(cancellationToken);
@@ -640,9 +615,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteRoom(Guid id, Guid roomId, CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         var room = await dbContext.Rooms
             .Where(x => x.Uuid == roomId && x.HospitalUuid == id && x.DeletedAt == null)
             .FirstOrDefaultAsync(cancellationToken);
@@ -679,9 +651,6 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         Guid roomId,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(id, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         var room = await dbContext.Rooms
             .Where(x => x.Uuid == roomId && x.HospitalUuid == id && x.DeletedAt != null)
             .FirstOrDefaultAsync(cancellationToken);
@@ -718,28 +687,4 @@ public sealed class HospitalController(DBContext dbContext) : ControllerBase
         return Ok(new { message = "Room restored successfully", data = response });
     }
 
-    private async Task<bool> HasBranchAccess(
-        Guid hospitalUuid,
-        CancellationToken cancellationToken)
-    {
-        var accountUuid = User.GetAccountUuid();
-        return accountUuid.HasValue &&
-               User.GetHospitalUuid() == hospitalUuid &&
-               await dbContext.Hospitals.AnyAsync(
-                   hospital => hospital.Uuid == hospitalUuid &&
-                               hospital.DeletedAt == null &&
-                               dbContext.Accounts.Any(account =>
-                                   account.Uuid == accountUuid.Value &&
-                                   account.HospitalUuid == hospitalUuid &&
-                                   account.Status == BaseStatus.Active &&
-                                   account.DeletedAt == null &&
-                                   account.RoleUuid.HasValue &&
-                                   dbContext.Roles.Any(role =>
-                                       role.Uuid == account.RoleUuid.Value &&
-                                       role.Status == BaseStatus.Active &&
-                                       role.DeletedAt == null &&
-                                       (role.Name.ToLower().Contains("admin") ||
-                                        role.Name.ToLower().Contains("quản trị")))),
-                   cancellationToken);
-    }
 }

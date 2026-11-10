@@ -87,9 +87,7 @@ export type PortalNavigationGroup = {
 };
 
 export function PortalShell({ portal, children, navigationGroups }: PortalShellProps) {
-  const [groups, setGroups] = useState<PortalNavigationGroup[]>(
-    process.env.NEXT_PUBLIC_USE_MOCK_API === "false" ? [] : navigationGroups,
-  );
+  const [groups, setGroups] = useState<PortalNavigationGroup[]>(navigationGroups);
 
   useEffect(() => {
     const controller = new AbortController();

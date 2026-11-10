@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using api.Contract.Hospital;
 using api.Lib;
 using api.Model;
@@ -14,75 +13,6 @@ namespace api.Controller;
 [Route("api/hospitals/{hospitalUuid:guid}/appointments")]
 public sealed class HospitalAppointmentsController(DBContext dbContext) : ControllerBase
 {
-    [HttpGet("resources")]
-    public async Task<IActionResult> GetResources(
-        Guid hospitalUuid,
-        CancellationToken cancellationToken = default)
-    {
-        if (!await HasBranchAccess(hospitalUuid, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
-        var rooms = await dbContext.Rooms
-            .Where(item => item.HospitalUuid == hospitalUuid &&
-                item.DeletedAt == null &&
-                item.Status == RoomStatus.Available)
-            .Select(item => new BranchAppointmentRoomResponse
-            {
-                Uuid = item.Uuid,
-                Name = item.Name,
-                Status = item.Status.ToString()
-            })
-            .ToListAsync(cancellationToken);
-        var doctors = await dbContext.DoctorProfiles
-            .Where(item => item.HospitalUuid == hospitalUuid &&
-                item.DeletedAt == null &&
-                (!item.AccountUuid.HasValue || dbContext.Accounts.Any(account =>
-                    account.Uuid == item.AccountUuid.Value &&
-                    account.Status == BaseStatus.Active &&
-                    account.DeletedAt == null)))
-            .Select(item => new BranchAppointmentDoctorResponse
-            {
-                Uuid = item.Uuid,
-                Name = item.Name
-            })
-            .ToListAsync(cancellationToken);
-        var services = await (
-            from assignment in dbContext.HospitalMedicalServices
-            join service in dbContext.MedicalServices
-                on assignment.MedicalServiceUuid equals service.Uuid
-            where assignment.HospitalUuid == hospitalUuid &&
-                service.Status == BaseStatus.Active &&
-                service.DeletedAt == null
-            select new BranchAppointmentMedicalServiceResponse
-            {
-                Uuid = service.Uuid,
-                Name = service.Name,
-                Price = service.Price
-            }).ToListAsync(cancellationToken);
-        var timeWorkings = await dbContext.TimeWorkings
-            .Where(item => item.Status == BaseStatus.Active && item.DeletedAt == null)
-            .Select(item => new BranchAppointmentWorkingResponse
-            {
-                Uuid = item.Uuid,
-                DayOfWeek = item.DayOfWeek,
-                StartTime = item.StartTime.ToString(),
-                EndTime = item.EndTime.ToString()
-            })
-            .ToListAsync(cancellationToken);
-
-        return Ok(new
-        {
-            message = "Fetched successfully",
-            data = new BranchAppointmentResourcesResponse
-            {
-                Rooms = rooms,
-                Doctors = doctors,
-                Services = services,
-                TimeWorkings = timeWorkings
-            }
-        });
-    }
-
     [HttpGet]
     public async Task<IActionResult> GetAppointments(
         Guid hospitalUuid,
@@ -95,9 +25,6 @@ public sealed class HospitalAppointmentsController(DBContext dbContext) : Contro
         [FromQuery] int pageSize = 100,
         CancellationToken cancellationToken = default)
     {
-        if (!await HasBranchAccess(hospitalUuid, cancellationToken))
-            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
-
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var query = dbContext.Appointments
@@ -142,6 +69,59 @@ public sealed class HospitalAppointmentsController(DBContext dbContext) : Contro
         });
     }
 
+    [HttpPost]
+    public async Task<IActionResult> CreateAppointment(
+        Guid hospitalUuid,
+        CreateBranchAppointmentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(request.Gender) || !Enum.IsDefined(request.Type))
+            return BadRequest(new { message = "Appointment details are invalid", error = "INVALID_APPOINTMENT_REQUEST" });
+        if (request.AppointmentDate == default)
+            return BadRequest(new { message = "Appointment date is required", error = "INVALID_APPOINTMENT_REQUEST" });
+        var sessionHospitalUuid = User.GetHospitalUuid();
+        if (!sessionHospitalUuid.HasValue)
+            return Unauthorized(new { message = "The current account is not associated with a hospital" });
+        hospitalUuid = sessionHospitalUuid.Value;
+
+        var hospitalExists = await dbContext.Hospitals.AnyAsync(
+            item => item.Uuid == hospitalUuid && item.DeletedAt == null,
+            cancellationToken);
+        if (!hospitalExists)
+            return NotFound(new { message = "Hospital not found", error = "Resource does not exist" });
+
+        var uuid = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        var appointment = new Appointment
+        {
+            Uuid = uuid,
+            PatientName = request.PatientName.Trim(),
+            Gender = request.Gender,
+            MedicalCode = $"APT-{request.AppointmentDate:yyyyMMdd}-{uuid.ToString("N")[..8].ToUpperInvariant()}",
+            Note = request.Note.Trim(),
+            AppointmentDate = request.AppointmentDate,
+            Type = request.Type,
+            Status = AppointmentStatus.Pending,
+            PatientUuid = null,
+            HospitalUuid = hospitalUuid,
+            DoctorUuid = null,
+            MedicalServiceUuid = null,
+            RoomUuid = null,
+            TotalPrice = 0,
+            IsPaid = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        dbContext.Appointments.Add(appointment);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return StatusCode(StatusCodes.Status201Created, new
+        {
+            message = "Appointment created successfully",
+            data = await ToResponse(appointment, cancellationToken)
+        });
+    }
+
     [HttpPut("{appointmentUuid:guid}/status")]
     public async Task<IActionResult> UpdateStatus(
         Guid hospitalUuid,
@@ -151,7 +131,6 @@ public sealed class HospitalAppointmentsController(DBContext dbContext) : Contro
     {
         if (request.Status is not AppointmentStatus.Approved
             and not AppointmentStatus.Unconfirmed
-            and not AppointmentStatus.CheckedIn
             and not AppointmentStatus.Cancelled)
             return BadRequest(new { message = "Requested appointment status is not supported" });
         var appointment = await FindAppointment(hospitalUuid, appointmentUuid, cancellationToken);
@@ -161,8 +140,7 @@ public sealed class HospitalAppointmentsController(DBContext dbContext) : Contro
         {
             AppointmentStatus.Pending => request.Status is AppointmentStatus.Approved
                 or AppointmentStatus.Unconfirmed or AppointmentStatus.Cancelled,
-            AppointmentStatus.Approved => request.Status is AppointmentStatus.CheckedIn
-                or AppointmentStatus.Cancelled,
+            AppointmentStatus.Approved => request.Status is AppointmentStatus.Cancelled,
             _ => false
         };
         if (!validTransition)
@@ -172,89 +150,6 @@ public sealed class HospitalAppointmentsController(DBContext dbContext) : Contro
         appointment.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         return Ok(new { message = "Updated successfully", data = await ToResponse(appointment, cancellationToken) });
-    }
-
-    [HttpPut("{appointmentUuid:guid}/assignment")]
-    public async Task<IActionResult> AssignResources(
-        Guid hospitalUuid,
-        Guid appointmentUuid,
-        BranchAppointmentAssignmentRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var appointment = await FindAppointment(hospitalUuid, appointmentUuid, cancellationToken);
-        if (appointment is null)
-            return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
-        if (appointment.Status is not AppointmentStatus.Pending and not AppointmentStatus.Approved)
-            return Conflict(new { message = "Only pending or approved appointments can be assigned", error = "INVALID_APPOINTMENT_STATE" });
-
-        if (request.DoctorUuid.HasValue)
-        {
-            var doctor = await dbContext.DoctorProfiles.FirstOrDefaultAsync(item =>
-                item.Uuid == request.DoctorUuid.Value &&
-                item.HospitalUuid == hospitalUuid &&
-                item.DeletedAt == null &&
-                (!item.AccountUuid.HasValue || dbContext.Accounts.Any(account =>
-                    account.Uuid == item.AccountUuid.Value &&
-                    account.Status == BaseStatus.Active &&
-                    account.DeletedAt == null)), cancellationToken);
-            if (doctor is null)
-                return BadRequest(new { message = "Doctor does not belong to this branch or is inactive", error = "DOCTOR_NOT_AVAILABLE" });
-
-            var working = await dbContext.TimeWorkings.FirstOrDefaultAsync(item =>
-                item.Uuid == appointment.TimeSlot &&
-                item.Status == BaseStatus.Active &&
-                item.DeletedAt == null &&
-                item.DayOfWeek == (int)appointment.AppointmentDate.DayOfWeek, cancellationToken);
-            var doctorWorks = working is not null && await dbContext.DoctorWorkings.AnyAsync(item =>
-                item.DoctorUuid == doctor.Uuid && item.WorkingUuid == working.Uuid, cancellationToken);
-            if (!doctorWorks)
-                return Conflict(new { message = "Doctor is not scheduled for this time slot", error = "DOCTOR_NOT_SCHEDULED" });
-
-            var hasDoctorConflict = await dbContext.Appointments.AnyAsync(item =>
-                item.Uuid != appointment.Uuid &&
-                item.HospitalUuid == hospitalUuid &&
-                item.DoctorUuid == doctor.Uuid &&
-                item.AppointmentDate == appointment.AppointmentDate &&
-                item.TimeSlot == appointment.TimeSlot &&
-                item.DeletedAt == null &&
-                (item.Status == AppointmentStatus.Pending ||
-                 item.Status == AppointmentStatus.Approved ||
-                 item.Status == AppointmentStatus.CheckedIn),
-                cancellationToken);
-            if (hasDoctorConflict)
-                return Conflict(new { message = "Doctor already has an appointment for this time slot", error = "DOCTOR_SLOT_TAKEN" });
-        }
-
-        if (request.RoomUuid.HasValue)
-        {
-            var room = await dbContext.Rooms.FirstOrDefaultAsync(item =>
-                item.Uuid == request.RoomUuid.Value &&
-                item.HospitalUuid == hospitalUuid &&
-                item.DeletedAt == null &&
-                item.Status == RoomStatus.Available, cancellationToken);
-            if (room is null)
-                return BadRequest(new { message = "Room is not available in this branch", error = "ROOM_NOT_AVAILABLE" });
-
-            var hasRoomConflict = await dbContext.Appointments.AnyAsync(item =>
-                item.Uuid != appointment.Uuid &&
-                item.HospitalUuid == hospitalUuid &&
-                item.RoomUuid == room.Uuid &&
-                item.AppointmentDate == appointment.AppointmentDate &&
-                item.TimeSlot == appointment.TimeSlot &&
-                item.DeletedAt == null &&
-                (item.Status == AppointmentStatus.Pending ||
-                 item.Status == AppointmentStatus.Approved ||
-                 item.Status == AppointmentStatus.CheckedIn),
-                cancellationToken);
-            if (hasRoomConflict)
-                return Conflict(new { message = "Room already has an appointment for this time slot", error = "ROOM_SLOT_TAKEN" });
-        }
-
-        appointment.DoctorUuid = request.DoctorUuid;
-        appointment.RoomUuid = request.RoomUuid;
-        appointment.UpdatedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return Ok(new { message = "Resources assigned successfully", data = await ToResponse(appointment, cancellationToken) });
     }
 
     [HttpPut("{appointmentUuid:guid}/payment")]
@@ -357,90 +252,15 @@ public sealed class HospitalAppointmentsController(DBContext dbContext) : Contro
         return Ok(new { message = "Service completed successfully", data = await ToResponse(appointment, cancellationToken) });
     }
 
-    [HttpPut("{appointmentUuid:guid}/complete")]
-    public async Task<IActionResult> CompleteAppointment(
-        Guid hospitalUuid,
-        Guid appointmentUuid,
-        BranchAppointmentNoteRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var appointment = await FindAppointment(hospitalUuid, appointmentUuid, cancellationToken);
-        if (appointment is null)
-            return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
-        if (appointment.Status != AppointmentStatus.CheckedIn)
-            return Conflict(new { message = "Only checked-in appointments can be completed", error = "INVALID_APPOINTMENT_STATE" });
-        if (!appointment.IsPaid)
-            return Conflict(new { message = "Appointment must be paid before completion", error = "PAYMENT_REQUIRED" });
-        if (await dbContext.AppointmentMedicalServices.AnyAsync(item =>
-            item.AppointmentUuid == appointmentUuid &&
-            item.Status != AppointmentMedicalServiceStatus.Completed, cancellationToken))
-            return Conflict(new { message = "All additional services must be completed first", error = "SERVICES_INCOMPLETE" });
-
-        appointment.Status = AppointmentStatus.Done;
-        appointment.DoctorNote = request.DoctorNote.Trim();
-        appointment.UpdatedAt = DateTime.UtcNow;
-        if (appointment.RoomUuid.HasValue)
-        {
-            var roomHasOtherActiveAppointment = await dbContext.Appointments.AnyAsync(item =>
-                item.Uuid != appointment.Uuid &&
-                item.HospitalUuid == hospitalUuid &&
-                item.RoomUuid == appointment.RoomUuid &&
-                item.DeletedAt == null &&
-                (item.Status == AppointmentStatus.Pending ||
-                 item.Status == AppointmentStatus.Approved ||
-                 item.Status == AppointmentStatus.CheckedIn),
-                cancellationToken);
-            if (!roomHasOtherActiveAppointment)
-            {
-                var room = await dbContext.Rooms.FirstOrDefaultAsync(item =>
-                    item.Uuid == appointment.RoomUuid &&
-                    item.HospitalUuid == hospitalUuid &&
-                    item.Status == RoomStatus.Occupied, cancellationToken);
-                if (room is not null)
-                {
-                    room.Status = RoomStatus.Available;
-                    room.UpdatedAt = DateTime.UtcNow;
-                }
-            }
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return Ok(new { message = "Appointment completed successfully", data = await ToResponse(appointment, cancellationToken) });
-    }
-
     private async Task<Appointment?> FindAppointment(
         Guid hospitalUuid,
         Guid appointmentUuid,
         CancellationToken cancellationToken)
     {
-        if (!await HasBranchAccess(hospitalUuid, cancellationToken))
-            return null;
         return await dbContext.Appointments.FirstOrDefaultAsync(item =>
             item.Uuid == appointmentUuid &&
             item.HospitalUuid == hospitalUuid &&
             item.DeletedAt == null, cancellationToken);
-    }
-
-    private async Task<bool> HasBranchAccess(Guid hospitalUuid, CancellationToken cancellationToken)
-    {
-        if (!Guid.TryParse(User.FindFirstValue("uuid"), out var accountUuid))
-            return false;
-        return await dbContext.Accounts.AnyAsync(account =>
-            account.Uuid == accountUuid &&
-            account.HospitalUuid == hospitalUuid &&
-            account.Status == BaseStatus.Active &&
-            account.DeletedAt == null &&
-            account.RoleUuid.HasValue &&
-            dbContext.Roles.Any(role =>
-                role.Uuid == account.RoleUuid.Value &&
-                role.Status == BaseStatus.Active &&
-                role.DeletedAt == null &&
-                (role.Name.ToLower().Contains("admin") ||
-                 role.Name.ToLower().Contains("quản trị") ||
-                 role.Name.ToLower().Contains("staff") ||
-                 role.Name.ToLower().Contains("tiếp nhận") ||
-                 role.Name.ToLower().Contains("warehouse") ||
-                 role.Name.ToLower().Contains("kho"))), cancellationToken);
     }
 
     private async Task<List<BranchAppointmentResponse>> ToResponses(

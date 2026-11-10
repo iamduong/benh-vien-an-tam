@@ -8,7 +8,7 @@ public sealed class HospitalStaffResponse
     public Guid? DoctorUuid { get; init; }
     public string DisplayName { get; init; } = string.Empty;
     public string Phone { get; init; } = string.Empty;
-    public string RoleCode { get; init; } = string.Empty;
+    public Guid RoleUuid { get; init; }
     public string RoleName { get; init; } = string.Empty;
     public Guid? DepartmentUuid { get; init; }
     public string? DepartmentName { get; init; }
