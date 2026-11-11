@@ -62,7 +62,7 @@ export function DoctorScheduleScreen() {
 
     useEffect(() => {
         const controller = new AbortController();
-        setState({ status: "loading" });
+        queueMicrotask(() => setState({ status: "loading" }));
         doctorAppointmentService
             .getAppointments(date, controller.signal)
             .then((items) => setState({ status: "success", items }))

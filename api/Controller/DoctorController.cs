@@ -352,8 +352,8 @@ public sealed class DoctorController(DBContext dbContext) : ControllerBase
     {
         pageSize = Math.Min(pageSize, 100);
 
-        var query = from dw in dbContext.DoctorWorkings
-                    join tw in dbContext.TimeWorkings on dw.WorkingUuid equals tw.Uuid
+        var query = from dw in dbContext.DoctorWorkingHours
+                    join tw in dbContext.TimeWorkings on dw.WorkingHourUuid equals tw.Uuid
                     where dw.DoctorUuid == id && tw.DeletedAt == null
                     select tw;
 
@@ -395,14 +395,14 @@ public sealed class DoctorController(DBContext dbContext) : ControllerBase
         AddDoctorWorkingRequest request,
         CancellationToken cancellationToken = default)
     {
-        var doctorWorking = new DoctorWorking
+        var doctorWorking = new DoctorWorkingHour
         {
             Uuid = Guid.NewGuid(),
             DoctorUuid = id,
-            WorkingUuid = request.WorkingUuid
+            WorkingHourUuid = request.WorkingUuid
         };
 
-        dbContext.DoctorWorkings.Add(doctorWorking);
+        dbContext.DoctorWorkingHours.Add(doctorWorking);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return StatusCode(StatusCodes.Status201Created,
@@ -413,7 +413,7 @@ public sealed class DoctorController(DBContext dbContext) : ControllerBase
                 {
                     uuid = doctorWorking.Uuid,
                     doctorUuid = doctorWorking.DoctorUuid,
-                    workingUuid = doctorWorking.WorkingUuid
+                    workingUuid = doctorWorking.WorkingHourUuid
                 }
             });
     }
@@ -425,14 +425,14 @@ public sealed class DoctorController(DBContext dbContext) : ControllerBase
         Guid workingId,
         CancellationToken cancellationToken = default)
     {
-        var doctorWorking = await dbContext.DoctorWorkings
-            .Where(x => x.DoctorUuid == id && x.WorkingUuid == workingId)
+        var doctorWorking = await dbContext.DoctorWorkingHours
+            .Where(x => x.DoctorUuid == id && x.WorkingHourUuid == workingId)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (doctorWorking is null)
             return NotFound(new { message = "Doctor working not found", error = "Resource does not exist" });
 
-        dbContext.DoctorWorkings.Remove(doctorWorking);
+        dbContext.DoctorWorkingHours.Remove(doctorWorking);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return NoContent();

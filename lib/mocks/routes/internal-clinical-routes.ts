@@ -3,7 +3,7 @@ import { mockInternalClinicalAppointments } from "@/data/mocks/internal-clinical
 import { mockMedicalServices } from "@/data/mocks/medical-services";
 import { mockMedicines } from "@/data/mocks/medicines";
 import { getVietnamDateTimeParts } from "@/lib/booking/working-hours";
-import type { ClinicalMedicalService } from "@/types/internal-clinical";
+import type { ClinicalAppointment, ClinicalMedicalService, Prescription } from "@/types/internal-clinical";
 
 // In-memory store cho danh sách dịch vụ chỉ định của các ca khám
 const clinicalMedicalServices: ClinicalMedicalService[] = [
@@ -19,7 +19,7 @@ const clinicalMedicalServices: ClinicalMedicalService[] = [
 ];
 
 // In-memory store cho đơn thuốc theo appointmentUuid
-const prescriptionsMap: Record<string, any> = {
+const prescriptionsMap: Record<string, Prescription> = {
     "9df649f8-a02d-41a4-a1ab-5a0a377ff103": {
         uuid: "pres-1",
         status: "Unpaid",
@@ -106,7 +106,7 @@ export function registerInternalClinicalRoutes(mock: AxiosMockAdapter) {
             }
 
             if (body.status) {
-                appointment.status = body.status as any;
+                appointment.status = body.status as ClinicalAppointment["status"];
             }
 
             return [200, { data: true, message: "Cập nhật trạng thái ca khám thành công." }];

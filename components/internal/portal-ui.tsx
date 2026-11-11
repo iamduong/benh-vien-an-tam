@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Search } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -161,6 +161,47 @@ export function PortalTable({
         </tbody>
       </table>
     </div>
+  );
+}
+
+export const INTERNAL_PAGE_SIZE = 10;
+
+export function PortalPagination({
+  page,
+  pageSize = INTERNAL_PAGE_SIZE,
+  totalItems,
+  onPageChange,
+}: {
+  page: number;
+  pageSize?: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+}) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+
+  if (totalItems <= pageSize) return null;
+
+  const firstItem = (safePage - 1) * pageSize + 1;
+  const lastItem = Math.min(safePage * pageSize, totalItems);
+
+  return (
+    <nav aria-label="Phân trang" className="flex flex-col gap-3 border-t bg-[#fbfdfe] px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-muted-foreground">
+        Hiển thị <strong className="text-foreground">{firstItem}–{lastItem}</strong> trên tổng số <strong className="text-foreground">{totalItems}</strong> kết quả
+      </p>
+      <div className="flex items-center gap-2">
+        <Button type="button" size="sm" variant="outline" disabled={safePage <= 1} onClick={() => onPageChange(safePage - 1)}>
+          <ChevronLeft />
+          Trước
+        </Button>
+        <span className="min-w-24 text-center font-medium">Trang {safePage} / {totalPages}</span>
+        <Button type="button" size="sm" variant="outline" disabled={safePage >= totalPages} onClick={() => onPageChange(safePage + 1)}>
+          Sau
+          <ChevronRight />
+        </Button>
+      </div>
+    </nav>
   );
 }
 

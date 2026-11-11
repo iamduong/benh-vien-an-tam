@@ -54,9 +54,8 @@ public static class PermissionSeed
         Create(Guid.Parse("e8a24ed9-62cc-4188-bd9b-66cec5c6c5d2"), "dashboard", "tong-quan-kho", "Tổng quan kho thuốc", "Kho thuốc"),
         Create(Guid.Parse("892e4dbf-a00f-4759-a676-39d5681f8542"), "inventory", "ton-kho", "Tồn kho", "Kho thuốc"),
         Create(Guid.Parse("df01b115-6849-4a46-906b-79339166b797"), "provider", "nha-cung-cap", "Nhà cung cấp", "Kho thuốc"),
-        Create(Guid.Parse("952d3443-6ca0-4001-a67e-5547b2c57f3c"), "ticket", "phieu-nhap-xuat", "Phiếu nhập xuất", "Kho thuốc"),
-        Create(Guid.Parse("0d7511d1-4ed5-478f-ae55-aa0691fb4e7f"), "medicine", "dieu-chinh-ton", "Điều chỉnh tồn", "Kho thuốc"),
-        Create(Guid.Parse("3a8ded95-de99-4ba7-98e6-147328997e06"), "history", "lich-su", "Lịch sử kho", "Kho thuốc"),
+        Create(Guid.Parse("952d3443-6ca0-4001-a67e-5547b2c57f3c"), "ticket", "nhap-hang", "Nhập hàng", "Kho thuốc"),
+        Create(Guid.Parse("4fe03c32-9a96-467f-a591-ff7eb7ae3a8f"), "ticket", "xuat-hang", "Xuất hàng", "Kho thuốc"),
         Create(Guid.Parse("ce817bab-056f-4f1f-a31b-22f294eae961"), "report", "bao-cao-kho", "Báo cáo kho", "Kho thuốc"),
     ];
 

@@ -132,7 +132,7 @@ export function PatientHomePage() {
 
   useEffect(() => {
     if (!session) {
-      setAppointments({ status: "loading" });
+      queueMicrotask(() => setAppointments({ status: "loading" }));
       return;
     }
     const controller = new AbortController();

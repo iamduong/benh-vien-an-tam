@@ -10,7 +10,8 @@ import {
     Save,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { isAxiosError } from "axios";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
     DetailGrid,
     DetailItem,
@@ -34,6 +35,13 @@ import type {
     ClinicalMedicalService,
     ClinicalMedicineOption,
 } from "@/types/internal-clinical";
+
+function getRequestError(error: unknown, fallback: string) {
+    if (isAxiosError(error) && typeof error.response?.data?.message === "string") {
+        return error.response.data.message;
+    }
+    return error instanceof Error ? error.message : fallback;
+}
 
 type DetailState =
     | { status: "loading" }
@@ -119,7 +127,7 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
                 .then((res) => setSearchedMedicines(res))
                 .catch(() => setSearchedMedicines([]));
         } else {
-            setSearchedMedicines([]);
+            queueMicrotask(() => setSearchedMedicines([]));
         }
         return () => controller.abort();
     }, [debouncedMedicineSearch]);
@@ -134,7 +142,7 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const loadDetail = () => {
+    const loadDetail = useCallback(() => {
         const controller = new AbortController();
         doctorAppointmentService
             .getAppointmentDetail(uuid, controller.signal)
@@ -166,11 +174,11 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
                 }
             });
         return () => controller.abort();
-    };
+    }, [uuid]);
 
     useEffect(() => {
-        loadDetail();
-    }, [uuid]);
+        return loadDetail();
+    }, [loadDetail]);
 
     if (state.status === "loading") {
         return <p className="border bg-white p-8 text-center text-sm text-muted-foreground" > Đang tải thông tin ca khám...</p>;
@@ -211,8 +219,8 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
         try {
             await doctorAppointmentService.updateStatus(item.uuid, "Completed");
             loadDetail();
-        } catch (err: any) {
-            alert(err?.response?.data?.message || "Không thể hoàn thành ca khám.");
+        } catch (error: unknown) {
+            alert(getRequestError(error, "Không thể hoàn thành ca khám."));
         }
     }
 
@@ -241,8 +249,8 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
         try {
             await clinicalExaminationService.saveDiagnosis(item.uuid, diagnosisNote);
             alert("Đã lưu chẩn đoán thành công!");
-        } catch (error: any) {
-            alert(error?.response?.data?.message || "Lưu chẩn đoán thất bại.");
+        } catch (error: unknown) {
+            alert(getRequestError(error, "Lưu chẩn đoán thất bại."));
         }
     }
 
@@ -262,8 +270,8 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
             );
             alert("Lưu đơn thuốc thành công!");
             loadDetail();
-        } catch (error: any) {
-            alert(error?.response?.data?.message || "Lưu đơn thuốc thất bại.");
+        } catch (error: unknown) {
+            alert(getRequestError(error, "Lưu đơn thuốc thất bại."));
         }
     }
 

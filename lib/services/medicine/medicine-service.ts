@@ -68,7 +68,6 @@ export const MedicineService = {
             `/AvailableMedicine/${uuid}`
         );
 
-        const resData = response.data as any;
-        return resData?.data ?? resData;
+        return response.data.data;
     },
 };

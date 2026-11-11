@@ -23,7 +23,9 @@ export function AvailableMedicineScreen() {
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [dbUnits, setDbUnits] = useState<MedicineUnitDto[]>([]);
-    const [currentTime, setCurrentTime] = useState("");
+    const [currentTime] = useState(() =>
+        new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    );
 
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 5;
@@ -39,13 +41,6 @@ export function AvailableMedicineScreen() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        const now = new Date();
-        setCurrentTime(
-            now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
-        );
-    }, []);
 
     useEffect(() => {
         MedicineService.getMedicineUnits()

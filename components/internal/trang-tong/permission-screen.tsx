@@ -13,7 +13,9 @@ import {
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  INTERNAL_PAGE_SIZE,
   PortalPageHeader,
+  PortalPagination,
   PortalSection,
   PortalTable,
   StatusPill,
@@ -97,6 +99,7 @@ export function PermissionManagementScreen() {
   const [selectedRoleUuid, setSelectedRoleUuid] = useState("");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<RoleStatusFilter>("all");
+  const [page, setPage] = useState(1);
   const [draft, setDraft] = useState<RoleDraft | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,7 +127,7 @@ export function PermissionManagementScreen() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void loadData(controller.signal);
+    void Promise.resolve().then(() => loadData(controller.signal));
 
     return () => {
       controller.abort();
@@ -144,6 +147,12 @@ export function PermissionManagementScreen() {
     : [];
   const activeCount = roles.filter((role) => role.status === BaseStatus.Active).length;
   const inactiveCount = roles.filter((role) => role.status === BaseStatus.InActive).length;
+  const totalPages = Math.max(1, Math.ceil(roles.length / INTERNAL_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedRoles = roles.slice(
+    (safePage - 1) * INTERNAL_PAGE_SIZE,
+    safePage * INTERNAL_PAGE_SIZE,
+  );
   const availablePermissions = draft?.scope === AccessScope.Hospital
     ? permissions.filter((permission) => permission.scope === AccessScope.Hospital)
     : permissions;
@@ -227,7 +236,7 @@ export function PermissionManagementScreen() {
     }
   }
 
-  const rows = roles.map((role) => [
+  const rows = paginatedRoles.map((role) => [
     <div
       key={`${role.uuid}-name`}
       className="text-left"
@@ -313,7 +322,7 @@ export function PermissionManagementScreen() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => { setQuery(event.target.value); setPage(1); }}
                   placeholder="Tên hoặc mô tả vai trò"
                   className="h-9 bg-background pl-9"
                 />
@@ -332,7 +341,7 @@ export function PermissionManagementScreen() {
                     size="sm"
                     variant={statusFilter === value ? "default" : "outline"}
                     aria-pressed={statusFilter === value}
-                    onClick={() => setStatusFilter(value)}
+                    onClick={() => { setStatusFilter(value); setPage(1); }}
                   >
                     {value === "all" ? "Tất cả" : value === BaseStatus.Active ? "Hoạt động" : "Tạm ngưng"}
                   </Button>
@@ -344,11 +353,14 @@ export function PermissionManagementScreen() {
         {isLoading ? (
           <p className="p-8 text-center text-sm text-muted-foreground">Đang tải danh sách vai trò...</p>
         ) : rows.length ? (
-          <PortalTable
-            caption="Danh sách role hệ thống"
-            columns={["Role", "Phân loại", "Tài khoản", "Trạng thái", "Bản ghi", "Cập nhật", "Thao tác"]}
-            rows={rows}
-          />
+          <>
+            <PortalTable
+              caption="Danh sách role hệ thống"
+              columns={["Role", "Phân loại", "Tài khoản", "Trạng thái", "Bản ghi", "Cập nhật", "Thao tác"]}
+              rows={rows}
+            />
+            <PortalPagination page={safePage} totalItems={roles.length} onPageChange={setPage} />
+          </>
         ) : (
           <p className="p-8 text-center text-sm text-muted-foreground">Không có role phù hợp với bộ lọc.</p>
         )}
@@ -413,7 +425,7 @@ export function PermissionManagementScreen() {
                     id="role-scope"
                     value={draft.scope}
                     onChange={(event) => changeDraftScope(event.target.value as AccessScope)}
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-md border px-3 text-sm"
                   >
                     <option value={AccessScope.Hospital}>Theo cơ sở y tế</option>
                     <option value={AccessScope.System}>Toàn hệ thống</option>

@@ -22,6 +22,7 @@ public class DoctorProfileService : IDoctorProfileService
             .Select(dp => new DoctorProfileResponseDto
             {
                 Uuid = dp.Uuid,
+                Avatar = dp.Avatar,
                 Name = dp.Name,
                 Specialty = dp.Specialty,
                 Workplace = dp.Workplace,

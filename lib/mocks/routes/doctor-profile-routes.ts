@@ -36,6 +36,7 @@ function buildDoctorProfileResponse(
 
   return {
     uuid: doctor.uuid,
+    avatar: doctor.avatar,
     name: updatedData.name ?? doctor.name,
     specialty: updatedData.specialty ?? doctor.specialty,
     workplace: updatedData.workplace ?? doctor.workplace,
