@@ -6,7 +6,7 @@ import type {
 } from "@/types/prescription-doc";
 
 // Khởi tạo dữ liệu Mock đầy đủ cấu trúc chi tiết cho Modal
-let mockPrescriptionDetailsList: PrescriptionDetail[] = [
+const mockPrescriptionDetailsList: PrescriptionDetail[] = [
     {
         uuid: "e0000000-0000-0000-0000-000000000001",
         rxCode: "RX2026100901",

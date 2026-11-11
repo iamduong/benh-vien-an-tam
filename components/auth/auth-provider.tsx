@@ -42,14 +42,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const result = authService.getStoredLoginResult();
-    const patientSession = result?.type === "patient" ? result.session : null;
-    const storedManagementSession =
-      result?.type === "management" ? result.session : null;
-    sessionRef.current = patientSession;
-    setSession(patientSession);
-    setManagementSession(storedManagementSession);
-    setIsLoading(false);
+    queueMicrotask(() => {
+      const result = authService.getStoredLoginResult();
+      const patientSession = result?.type === "patient" ? result.session : null;
+      const storedManagementSession =
+        result?.type === "management" ? result.session : null;
+      sessionRef.current = patientSession;
+      setSession(patientSession);
+      setManagementSession(storedManagementSession);
+      setIsLoading(false);
+    });
   }, []);
 
   async function login(credentials: LoginRequest) {

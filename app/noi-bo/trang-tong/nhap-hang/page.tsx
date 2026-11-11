@@ -1,5 +1,5 @@
 import { CombinedPortalScreen } from "@/components/internal/combined-portal-screen";
 
 export default function Page() {
-  return <CombinedPortalScreen area="inventory" slug="dieu-chinh-ton" />;
+  return <CombinedPortalScreen area="inventory" slug="nhap-hang" />;
 }

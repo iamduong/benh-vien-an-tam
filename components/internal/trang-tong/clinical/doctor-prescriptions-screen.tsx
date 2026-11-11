@@ -103,11 +103,11 @@ export function DoctorPrescriptionsScreen() {
     }, [fetchMetrics, fetchList, selectedDate, debouncedSearch, statusFilter]);
 
     useEffect(() => {
-        fetchMetrics(selectedDate);
+        void Promise.resolve().then(() => fetchMetrics(selectedDate));
     }, [fetchMetrics, selectedDate]);
 
     useEffect(() => {
-        fetchList(debouncedSearch, selectedDate, statusFilter);
+        void Promise.resolve().then(() => fetchList(debouncedSearch, selectedDate, statusFilter));
     }, [fetchList, debouncedSearch, selectedDate, statusFilter]);
 
     // Mở modal & Tải dữ liệu chi tiết đơn

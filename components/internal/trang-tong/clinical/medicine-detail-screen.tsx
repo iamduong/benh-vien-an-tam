@@ -29,13 +29,13 @@ export function MedicineDetailScreen({
     // Fetch API khi mở sheet[cite: 3]
     useEffect(() => {
         if (isOpen && medicineId) {
-            setIsLoading(true);
-            MedicineService.getMedicineDetail(medicineId)
+            void Promise.resolve().then(() => setIsLoading(true));
+            void MedicineService.getMedicineDetail(medicineId)
                 .then(setDetail)
                 .catch(console.error)
                 .finally(() => setIsLoading(false));
         } else {
-            setDetail(null); // Clear data khi đóng
+            queueMicrotask(() => setDetail(null)); // Clear data khi đóng
         }
     }, [isOpen, medicineId]);
 

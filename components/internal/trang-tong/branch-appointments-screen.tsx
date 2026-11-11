@@ -5,7 +5,9 @@ import { isAxiosError } from "axios";
 
 import { ErrorState, LoadingState } from "@/components/shared/data-state";
 import {
+  INTERNAL_PAGE_SIZE,
   PortalPageHeader,
+  PortalPagination,
   PortalSection,
   PortalTable,
   StatusPill,
@@ -65,6 +67,7 @@ export function BranchAppointmentsScreen() {
   const [typeFilter, setTypeFilter] = useState<AppointmentType | "all">("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<BranchAppointment | null>(null);
   const [patientName, setPatientName] = useState("");
   const [gender, setGender] = useState<Gender>(Gender.Other);
@@ -152,6 +155,12 @@ export function BranchAppointmentsScreen() {
   }
 
   const { hospital, appointments } = state;
+  const totalPages = Math.max(1, Math.ceil(appointments.length / INTERNAL_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedAppointments = appointments.slice(
+    (safePage - 1) * INTERNAL_PAGE_SIZE,
+    safePage * INTERNAL_PAGE_SIZE,
+  );
 
   function updateLocal(updated: BranchAppointment) {
     setState((current) =>
@@ -233,7 +242,7 @@ export function BranchAppointmentsScreen() {
     }
   }
 
-  const rows = appointments.map((appointment) => [
+  const rows = paginatedAppointments.map((appointment) => [
     vietnamDateTime.format(appointment.appointmentDate),
     <div key={`${appointment.uuid}-patient`}>
       <p className="font-medium">{appointment.patientName}</p>
@@ -323,7 +332,7 @@ export function BranchAppointmentsScreen() {
                 id="branch-appointment-gender"
                 value={gender}
                 onChange={(event) => setGender(event.currentTarget.value as Gender)}
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-md border px-3 text-sm"
                 disabled={isSaving}
               >
                 <option value={Gender.Other}>Khác</option>
@@ -350,7 +359,7 @@ export function BranchAppointmentsScreen() {
                 onChange={(event) =>
                   setAppointmentType(event.currentTarget.value as AppointmentType)
                 }
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-md border px-3 text-sm"
                 disabled={isSaving}
               >
                 {Object.values(AppointmentType).map((type) => (
@@ -394,7 +403,7 @@ export function BranchAppointmentsScreen() {
           <Input
             aria-label="Tìm bệnh nhân hoặc mã y tế"
             value={search}
-            onChange={(event) => setSearch(event.currentTarget.value)}
+            onChange={(event) => { setSearch(event.currentTarget.value); setPage(1); }}
             placeholder="Tên hoặc mã lịch"
             className="h-9"
           />
@@ -402,22 +411,23 @@ export function BranchAppointmentsScreen() {
             aria-label="Từ ngày"
             type="date"
             value={fromDate}
-            onChange={(event) => setFromDate(event.currentTarget.value)}
+            onChange={(event) => { setFromDate(event.currentTarget.value); setPage(1); }}
             className="h-9"
           />
           <Input
             aria-label="Đến ngày"
             type="date"
             value={toDate}
-            onChange={(event) => setToDate(event.currentTarget.value)}
+            onChange={(event) => { setToDate(event.currentTarget.value); setPage(1); }}
             className="h-9"
           />
           <select
             aria-label="Lọc trạng thái lịch hẹn"
             value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.currentTarget.value as AppointmentStatus | "all")
-            }
+            onChange={(event) => {
+              setStatusFilter(event.currentTarget.value as AppointmentStatus | "all");
+              setPage(1);
+            }}
             className="h-9 rounded-md border bg-white px-3 text-sm"
           >
             <option value="all">Mọi trạng thái</option>
@@ -428,9 +438,10 @@ export function BranchAppointmentsScreen() {
           <select
             aria-label="Lọc loại lịch hẹn"
             value={typeFilter}
-            onChange={(event) =>
-              setTypeFilter(event.currentTarget.value as AppointmentType | "all")
-            }
+            onChange={(event) => {
+              setTypeFilter(event.currentTarget.value as AppointmentType | "all");
+              setPage(1);
+            }}
             className="h-9 rounded-md border bg-white px-3 text-sm"
           >
             <option value="all">Mọi loại lịch</option>
@@ -440,11 +451,14 @@ export function BranchAppointmentsScreen() {
           </select>
         </div>
         {rows.length ? (
-          <PortalTable
-            caption="Lịch hẹn thuộc chi nhánh"
-            columns={["Ngày / giờ", "Bệnh nhân", "Loại lịch", "Trạng thái", ""]}
-            rows={rows}
-          />
+          <>
+            <PortalTable
+              caption="Lịch hẹn thuộc chi nhánh"
+              columns={["Ngày / giờ", "Bệnh nhân", "Loại lịch", "Trạng thái", ""]}
+              rows={rows}
+            />
+            <PortalPagination page={safePage} totalItems={appointments.length} onPageChange={setPage} />
+          </>
         ) : (
           <p className="p-8 text-center text-sm text-muted-foreground">
             {appointments.length

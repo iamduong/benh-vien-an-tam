@@ -3,6 +3,7 @@ namespace api.Contract.DoctorProfile;
 public class DoctorProfileResponseDto
 {
     public Guid Uuid { get; set; }
+    public string Avatar { get; set; } = string.Empty;
     
     // Khối 1: Thông tin bác sĩ (Chỉnh sửa được)
     public string Name { get; set; } = string.Empty;

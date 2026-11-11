@@ -15,7 +15,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import {
   MetricCard,
   MetricGrid,
+  INTERNAL_PAGE_SIZE,
   PortalPageHeader,
+  PortalPagination,
   PortalSection,
   PortalTable,
   StatusPill,
@@ -96,6 +98,7 @@ export function AccountsManagementScreen() {
   const [roleUuid, setRoleUuid] = useState("all");
   const [status, setStatus] = useState("all");
   const [recordFilter, setRecordFilter] = useState<RecordFilter>("active");
+  const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [draft, setDraft] = useState<AccountDraft | null>(null);
@@ -142,6 +145,12 @@ export function AccountsManagementScreen() {
       (status === "all" || account.status === status) &&
       matchesRecord;
   });
+  const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / INTERNAL_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedAccounts = filteredAccounts.slice(
+    (safePage - 1) * INTERNAL_PAGE_SIZE,
+    safePage * INTERNAL_PAGE_SIZE,
+  );
 
   function openCreate() {
     setMutationError(null);
@@ -290,7 +299,7 @@ export function AccountsManagementScreen() {
     ? options.roles.find((role) => role.uuid === draft.roleUuid)
     : undefined;
 
-  const rows = filteredAccounts.map((account) => {
+  const rows = paginatedAccounts.map((account) => {
     const deleted = isDeleted(account);
     return [
       <div key={`${account.uuid}-identity`}>
@@ -331,13 +340,13 @@ export function AccountsManagementScreen() {
             <label className="relative min-w-0 flex-1 lg:max-w-sm">
               <span className="sr-only">Tìm tài khoản</span>
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm số điện thoại, mã hoặc cơ sở" className="h-9 pl-9" />
+              <Input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Tìm số điện thoại, mã hoặc cơ sở" className="h-9 pl-9" />
             </label>
-            <select aria-label="Lọc theo role" value={roleUuid} onChange={(event) => setRoleUuid(event.target.value)} className="h-9 rounded-md border bg-white px-3 text-sm">
+            <select aria-label="Lọc theo role" value={roleUuid} onChange={(event) => { setRoleUuid(event.target.value); setPage(1); }} className="h-9 rounded-md border bg-white px-3 text-sm">
               <option value="all">Tất cả role</option>
               {options.roles.map((role) => <option key={role.uuid} value={role.uuid}>{role.name}</option>)}
             </select>
-            <select aria-label="Lọc theo trạng thái tài khoản" value={status} onChange={(event) => setStatus(event.target.value)} className="h-9 rounded-md border bg-white px-3 text-sm">
+            <select aria-label="Lọc theo trạng thái tài khoản" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="h-9 rounded-md border bg-white px-3 text-sm">
               <option value="all">Mọi trạng thái</option>
               <option value={BaseStatus.Active}>Hoạt động</option>
               <option value={BaseStatus.InActive}>Vô hiệu hóa</option>
@@ -349,12 +358,15 @@ export function AccountsManagementScreen() {
               ["deleted", `Đã xóa (${deletedAccounts.length})`],
               ["all", `Tất cả (${accounts.length})`],
             ] as const).map(([value, label]) => (
-              <Button key={value} type="button" size="sm" variant={recordFilter === value ? "default" : "outline"} aria-pressed={recordFilter === value} onClick={() => setRecordFilter(value)}>{label}</Button>
+              <Button key={value} type="button" size="sm" variant={recordFilter === value ? "default" : "outline"} aria-pressed={recordFilter === value} onClick={() => { setRecordFilter(value); setPage(1); }}>{label}</Button>
             ))}
           </div>
         </div>
         {rows.length > 0 ? (
-          <PortalTable caption="Danh sách tài khoản hệ thống" columns={["Tài khoản", "Role", "Chi nhánh", "Trạng thái", "Bản ghi", "Cập nhật", "Thao tác"]} rows={rows} />
+          <>
+            <PortalTable caption="Danh sách tài khoản hệ thống" columns={["Tài khoản", "Role", "Chi nhánh", "Trạng thái", "Bản ghi", "Cập nhật", "Thao tác"]} rows={rows} />
+            <PortalPagination page={safePage} totalItems={filteredAccounts.length} onPageChange={setPage} />
+          </>
         ) : (
           <p className="p-8 text-center text-sm text-muted-foreground">Không có tài khoản phù hợp với bộ lọc.</p>
         )}
@@ -397,7 +409,7 @@ export function AccountsManagementScreen() {
                         hospitalUuid: role?.scope === AccessScope.System ? "" : draft.hospitalUuid,
                       });
                     }}
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-70">
+                    className="h-10 w-full rounded-md border px-3 text-sm disabled:cursor-not-allowed disabled:opacity-70">
                     <option value="" disabled>Chọn quyền</option>
                     {options.roles.map((role) => <option key={role.uuid} value={role.uuid}>{role.name}</option>)}
                   </select>
@@ -405,7 +417,7 @@ export function AccountsManagementScreen() {
                 {selectedRole?.scope === AccessScope.Hospital ? (
                   <div className="space-y-2">
                     <Label htmlFor="account-hospital">Mã bệnh viện</Label>
-                    <select id="account-hospital" required value={draft.hospitalUuid} onChange={(event) => setDraft({ ...draft, hospitalUuid: event.target.value })} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+                    <select id="account-hospital" required value={draft.hospitalUuid} onChange={(event) => setDraft({ ...draft, hospitalUuid: event.target.value })} className="h-10 w-full rounded-md border px-3 text-sm">
                       <option value="" disabled>Chọn bệnh viện</option>
                       {options.hospitals.map((hospital) => <option key={hospital.uuid} value={hospital.uuid}>{hospital.name}</option>)}
                     </select>

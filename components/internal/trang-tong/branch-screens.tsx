@@ -19,10 +19,12 @@ import { ErrorState, LoadingState } from "@/components/shared/data-state";
 import {
   DetailGrid,
   DetailItem,
+  INTERNAL_PAGE_SIZE,
   MetricCard,
   MetricGrid,
   PortalAction,
   PortalPageHeader,
+  PortalPagination,
   PortalSection,
   PortalTable,
   PortalToolbar,
@@ -82,6 +84,7 @@ export function BranchScreens({ slug }: { slug: string }) {
     case "bao-cao": return <HospitalReportsScreen />;
     case "nhat-ky": return <HospitalAuditScreen />;
     case "gio-lam-viec-benh-vien": return <HospitalWorkingScreen />;
+    case "duyet-don-lam-viec": return <HospitalWorkingScreen />;
     default: return null;
   }
 }
@@ -624,10 +627,17 @@ function AssignmentList({
   onToggle: (uuid: string) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const filteredItems = items.filter((item) =>
     `${item.name} ${item.description}`
       .toLocaleLowerCase("vi")
       .includes(query.trim().toLocaleLowerCase("vi")),
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / INTERNAL_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedItems = filteredItems.slice(
+    (safePage - 1) * INTERNAL_PAGE_SIZE,
+    safePage * INTERNAL_PAGE_SIZE,
   );
 
   return (
@@ -640,7 +650,7 @@ function AssignmentList({
           <span className="sr-only">Tìm {title.toLocaleLowerCase("vi")}</span>
           <Input
             value={query}
-            onChange={(event) => setQuery(event.currentTarget.value)}
+            onChange={(event) => { setQuery(event.currentTarget.value); setPage(1); }}
             placeholder={`Tìm ${title.toLocaleLowerCase("vi")}`}
             className="h-9"
           />
@@ -648,7 +658,7 @@ function AssignmentList({
       </div>
       {filteredItems.length > 0 ? (
         <div className="divide-y">
-          {filteredItems.map((item) => {
+          {paginatedItems.map((item) => {
             const isSelected = selectedUuids.includes(item.uuid);
             return (
               <label
@@ -679,6 +689,7 @@ function AssignmentList({
               </label>
             );
           })}
+          <PortalPagination page={safePage} totalItems={filteredItems.length} onPageChange={setPage} />
         </div>
       ) : (
         <p className="p-8 text-center text-sm text-muted-foreground">
@@ -711,6 +722,7 @@ function RoomsScreen() {
   const [recordFilter, setRecordFilter] = useState<"active" | "deleted" | "all">(
     "active",
   );
+  const [page, setPage] = useState(1);
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "error"; message: string }
@@ -812,6 +824,12 @@ function RoomsScreen() {
 
     return matchesRecord && matchesStatus && matchesSearch;
   });
+  const totalPages = Math.max(1, Math.ceil(visibleRooms.length / INTERNAL_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedRooms = visibleRooms.slice(
+    (safePage - 1) * INTERNAL_PAGE_SIZE,
+    safePage * INTERNAL_PAGE_SIZE,
+  );
 
   function openCreateForm() {
     setEditingRoom(null);
@@ -932,7 +950,7 @@ function RoomsScreen() {
     }
   }
 
-  const roomRows = visibleRooms.map((room) => {
+  const roomRows = paginatedRooms.map((room) => {
     const isDeleted = room.deletedAt.getTime() !== 0;
     const status = room.status === RoomStatus.Available
       ? <StatusPill tone="green">Khả dụng</StatusPill>
@@ -971,7 +989,7 @@ function RoomsScreen() {
         <PortalSection title={editingRoom ? `Chỉnh sửa ${editingRoom.name}` : "Thêm phòng mới"} description={editingRoom ? "Cập nhật tên và trạng thái vận hành." : `Còn ${Math.max(hospital.numberOfRoom - activeRooms.length, 0)} vị trí có thể tạo.`}>
           <form onSubmit={handleSubmit} className="grid gap-5 p-5 sm:grid-cols-2">
             <div className="space-y-2"><Label htmlFor="room-name">Tên phòng</Label><Input id="room-name" name="name" maxLength={100} value={roomName} onChange={(event) => setRoomName(event.currentTarget.value)} placeholder="Ví dụ: Phòng khám A2" required disabled={isSaving} /></div>
-            <div className="space-y-2"><Label htmlFor="room-status">Trạng thái</Label><select id="room-status" name="status" value={roomStatus} onChange={(event) => setRoomStatus(event.currentTarget.value as RoomStatus)} disabled={isSaving} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value={RoomStatus.Available}>Khả dụng</option><option value={RoomStatus.Occupied}>Đang sử dụng</option><option value={RoomStatus.Maintenance}>Bảo trì</option></select></div>
+            <div className="space-y-2"><Label htmlFor="room-status">Trạng thái</Label><select id="room-status" name="status" value={roomStatus} onChange={(event) => setRoomStatus(event.currentTarget.value as RoomStatus)} disabled={isSaving} className="h-10 w-full rounded-md border px-3 text-sm"><option value={RoomStatus.Available}>Khả dụng</option><option value={RoomStatus.Occupied}>Đang sử dụng</option><option value={RoomStatus.Maintenance}>Bảo trì</option></select></div>
             <div className="flex gap-2 sm:col-span-2"><Button type="submit" disabled={isSaving || (!editingRoom && atCapacity)}>{isSaving ? "Đang lưu..." : editingRoom ? "Lưu thay đổi" : "Thêm phòng"}</Button><Button type="button" variant="outline" disabled={isSaving} onClick={() => { setShowForm(false); setEditingRoom(null); setRoomName(""); setRoomStatus(RoomStatus.Available); }}>Hủy</Button></div>
           </form>
         </PortalSection>
@@ -983,7 +1001,7 @@ function RoomsScreen() {
             <span className="sr-only">Tìm theo tên hoặc mã phòng</span>
             <Input
               value={search}
-              onChange={(event) => setSearch(event.currentTarget.value)}
+              onChange={(event) => { setSearch(event.currentTarget.value); setPage(1); }}
               placeholder="Tìm tên hoặc mã phòng"
               className="h-9"
             />
@@ -992,9 +1010,10 @@ function RoomsScreen() {
             <span className="sr-only">Lọc theo trạng thái phòng</span>
             <select
               value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.currentTarget.value as RoomStatus | "all")
-              }
+              onChange={(event) => {
+                setStatusFilter(event.currentTarget.value as RoomStatus | "all");
+                setPage(1);
+              }}
               className="h-9 w-full rounded-md border bg-white px-3 text-sm"
             >
               <option value="all">Tất cả trạng thái</option>
@@ -1007,11 +1026,12 @@ function RoomsScreen() {
             <span className="sr-only">Lọc bản ghi phòng</span>
             <select
               value={recordFilter}
-              onChange={(event) =>
+              onChange={(event) => {
                 setRecordFilter(
                   event.currentTarget.value as "active" | "deleted" | "all",
-                )
-              }
+                );
+                setPage(1);
+              }}
               className="h-9 w-full rounded-md border bg-white px-3 text-sm"
             >
               <option value="active">Đang quản lý</option>
@@ -1021,7 +1041,10 @@ function RoomsScreen() {
           </label>
         </div>
         {roomRows.length > 0 ? (
-          <PortalTable caption="Danh sách phòng khám" columns={["Phòng", "Trạng thái", "Bản ghi", "Cập nhật", "Thao tác"]} rows={roomRows} />
+          <>
+            <PortalTable caption="Danh sách phòng khám" columns={["Phòng", "Trạng thái", "Bản ghi", "Cập nhật", "Thao tác"]} rows={roomRows} />
+            <PortalPagination page={safePage} totalItems={visibleRooms.length} onPageChange={setPage} />
+          </>
         ) : (
           <p className="p-8 text-center text-sm text-muted-foreground">{rooms.length ? "Không có phòng phù hợp với bộ lọc." : "Chi nhánh chưa có phòng khám nào."}</p>
         )}
@@ -1038,6 +1061,7 @@ function StaffAccountsScreen() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<BaseStatus | "all">("all");
+  const [page, setPage] = useState(1);
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [roleUuid, setRoleUuid] = useState("");
@@ -1151,6 +1175,12 @@ function StaffAccountsScreen() {
       (!normalizedSearch || searchText.includes(normalizedSearch))
     );
   });
+  const totalPages = Math.max(1, Math.ceil(filteredStaff.length / INTERNAL_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedStaff = filteredStaff.slice(
+    (safePage - 1) * INTERNAL_PAGE_SIZE,
+    safePage * INTERNAL_PAGE_SIZE,
+  );
   function resetForm() {
     setPhone("");
     setPassword("");
@@ -1242,7 +1272,7 @@ function StaffAccountsScreen() {
     }
   }
 
-  const rows = filteredStaff.map((member) => [
+  const rows = paginatedStaff.map((member) => [
     <div key={`${member.accountUuid}-identity`}>
       <p className="font-medium">{member.DisplayName}</p>
       <p className="mt-1 text-xs text-muted-foreground">{member.phone}</p>
@@ -1357,7 +1387,7 @@ function StaffAccountsScreen() {
                   setRoleUuid(event.currentTarget.value)
                 }
                 disabled={isSaving}
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-md border px-3 text-sm"
               >
                 <option value="">Chọn vai trò</option>
                 {roles.map((role) => (
@@ -1421,7 +1451,7 @@ function StaffAccountsScreen() {
                     }
                     required
                     disabled={isSaving || departments.length === 0}
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    className="h-10 w-full rounded-md border px-3 text-sm"
                   >
                     <option value="">Chọn chuyên khoa</option>
                     {departments.map((department) => (
@@ -1473,16 +1503,17 @@ function StaffAccountsScreen() {
           <Input
             aria-label="Tìm nhân sự"
             value={search}
-            onChange={(event) => setSearch(event.currentTarget.value)}
+            onChange={(event) => { setSearch(event.currentTarget.value); setPage(1); }}
             placeholder="Tìm tên, số điện thoại, chuyên khoa"
             className="h-9"
           />
           <select
             aria-label="Lọc theo vai trò"
             value={roleFilter}
-            onChange={(event) =>
-              setRoleFilter(event.currentTarget.value)
-            }
+            onChange={(event) => {
+              setRoleFilter(event.currentTarget.value);
+              setPage(1);
+            }}
             className="h-9 rounded-md border bg-white px-3 text-sm"
           >
             <option value="all">Tất cả vai trò</option>
@@ -1493,9 +1524,10 @@ function StaffAccountsScreen() {
           <select
             aria-label="Lọc theo trạng thái"
             value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.currentTarget.value as BaseStatus | "all")
-            }
+            onChange={(event) => {
+              setStatusFilter(event.currentTarget.value as BaseStatus | "all");
+              setPage(1);
+            }}
             className="h-9 rounded-md border bg-white px-3 text-sm"
           >
             <option value="all">Mọi trạng thái</option>
@@ -1504,11 +1536,14 @@ function StaffAccountsScreen() {
           </select>
         </div>
         {rows.length > 0 ? (
-          <PortalTable
-            caption="Danh sách tài khoản nhân sự chi nhánh"
-            columns={["Nhân sự", "Vai trò", "Bộ phận", "Trạng thái", "Cập nhật", "Thao tác"]}
-            rows={rows}
-          />
+          <>
+            <PortalTable
+              caption="Danh sách tài khoản nhân sự chi nhánh"
+              columns={["Nhân sự", "Vai trò", "Bộ phận", "Trạng thái", "Cập nhật", "Thao tác"]}
+              rows={rows}
+            />
+            <PortalPagination page={safePage} totalItems={filteredStaff.length} onPageChange={setPage} />
+          </>
         ) : (
           <p className="p-8 text-center text-sm text-muted-foreground">
             {staff.length

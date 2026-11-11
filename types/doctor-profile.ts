@@ -5,6 +5,7 @@ import type { BaseStatus, Guid } from "@/types/models";
  */
 export type DoctorProfileResponse = {
     uuid: Guid;
+    avatar: string;
     name: string;
     specialty: string;
     workplace: string;
@@ -21,7 +22,7 @@ export type DoctorProfileResponse = {
  */
 export type UpdateDoctorProfilePayload = {
     name: string;
-    specialty: string | null;
+    specialty: string;
     workplace: string;
     introduction: string;
     expertise: string;

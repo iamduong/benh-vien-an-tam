@@ -173,7 +173,7 @@ function FilterSelect({ label, children, ...props }: React.ComponentProps<"selec
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <select id={id} className="h-8 w-full rounded-lg border bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50" {...props}>
+      <select id={id} className="h-8 w-full rounded-lg border px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50" {...props}>
         {children}
       </select>
     </div>

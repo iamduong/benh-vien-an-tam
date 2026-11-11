@@ -64,6 +64,7 @@ builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<TimeWorkingService>();
 builder.Services.AddScoped<PermissionService>();
 builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<PatientService>();
 
 // Services from your current work
 builder.Services.AddScoped<IAvailableMedicineService, AvailableMedicineService>();

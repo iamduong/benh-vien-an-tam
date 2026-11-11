@@ -11,7 +11,6 @@ import {
   PackageCheck,
   Plus,
   RotateCcw,
-  Save,
   Trash2,
   Truck,
 } from "lucide-react";
@@ -31,9 +30,6 @@ import {
   StatusPill,
 } from "@/components/internal/portal-ui";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { mockExportTicketDetails } from "@/data/mocks/export-ticket-details";
 import { mockExportTickets } from "@/data/mocks/export-tickets";
 import { mockImportTicketDetails } from "@/data/mocks/import-ticket-details";
@@ -49,15 +45,17 @@ import {
   type ExportTicket,
   type ImportTicket,
 } from "@/types/models";
+import { ProviderManagementScreen, RealInventoryScreen, StockMovementScreen } from "@/components/internal/trang-tong/warehouse-management-screens";
+import { WarehouseDashboardScreen } from "@/components/internal/trang-tong/warehouse-dashboard-screen";
 
 export function InventoryScreens({ slug }: { slug: string }) {
   switch (slug) {
-    case "tong-quan": return <WarehouseDashboard />;
-    case "ton-kho": return <InventoryScreen />;
-    case "nha-cung-cap": return <ProvidersScreen />;
-    case "phieu-nhap-xuat": return <StockTicketsScreen />;
-    case "dieu-chinh-ton": return <InventoryAdjustmentScreen />;
-    case "lich-su": return <InventoryHistoryScreen />;
+    case "tong-quan": return <WarehouseDashboardScreen />;
+    case "ton-kho": return <RealInventoryScreen />;
+    case "nha-cung-cap": return <ProviderManagementScreen />;
+    case "phieu-nhap-xuat":
+    case "nhap-hang": return <StockMovementScreen kind="imports" />;
+    case "xuat-hang": return <StockMovementScreen kind="exports" />;
     case "bao-cao": return <WarehouseReportsScreen />;
     default: return null;
   }
@@ -121,36 +119,6 @@ function TicketStatus({ status }: { status: ImportTicketStatus | ExportTicketSta
   if (status === ImportTicketStatus.Confirmed) return <StatusPill tone="green">Đã xác nhận</StatusPill>;
   if (status === ImportTicketStatus.Cancelled) return <StatusPill tone="red">Đã hủy</StatusPill>;
   return <StatusPill tone="amber">Chờ duyệt</StatusPill>;
-}
-
-function WarehouseDashboard() {
-  return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Kho BV Đa khoa Thành Phố" title="Tổng quan kho thuốc" description="Theo dõi tồn kho, cảnh báo dưới ngưỡng và các phiếu cần quản trị viên chi nhánh duyệt." actions={<><PortalAction>Tải danh sách tồn</PortalAction><PortalAction variant="default"><Plus />Tạo phiếu</PortalAction></>} />
-      <MetricGrid>
-        <MetricCard label="Mặt hàng trong kho" value="428" detail="392 thuốc đang hoạt động" icon={<Boxes className="size-5" />} />
-        <MetricCard label="Dưới ngưỡng" value="16" detail="5 mặt hàng đã hết" icon={<AlertTriangle className="size-5" />} tone="red" />
-        <MetricCard label="Phiếu chờ duyệt" value="7" detail="5 nhập kho, 2 xuất kho" icon={<ClipboardCheck className="size-5" />} tone="amber" />
-        <MetricCard label="Giá trị tồn" value="1,84 tỷ" detail="Tăng 2,4% so với đầu tháng" trend="up" icon={<CircleDollarSign className="size-5" />} tone="green" />
-      </MetricGrid>
-      <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <PortalSection title="Thuốc cần xử lý sớm" action={<PortalAction>Xem cảnh báo</PortalAction>}>
-          <PortalTable caption="Thuốc cần xử lý sớm" columns={["Thuốc", "Tồn", "Tối thiểu", "Dự kiến dùng", "Mức độ"]} rows={[
-            ["Natri Clorid 0,9%", "0 chai", "50", "18 chai/ngày", <StatusPill key="1" tone="red">Nghiêm trọng</StatusPill>],
-            ["Amlodipine 5mg", "142 viên", "150", "36 viên/ngày", <StatusPill key="2" tone="amber">Cảnh báo</StatusPill>],
-            ["Omeprazole 20mg", "226 viên", "250", "42 viên/ngày", <StatusPill key="3" tone="amber">Cảnh báo</StatusPill>],
-          ]} />
-        </PortalSection>
-        <PortalSection title="Nhập xuất tháng 09">
-          <ProgressList items={[
-            { label: "Nhập kho", value: 78, display: "482,6 triệu", color: "bg-emerald-500" },
-            { label: "Xuất kho", value: 62, display: "386,4 triệu" },
-            { label: "Điều chỉnh giảm", value: 8, display: "12,2 triệu", color: "bg-red-400" },
-          ]} />
-        </PortalSection>
-      </div>
-    </div>
-  );
 }
 
 function InventoryScreen() {
@@ -314,49 +282,6 @@ function StockTicketsScreen() {
   );
 }
 
-function InventoryAdjustmentScreen() {
-  return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Thao tác có kiểm toán" title="Điều chỉnh tồn kho" description="Mọi điều chỉnh bắt buộc có lý do và được ghi vào nhật ký hoạt động." />
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <PortalSection title="Tạo phiếu điều chỉnh" description="Kiểm tra số lượng thực tế trước khi xác nhận.">
-          <form className="space-y-5 p-5">
-            <Field label="Thuốc" defaultValue="Amlodipine 5mg" />
-            <div className="grid grid-cols-2 gap-4"><Field label="Số lượng hệ thống" defaultValue="142" type="number" /><Field label="Số lượng thực tế" defaultValue="140" type="number" /></div>
-            <div className="space-y-2"><Label htmlFor="adjust-reason">Lý do điều chỉnh</Label><Textarea id="adjust-reason" rows={5} placeholder="Mô tả nguyên nhân chênh lệch..." /></div>
-            <div className="border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800"><strong>Chênh lệch dự kiến: -2 viên.</strong> Thao tác này sẽ được ghi với tài khoản và thời gian hiện tại.</div>
-            <PortalAction variant="default"><Save />Ghi nhận điều chỉnh</PortalAction>
-          </form>
-        </PortalSection>
-        <PortalSection title="Điều chỉnh gần đây">
-          <PortalTable caption="Điều chỉnh tồn kho gần đây" columns={["Thời gian", "Thuốc", "Trước", "Sau", "Lý do", "Người thực hiện"]} rows={[
-            ["23/09 08:56", "Paracetamol 500mg", "2.485", "2.480", "Hư hỏng bao bì", "Lê Văn Tuấn"],
-            ["22/09 16:12", "Amoxicillin 500mg", "858", "860", "Kiểm kê thừa", "Ngô Thanh Hà"],
-            ["22/09 09:44", "Natri Clorid 0,9%", "4", "0", "Hết hạn sử dụng", "Lê Văn Tuấn"],
-          ]} />
-        </PortalSection>
-      </div>
-    </div>
-  );
-}
-
-function InventoryHistoryScreen() {
-  return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Sổ biến động" title="Lịch sử kho" description="Tra cứu toàn bộ biến động nhập, xuất và điều chỉnh của từng mặt hàng." actions={<PortalAction>Xuất sổ kho</PortalAction>} />
-      <PortalSection title="Dòng biến động">
-        <PortalToolbar placeholder="Tìm thuốc hoặc mã phiếu" filters={[{ label: "30 ngày gần nhất", options: ["Hôm nay", "7 ngày", "90 ngày"] }, { label: "Tất cả nghiệp vụ", options: ["Nhập kho", "Xuất kho", "Điều chỉnh"] }]} />
-        <PortalTable caption="Lịch sử biến động kho" columns={["Thời gian", "Thuốc", "Nghiệp vụ", "Chứng từ", "Biến động", "Tồn sau"]} rows={[
-          ["23/09 09:28", "Paracetamol 500mg", <StatusPill key="1" tone="blue">Xuất kho</StatusPill>, "XK-260923-001", "-120", "2.480"],
-          ["23/09 08:56", "Paracetamol 500mg", <StatusPill key="2" tone="amber">Điều chỉnh</StatusPill>, "ADJ-260923-003", "-5", "2.600"],
-          ["22/09 16:45", "Amoxicillin 500mg", <StatusPill key="3" tone="green">Nhập kho</StatusPill>, "NK-260922-018", "+500", "860"],
-          ["22/09 15:12", "Natri Clorid 0,9%", <StatusPill key="4" tone="blue">Xuất kho</StatusPill>, "XK-260922-010", "-24", "0"],
-        ]} />
-      </PortalSection>
-    </div>
-  );
-}
-
 function WarehouseReportsScreen() {
   return (
     <div className="space-y-6">
@@ -387,9 +312,4 @@ function WarehouseReportsScreen() {
       </div>
     </div>
   );
-}
-
-function Field({ label, defaultValue, type = "text" }: { label: string; defaultValue: string; type?: string }) {
-  const id = `warehouse-${label.toLowerCase().replaceAll(" ", "-")}`;
-  return <div className="space-y-2"><Label htmlFor={id}>{label}</Label><Input id={id} type={type} defaultValue={defaultValue} /></div>;
 }

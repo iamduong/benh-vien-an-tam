@@ -21,7 +21,9 @@ import {
   DetailItem,
   MetricCard,
   MetricGrid,
+  INTERNAL_PAGE_SIZE,
   PortalPageHeader,
+  PortalPagination,
   PortalSection,
   PortalTable,
   StatusPill,
@@ -115,6 +117,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [visibility, setVisibility] = useState("current");
+  const [page, setPage] = useState(1);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [draft, setDraft] = useState<T | null>(null);
   const [draftMode, setDraftMode] = useState<"create" | "edit" | null>(null);
@@ -128,6 +131,12 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
     const matchesVisibility = visibility === "all" || (visibility === "deleted" ? isDeleted(item) : !isDeleted(item));
     return matchesQuery && matchesStatus && matchesVisibility;
   });
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / INTERNAL_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedItems = filteredItems.slice(
+    (safePage - 1) * INTERNAL_PAGE_SIZE,
+    safePage * INTERNAL_PAGE_SIZE,
+  );
   const detailItem = items.find((item) => item.uuid === detailId) ?? null;
   const activeCount = items.filter((item) => !isDeleted(item) && item.status === BaseStatus.Active).length;
   const deletedCount = items.filter(isDeleted).length;
@@ -239,7 +248,7 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
     }
   }
 
-  const rows = filteredItems.map((item) => [
+  const rows = paginatedItems.map((item) => [
     ...config.renderCells(item),
     <RecordStatus key={`${item.uuid}-status`} item={item} />,
     <div key={`${item.uuid}-actions`} className="flex items-center justify-end gap-1">
@@ -304,21 +313,24 @@ function CatalogManagementScreen<T extends ManagedRecord>({ config }: { config: 
           <label className="relative">
             <span className="sr-only">Tìm kiếm</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Tìm ${config.title.toLocaleLowerCase("vi")}...`} className="pl-9" />
+            <Input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={`Tìm ${config.title.toLocaleLowerCase("vi")}...`} className="pl-9" />
           </label>
-          <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-10 rounded-md border bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" aria-label="Lọc trạng thái">
+          <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="h-10 rounded-md border bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" aria-label="Lọc trạng thái">
             <option value="all">Tất cả trạng thái</option>
             <option value={BaseStatus.Active}>Hoạt động</option>
             <option value={BaseStatus.InActive}>Tạm ngưng</option>
           </select>
-          <select value={visibility} onChange={(event) => setVisibility(event.target.value)} className="h-10 rounded-md border bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" aria-label="Lọc trạng thái xóa">
+          <select value={visibility} onChange={(event) => { setVisibility(event.target.value); setPage(1); }} className="h-10 rounded-md border bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" aria-label="Lọc trạng thái xóa">
             <option value="current">Bản ghi hiện hành</option>
             <option value="deleted">Đã xóa</option>
             <option value="all">Tất cả bản ghi</option>
           </select>
         </div>
         {rows.length ? (
-          <PortalTable caption={`Danh sách ${config.title.toLocaleLowerCase("vi")}`} columns={[...config.columns, "Trạng thái", "Thao tác"]} rows={rows} />
+          <>
+            <PortalTable caption={`Danh sách ${config.title.toLocaleLowerCase("vi")}`} columns={[...config.columns, "Trạng thái", "Thao tác"]} rows={rows} />
+            <PortalPagination page={safePage} totalItems={filteredItems.length} onPageChange={setPage} />
+          </>
         ) : (
           <div className="p-10 text-center text-sm text-muted-foreground">Không có bản ghi phù hợp với bộ lọc.</div>
         )}

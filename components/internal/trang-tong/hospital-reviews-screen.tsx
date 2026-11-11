@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 
 import {
+  INTERNAL_PAGE_SIZE,
   MetricCard,
   MetricGrid,
   PortalPageHeader,
+  PortalPagination,
   PortalSection,
   StatusPill,
 } from "@/components/internal/portal-ui";
@@ -45,6 +47,7 @@ export function HospitalReviewsScreen() {
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const [busyUuid, setBusyUuid] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,6 +68,13 @@ export function HospitalReviewsScreen() {
       });
     return () => controller.abort();
   }, [filters, reload]);
+
+  const totalPages = Math.max(1, Math.ceil(reviews.length / INTERNAL_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedReviews = reviews.slice(
+    (safePage - 1) * INTERNAL_PAGE_SIZE,
+    safePage * INTERNAL_PAGE_SIZE,
+  );
 
   async function moderate(review: BranchReview, status: Exclude<BranchReviewStatus, "pending">) {
     setBusyUuid(review.uuid);
@@ -105,13 +115,13 @@ export function HospitalReviewsScreen() {
             aria-label="Tìm đánh giá"
             placeholder="Tìm nội dung, người đánh giá, đối tượng"
             value={filters.search ?? ""}
-            onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+            onChange={(event) => { setFilters((current) => ({ ...current, search: event.target.value })); setPage(1); }}
           />
           <select
             aria-label="Lọc loại đánh giá"
             value={filters.type}
-            onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value as BranchReviewType | "all" }))}
-            className="h-10 rounded-md border bg-background px-3 text-sm"
+            onChange={(event) => { setFilters((current) => ({ ...current, type: event.target.value as BranchReviewType | "all" })); setPage(1); }}
+            className="h-10 rounded-md border px-3 text-sm"
           >
             <option value="all">Tất cả đối tượng</option>
             <option value="hospital">Bệnh viện</option>
@@ -121,8 +131,8 @@ export function HospitalReviewsScreen() {
           <select
             aria-label="Lọc số sao"
             value={filters.stars}
-            onChange={(event) => setFilters((current) => ({ ...current, stars: event.target.value === "all" ? "all" : Number(event.target.value) }))}
-            className="h-10 rounded-md border bg-background px-3 text-sm"
+            onChange={(event) => { setFilters((current) => ({ ...current, stars: event.target.value === "all" ? "all" : Number(event.target.value) })); setPage(1); }}
+            className="h-10 rounded-md border px-3 text-sm"
           >
             <option value="all">Tất cả số sao</option>
             {[5, 4, 3, 2, 1].map((stars) => <option key={stars} value={stars}>{stars} sao</option>)}
@@ -130,8 +140,8 @@ export function HospitalReviewsScreen() {
           <select
             aria-label="Lọc trạng thái duyệt"
             value={filters.status}
-            onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as BranchReviewStatus | "all" }))}
-            className="h-10 rounded-md border bg-background px-3 text-sm"
+            onChange={(event) => { setFilters((current) => ({ ...current, status: event.target.value as BranchReviewStatus | "all" })); setPage(1); }}
+            className="h-10 rounded-md border px-3 text-sm"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="pending">Chờ duyệt</option>
@@ -151,7 +161,7 @@ export function HospitalReviewsScreen() {
           <p className="p-5 text-sm text-muted-foreground">Không tìm thấy đánh giá phù hợp.</p>
         ) : (
           <div className="divide-y">
-            {reviews.map((review) => (
+            {paginatedReviews.map((review) => (
               <article key={`${review.type}-${review.uuid}`} className="space-y-3 p-5">
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                   <div>
@@ -182,6 +192,7 @@ export function HospitalReviewsScreen() {
                 </div>
               </article>
             ))}
+            <PortalPagination page={safePage} totalItems={reviews.length} onPageChange={setPage} />
           </div>
         )}
       </PortalSection>
