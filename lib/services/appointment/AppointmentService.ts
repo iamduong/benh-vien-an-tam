@@ -47,11 +47,22 @@ export class AppointmentService {
         "/appointments",
         { params: query, signal },
       );
+      const raw = response.data.data as AppointmentList & {
+        items?: AppointmentPresentation[];
+        page?: number;
+        pageSize?: number;
+        totalItems?: number;
+        totalPages?: number;
+      };
+      const items = raw.Items ?? raw.items ?? [];
       return {
         ...response.data,
         data: {
-          ...response.data.data,
-          Items: response.data.data.Items.map(hydratePresentation),
+          Items: items.map(hydratePresentation),
+          Page: raw.Page ?? raw.page ?? 1,
+          PageSize: raw.PageSize ?? raw.pageSize ?? query.pageSize ?? 20,
+          TotalItems: raw.TotalItems ?? raw.totalItems ?? items.length,
+          TotalPages: raw.TotalPages ?? raw.totalPages ?? 1,
         },
       };
     } catch (error) {

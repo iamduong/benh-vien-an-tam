@@ -1,13 +1,13 @@
 using api.Contract;
 using api.Contract.Public;
-using api.Service.Interfaces;
+using api.Service;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controller;
 
 [ApiController]
 [Route("/api/public")]
-public class PublicController(IPublicService service) : ControllerBase
+public class PublicController(PublicService service) : ControllerBase
 {
     [HttpGet("departments")]
     public async Task<IActionResult> GetDepartmentsAsync()

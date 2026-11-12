@@ -2,12 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using api.Contract.Clinical;
 using api.Model;
 using api.Model.Enum;
-using api.Service.Interfaces;
 using api.Lib;
 
 namespace api.Service;
 
-public class ClinicalExaminationService(DBContext dbContext) : IClinicalExaminationService
+public class ClinicalExaminationService(DBContext dbContext)
 {
     public async Task<ClinicalMedicalServiceResponse?> AddMedicalServiceAsync(
         Guid doctorUuid, Guid appointmentUuid, AddMedicalServiceRequest request, CancellationToken cancellationToken)

@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using api.Contract.Prescription;
-using api.Service.Interfaces;
+using api.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,9 +11,9 @@ namespace api.Controller;
 [Authorize]
 public class PrescriptionsController : ControllerBase
 {
-    private readonly IPrescriptionService _prescriptionService;
+    private readonly PrescriptionService _prescriptionService;
 
-    public PrescriptionsController(IPrescriptionService prescriptionService)
+    public PrescriptionsController(PrescriptionService prescriptionService)
     {
         _prescriptionService = prescriptionService;
     }

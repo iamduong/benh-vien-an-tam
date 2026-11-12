@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using api.Contract;
 using api.Contract.Clinical;
-using api.Service.Interfaces;
+using api.Service;
 
 namespace api.Controller;
 
@@ -11,9 +11,9 @@ namespace api.Controller;
 [Route("api/internal/clinical")]
 [Authorize]
 public class InternalClinicalController(
-    IDoctorAppointmentService appointmentService,
-    IClinicalExaminationService examinationService,
-    IPrescriptionManagementService prescriptionService) : ControllerBase
+    DoctorAppointmentService appointmentService,
+    ClinicalExaminationService examinationService,
+    PrescriptionManagementService prescriptionService) : ControllerBase
 {
     private Guid GetCurrentDoctorUuid()
     {

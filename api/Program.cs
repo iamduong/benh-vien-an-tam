@@ -5,7 +5,6 @@ using api.Lib;
 using api.Lib.Setting;
 using api.Middleware;
 using api.Service;
-using api.Service.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -55,7 +54,7 @@ builder.Services.AddScoped<Jwt>();
 builder.Services.AddScoped<Sepay>();
 builder.Services.AddScoped<Cloud>();
 
-// Existing services from main
+// Application services
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<HospitalService>();
 builder.Services.AddScoped<DepartmentService>();
@@ -66,16 +65,25 @@ builder.Services.AddScoped<PermissionService>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<PatientService>();
 
-// Services from your current work
-builder.Services.AddScoped<IAvailableMedicineService, AvailableMedicineService>();
-builder.Services.AddScoped<IDoctorProfileService, DoctorProfileService>();
-builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
-builder.Services.AddScoped<IDoctorAppointmentService, DoctorAppointmentService>();
-builder.Services.AddScoped<IClinicalExaminationService, ClinicalExaminationService>();
-builder.Services.AddScoped<IPrescriptionManagementService, PrescriptionManagementService>();
+builder.Services.AddScoped<AvailableMedicineService>();
+builder.Services.AddScoped<DoctorProfileService>();
+builder.Services.AddScoped<PrescriptionService>();
+builder.Services.AddScoped<DoctorAppointmentService>();
+builder.Services.AddScoped<ClinicalExaminationService>();
+builder.Services.AddScoped<PrescriptionManagementService>();
 
-// namduong note
-builder.Services.AddScoped<IPublicService, PublicService>();
+builder.Services.AddScoped<PublicService>();
+builder.Services.AddScoped<AppointmentService>();
+builder.Services.AddScoped<DoctorService>();
+builder.Services.AddScoped<DoctorWorkSubmissionsService>();
+builder.Services.AddScoped<HospitalAppointmentsService>();
+builder.Services.AddScoped<HospitalManagementService>();
+builder.Services.AddScoped<HospitalStaffService>();
+builder.Services.AddScoped<HospitalWorkingsService>();
+builder.Services.AddScoped<MedicalServiceService>();
+builder.Services.AddScoped<ReviewsService>();
+builder.Services.AddScoped<SidebarService>();
+builder.Services.AddScoped<WarehouseService>();
 
 // PostgreSQL
 builder.Services.AddDbContext<DBContext>(options =>

@@ -1,12 +1,42 @@
 using api.Contract.Department;
+using api.Contract.Common;
 using api.Lib;
 using api.Model;
+using api.Model.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Service;
 
 public sealed class DepartmentService(DBContext dbContext)
 {
+    public async Task<PagedResultDto<DepartmentResponse>> GetDepartmentsAsync(
+        int page, int pageSize, BaseStatus? status, string? search, CancellationToken cancellationToken)
+    {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var query = dbContext.Departments.AsNoTracking().Where(item => item.DeletedAt == null);
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(item => item.Name.Contains(search) || item.Slug.Contains(search));
+        if (status.HasValue) query = query.Where(item => item.Status == status.Value);
+        var totalItems = await query.CountAsync(cancellationToken);
+        var items = await query.OrderByDescending(item => item.CreatedAt)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        return new PagedResultDto<DepartmentResponse>
+        {
+            Items = items.Select(DepartmentResponse.FromModel).ToList(),
+            TotalItems = totalItems,
+            PageIndex = page,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<DepartmentResponse?> GetActiveDepartmentAsync(Guid uuid, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.Departments.AsNoTracking()
+            .FirstOrDefaultAsync(department => department.Uuid == uuid && department.DeletedAt == null, cancellationToken);
+        return item is null ? null : DepartmentResponse.FromModel(item);
+    }
+
     public async Task<IReadOnlyList<DepartmentResponse>> GetDepartmentsAsync(
         CancellationToken cancellationToken)
     {

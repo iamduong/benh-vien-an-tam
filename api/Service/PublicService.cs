@@ -1,12 +1,11 @@
 using api.Contract.Public;
 using api.Lib;
 using api.Model.Enum;
-using api.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Service;
 
-public class PublicService(DBContext context) : IPublicService
+public class PublicService(DBContext context)
 {
     public async Task<DepartmentResponse[]> GetDepartmentsAsync()
     {

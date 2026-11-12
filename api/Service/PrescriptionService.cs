@@ -1,12 +1,11 @@
 using api.Contract.Prescription;
 using api.Lib;
 using api.Model.Enum;
-using api.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Service;
 
-public class PrescriptionService : IPrescriptionService
+public class PrescriptionService
 {
 	private readonly DBContext _context;
 

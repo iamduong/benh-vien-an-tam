@@ -2,12 +2,11 @@ using api.Contract.AvailableMedicine;
 using api.Contract.Common;
 using api.Lib;
 using api.Model.Enum;
-using api.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Service;
 
-public class AvailableMedicineService : IAvailableMedicineService
+public class AvailableMedicineService
 {
     private readonly DBContext _dbContext;
 
