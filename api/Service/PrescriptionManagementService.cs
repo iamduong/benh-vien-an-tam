@@ -3,11 +3,10 @@ using api.Contract.Clinical;
 using api.Lib;
 using api.Model;
 using api.Model.Enum;
-using api.Service.Interfaces;
 
 namespace api.Service;
 
-public class PrescriptionManagementService(DBContext dbContext) : IPrescriptionManagementService
+public class PrescriptionManagementService(DBContext dbContext)
 {
     public async Task<PrescriptionResponse?> GetPrescriptionAsync(
         Guid appointmentUuid, CancellationToken cancellationToken)

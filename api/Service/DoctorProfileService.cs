@@ -1,11 +1,10 @@
 using api.Contract.DoctorProfile;
 using api.Lib;
-using api.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Service;
 
-public class DoctorProfileService : IDoctorProfileService
+public class DoctorProfileService
 {
     private readonly DBContext _context;
 

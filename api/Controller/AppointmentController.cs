@@ -1,408 +1,97 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using api.Contract.Appointment;
-using api.Lib;
 using api.Model;
 using api.Model.Enum;
 
+using api.Service;
 namespace api.Controller;
 
 [ApiController]
 [Route("api/appointments")]
-public sealed class AppointmentController(DBContext dbContext) : ControllerBase
+public sealed class AppointmentController(AppointmentService service) : ControllerBase
 {
+    private AppointmentService Service
+    {
+        get
+        {
+            service.ControllerContext = ControllerContext;
+            return service;
+        }
+    }
+
+    [HttpGet("booking-context")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetBookingContext(CancellationToken cancellationToken) => await Service.GetBookingContext(cancellationToken);
+    [HttpGet("availability")]
+    [Authorize]
+    public async Task<IActionResult> GetAvailability(
+        [FromQuery] string type,
+        [FromQuery] Guid targetUuid,
+        [FromQuery] Guid hospitalUuid,
+        [FromQuery] Guid accountUuid,
+        [FromQuery] DateOnly date,
+        CancellationToken cancellationToken) => await Service.GetAvailability(type, targetUuid, hospitalUuid, accountUuid, date, cancellationToken);
+    [HttpPost("hospitals")]
+    [Authorize]
+    public Task<IActionResult> CreateHospitalBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) => Service.CreateHospitalBooking(request, cancellationToken);
+    [HttpPost("doctors")]
+    [Authorize]
+    public Task<IActionResult> CreateDoctorBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) => Service.CreateDoctorBooking(request, cancellationToken);
+    [HttpPost("medical-services")]
+    [Authorize]
+    public Task<IActionResult> CreateMedicalServiceBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) => Service.CreateMedicalServiceBooking(request, cancellationToken);
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> GetAppointments(
+        [FromQuery] Guid accountUuid,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] AppointmentStatus? status = null,
-        [FromQuery] Guid? doctorUuid = null,
-        [FromQuery] Guid? hospitalUuid = null,
-        [FromQuery] Guid? patientUuid = null,
-        CancellationToken cancellationToken = default)
-    {
-        pageSize = Math.Min(pageSize, 100);
-
-        var query = dbContext.Appointments.Where(x => x.DeletedAt == null);
-
-        if (status.HasValue)
-        {
-            query = query.Where(x => x.Status == status.Value);
-        }
-
-        if (doctorUuid.HasValue)
-        {
-            query = query.Where(x => x.DoctorUuid == doctorUuid.Value);
-        }
-
-        if (hospitalUuid.HasValue)
-        {
-            query = query.Where(x => x.HospitalUuid == hospitalUuid.Value);
-        }
-
-        if (patientUuid.HasValue)
-        {
-            query = query.Where(x => x.PatientUuid == patientUuid.Value);
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(x => new AppointmentResponse
-            {
-                Uuid = x.Uuid,
-                PatientName = x.PatientName,
-                Gender = x.Gender.ToString(),
-                MedicalCode = x.MedicalCode,
-                Note = x.Note,
-                AppointmentDate = x.AppointmentDate,
-                TimeSlot = x.TimeSlot,
-                Type = x.Type.ToString(),
-                Status = x.Status.ToString(),
-                PatientUuid = x.PatientUuid,
-                HospitalUuid = x.HospitalUuid,
-                DoctorUuid = x.DoctorUuid,
-                MedicalServiceUuid = x.MedicalServiceUuid,
-                RoomUuid = x.RoomUuid,
-                DoctorNote = x.DoctorNote,
-                TotalPrice = x.TotalPrice,
-                IsPaid = x.IsPaid,
-                CreatedAt = x.CreatedAt,
-                UpdatedAt = x.UpdatedAt
-            })
-            .ToListAsync(cancellationToken);
-
-        return Ok(new
-        {
-            message = "Fetched successfully",
-            data = items,
-            pagination = new
-            {
-                page,
-                pageSize,
-                totalCount,
-                totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
-            }
-        });
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetAppointment(Guid id, CancellationToken cancellationToken = default)
-    {
-        var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == id && x.DeletedAt == null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (appointment is null)
-            return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
-
-        var response = new AppointmentResponse
-        {
-            Uuid = appointment.Uuid,
-            PatientName = appointment.PatientName,
-            Gender = appointment.Gender.ToString(),
-            MedicalCode = appointment.MedicalCode,
-            Note = appointment.Note,
-            AppointmentDate = appointment.AppointmentDate,
-            TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
-            Status = appointment.Status.ToString(),
-            PatientUuid = appointment.PatientUuid,
-            HospitalUuid = appointment.HospitalUuid,
-            DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
-            RoomUuid = appointment.RoomUuid,
-            DoctorNote = appointment.DoctorNote,
-            TotalPrice = appointment.TotalPrice,
-            IsPaid = appointment.IsPaid,
-            CreatedAt = appointment.CreatedAt,
-            UpdatedAt = appointment.UpdatedAt
-        };
-
-        return Ok(new { message = "Fetched successfully", data = response });
-    }
-
+        [FromQuery] string? type = null,
+        [FromQuery] DateOnly? from = null,
+        [FromQuery] DateOnly? to = null,
+        CancellationToken cancellationToken = default) => await Service.GetAppointments(accountUuid, page, pageSize, status, type, from, to, cancellationToken);
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetAppointment(Guid id, CancellationToken cancellationToken = default) => await Service.GetAppointment(id, cancellationToken);
+    [HttpGet("{uuid:guid}/detail")]
+    [Authorize]
+    public async Task<IActionResult> GetAppointmentDetail(Guid uuid, [FromQuery] Guid accountUuid, CancellationToken cancellationToken = default) => await Service.GetAppointmentDetail(uuid, accountUuid, cancellationToken);
+    [HttpPost("{uuid:guid}/reschedule")]
+    [Authorize]
+    public async Task<IActionResult> RescheduleAppointment(Guid uuid, ReschedulePatientAppointmentRequest request, CancellationToken cancellationToken = default) => await Service.RescheduleAppointment(uuid, request, cancellationToken);
+    [HttpPost("{uuid:guid}/cancel")]
+    [Authorize]
+    public async Task<IActionResult> CancelPatientAppointment(Guid uuid, CancelPatientAppointmentRequest request, CancellationToken cancellationToken = default) => await Service.CancelPatientAppointment(uuid, request, cancellationToken);
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CreateAppointment(
         CreateAppointmentRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var appointment = new Appointment
-        {
-            Uuid = Guid.NewGuid(),
-            PatientName = request.PatientName,
-            Gender = request.Gender,
-            MedicalCode = request.MedicalCode,
-            Note = request.Note,
-            AppointmentDate = request.AppointmentDate,
-            TimeSlot = request.TimeSlot,
-            Type = request.Type,
-            Status = AppointmentStatus.Pending,
-            PatientUuid = request.PatientUuid,
-            HospitalUuid = request.HospitalUuid,
-            DoctorUuid = request.DoctorUuid,
-            MedicalServiceUuid = request.MedicalServiceUuid,
-            RoomUuid = request.RoomUuid,
-            TotalPrice = request.TotalPrice,
-            IsPaid = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        dbContext.Appointments.Add(appointment);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var response = new AppointmentResponse
-        {
-            Uuid = appointment.Uuid,
-            PatientName = appointment.PatientName,
-            Gender = appointment.Gender.ToString(),
-            MedicalCode = appointment.MedicalCode,
-            Note = appointment.Note,
-            AppointmentDate = appointment.AppointmentDate,
-            TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
-            Status = appointment.Status.ToString(),
-            PatientUuid = appointment.PatientUuid,
-            HospitalUuid = appointment.HospitalUuid,
-            DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
-            RoomUuid = appointment.RoomUuid,
-            DoctorNote = appointment.DoctorNote,
-            TotalPrice = appointment.TotalPrice,
-            IsPaid = appointment.IsPaid,
-            CreatedAt = appointment.CreatedAt,
-            UpdatedAt = appointment.UpdatedAt
-        };
-
-        return StatusCode(StatusCodes.Status201Created,
-            new { message = "Created successfully", data = response });
-    }
-
-    [HttpPut("{id}")]
+        CancellationToken cancellationToken = default) => await Service.CreateAppointment(request, cancellationToken);
+    [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> UpdateAppointment(
         Guid id,
         UpdateAppointmentRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == id && x.DeletedAt == null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (appointment is null)
-            return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
-
-        appointment.PatientName = request.PatientName ?? appointment.PatientName;
-        appointment.Gender = request.Gender;
-        appointment.MedicalCode = request.MedicalCode ?? appointment.MedicalCode;
-        appointment.Note = request.Note ?? appointment.Note;
-        appointment.AppointmentDate = request.AppointmentDate != default ? request.AppointmentDate : appointment.AppointmentDate;
-        appointment.TimeSlot = request.TimeSlot ?? appointment.TimeSlot;
-        appointment.Type = request.Type;
-        appointment.PatientUuid = request.PatientUuid ?? appointment.PatientUuid;
-        appointment.DoctorUuid = request.DoctorUuid ?? appointment.DoctorUuid;
-        appointment.MedicalServiceUuid = request.MedicalServiceUuid ?? appointment.MedicalServiceUuid;
-        appointment.RoomUuid = request.RoomUuid ?? appointment.RoomUuid;
-        appointment.TotalPrice = request.TotalPrice.HasValue ? request.TotalPrice.Value : appointment.TotalPrice;
-        appointment.UpdatedAt = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var response = new AppointmentResponse
-        {
-            Uuid = appointment.Uuid,
-            PatientName = appointment.PatientName,
-            Gender = appointment.Gender.ToString(),
-            MedicalCode = appointment.MedicalCode,
-            Note = appointment.Note,
-            AppointmentDate = appointment.AppointmentDate,
-            TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
-            Status = appointment.Status.ToString(),
-            PatientUuid = appointment.PatientUuid,
-            HospitalUuid = appointment.HospitalUuid,
-            DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
-            RoomUuid = appointment.RoomUuid,
-            DoctorNote = appointment.DoctorNote,
-            TotalPrice = appointment.TotalPrice,
-            IsPaid = appointment.IsPaid,
-            CreatedAt = appointment.CreatedAt,
-            UpdatedAt = appointment.UpdatedAt
-        };
-
-        return Ok(new { message = "Updated successfully", data = response });
-    }
-
-    [HttpDelete("{id}")]
+        CancellationToken cancellationToken = default) => await Service.UpdateAppointment(id, request, cancellationToken);
+    [HttpDelete("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> DeleteAppointment(Guid id, CancellationToken cancellationToken = default)
-    {
-        var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == id && x.DeletedAt == null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (appointment is null)
-            return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
-
-        appointment.DeletedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
-    }
-
+    public async Task<IActionResult> DeleteAppointment(Guid id, CancellationToken cancellationToken = default) => await Service.DeleteAppointment(id, cancellationToken);
     [HttpPut("{id}/approve")]
     [Authorize]
     public async Task<IActionResult> ApproveAppointment(
         Guid id,
         ApproveAppointmentRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == id && x.DeletedAt == null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (appointment is null)
-            return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
-
-        if (appointment.Status != AppointmentStatus.Pending)
-            return BadRequest(new { message = "Invalid state", error = "Appointment must be in Pending status" });
-
-        appointment.Status = AppointmentStatus.Approved;
-        appointment.UpdatedAt = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var response = new AppointmentResponse
-        {
-            Uuid = appointment.Uuid,
-            PatientName = appointment.PatientName,
-            Gender = appointment.Gender.ToString(),
-            MedicalCode = appointment.MedicalCode,
-            Note = appointment.Note,
-            AppointmentDate = appointment.AppointmentDate,
-            TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
-            Status = appointment.Status.ToString(),
-            PatientUuid = appointment.PatientUuid,
-            HospitalUuid = appointment.HospitalUuid,
-            DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
-            RoomUuid = appointment.RoomUuid,
-            DoctorNote = appointment.DoctorNote,
-            TotalPrice = appointment.TotalPrice,
-            IsPaid = appointment.IsPaid,
-            CreatedAt = appointment.CreatedAt,
-            UpdatedAt = appointment.UpdatedAt
-        };
-
-        return Ok(new { message = "Updated successfully", data = response });
-    }
-
+        CancellationToken cancellationToken = default) => await Service.ApproveAppointment(id, request, cancellationToken);
     [HttpPut("{id}/complete")]
     [Authorize]
     public async Task<IActionResult> CompleteAppointment(
         Guid id,
         CompleteAppointmentRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == id && x.DeletedAt == null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (appointment is null)
-            return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
-
-        if (appointment.Status != AppointmentStatus.CheckedIn)
-            return BadRequest(new { message = "Invalid state", error = "Appointment must be in CheckedIn status" });
-        if (!appointment.IsPaid)
-            return Conflict(new { message = "Appointment must be paid before completion", error = "PAYMENT_REQUIRED" });
-        if (await dbContext.AppointmentMedicalServices.AnyAsync(
-                item => item.AppointmentUuid == appointment.Uuid &&
-                        item.Status != AppointmentMedicalServiceStatus.Completed,
-                cancellationToken))
-            return Conflict(new { message = "All additional services must be completed first", error = "SERVICES_INCOMPLETE" });
-
-        appointment.Status = AppointmentStatus.Done;
-        appointment.DoctorNote = request.DoctorNote ?? appointment.DoctorNote;
-        appointment.UpdatedAt = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var response = new AppointmentResponse
-        {
-            Uuid = appointment.Uuid,
-            PatientName = appointment.PatientName,
-            Gender = appointment.Gender.ToString(),
-            MedicalCode = appointment.MedicalCode,
-            Note = appointment.Note,
-            AppointmentDate = appointment.AppointmentDate,
-            TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
-            Status = appointment.Status.ToString(),
-            PatientUuid = appointment.PatientUuid,
-            HospitalUuid = appointment.HospitalUuid,
-            DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
-            RoomUuid = appointment.RoomUuid,
-            DoctorNote = appointment.DoctorNote,
-            TotalPrice = appointment.TotalPrice,
-            IsPaid = appointment.IsPaid,
-            CreatedAt = appointment.CreatedAt,
-            UpdatedAt = appointment.UpdatedAt
-        };
-
-        return Ok(new { message = "Updated successfully", data = response });
-    }
-
+        CancellationToken cancellationToken = default) => await Service.CompleteAppointment(id, request, cancellationToken);
     [HttpPut("{id}/check-in")]
     [Authorize]
     public async Task<IActionResult> CheckInAppointment(
         Guid id,
-        CancellationToken cancellationToken = default)
-    {
-        var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == id && x.DeletedAt == null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (appointment is null)
-            return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
-
-        if (appointment.Status != AppointmentStatus.Approved)
-            return BadRequest(new { message = "Invalid state", error = "Appointment must be in Approved status" });
-
-        appointment.Status = AppointmentStatus.CheckedIn;
-        appointment.UpdatedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var response = new AppointmentResponse
-        {
-            Uuid = appointment.Uuid,
-            PatientName = appointment.PatientName,
-            Gender = appointment.Gender.ToString(),
-            MedicalCode = appointment.MedicalCode,
-            Note = appointment.Note,
-            AppointmentDate = appointment.AppointmentDate,
-            TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
-            Status = appointment.Status.ToString(),
-            PatientUuid = appointment.PatientUuid,
-            HospitalUuid = appointment.HospitalUuid,
-            DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
-            RoomUuid = appointment.RoomUuid,
-            DoctorNote = appointment.DoctorNote,
-            TotalPrice = appointment.TotalPrice,
-            IsPaid = appointment.IsPaid,
-            CreatedAt = appointment.CreatedAt,
-            UpdatedAt = appointment.UpdatedAt
-        };
-
-        return Ok(new { message = "Updated successfully", data = response });
-    }
+        CancellationToken cancellationToken = default) => await Service.CheckInAppointment(id, cancellationToken);
 }

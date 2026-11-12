@@ -1,12 +1,34 @@
 using api.Contract.TimeWorking;
+using api.Contract.Common;
 using api.Lib;
 using api.Model;
+using api.Model.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Service;
 
 public sealed class TimeWorkingService(DBContext dbContext)
 {
+    public async Task<PagedResultDto<TimeWorkingResponse>> GetTimeWorkingsAsync(
+        int page, int pageSize, int? dayOfWeek, BaseStatus? status, CancellationToken cancellationToken)
+    {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var query = dbContext.TimeWorkings.AsNoTracking().Where(item => item.DeletedAt == null);
+        if (dayOfWeek.HasValue) query = query.Where(item => item.DayOfWeek == dayOfWeek.Value);
+        if (status.HasValue) query = query.Where(item => item.Status == status.Value);
+        var totalItems = await query.CountAsync(cancellationToken);
+        var items = await query.OrderByDescending(item => item.CreatedAt)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        return new PagedResultDto<TimeWorkingResponse>
+        {
+            Items = items.Select(TimeWorkingResponse.FromModel).ToList(),
+            TotalItems = totalItems,
+            PageIndex = page,
+            PageSize = pageSize
+        };
+    }
+
     public async Task<IReadOnlyList<TimeWorkingResponse>> GetTimeWorkingsAsync(
         CancellationToken cancellationToken)
     {

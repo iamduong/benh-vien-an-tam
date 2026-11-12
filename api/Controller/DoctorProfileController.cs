@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using api.Contract.DoctorProfile;
-using api.Service.Interfaces;
+using api.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,9 +11,9 @@ namespace api.Controller;
 [Authorize]
 public class DoctorProfileController : ControllerBase
 {
-    private readonly IDoctorProfileService _doctorProfileService;
+    private readonly DoctorProfileService _doctorProfileService;
 
-    public DoctorProfileController(IDoctorProfileService doctorProfileService)
+    public DoctorProfileController(DoctorProfileService doctorProfileService)
     {
         _doctorProfileService = doctorProfileService;
     }

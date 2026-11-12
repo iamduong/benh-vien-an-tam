@@ -1,5 +1,5 @@
 using api.Contract.AvailableMedicine;
-using api.Service.Interfaces;
+using api.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,9 +10,9 @@ namespace api.Controller;
 [Authorize]
 public class AvailableMedicineController : ControllerBase
 {
-    private readonly IAvailableMedicineService _availableMedicineService;
+    private readonly AvailableMedicineService _availableMedicineService;
 
-    public AvailableMedicineController(IAvailableMedicineService availableMedicineService)
+    public AvailableMedicineController(AvailableMedicineService availableMedicineService)
     {
         _availableMedicineService = availableMedicineService;
     }
