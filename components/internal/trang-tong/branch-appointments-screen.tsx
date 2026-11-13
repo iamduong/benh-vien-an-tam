@@ -43,6 +43,7 @@ const statusLabels: Record<AppointmentStatus, string> = {
   [AppointmentStatus.Approved]: "Đã duyệt",
   [AppointmentStatus.Unconfirmed]: "Không xác nhận",
   [AppointmentStatus.CheckedIn]: "Đang khám",
+  [AppointmentStatus.InProgress]: "Đang khám bệnh",
   [AppointmentStatus.Done]: "Hoàn thành",
   [AppointmentStatus.Cancelled]: "Đã hủy",
 };

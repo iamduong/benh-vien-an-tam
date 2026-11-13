@@ -45,12 +45,13 @@ import { mockRooms } from "@/data/mocks/rooms";
 import { formatDate } from "@/lib/format";
 import { AppointmentStatus, RoomStatus } from "@/types/models";
 import { HospitalReviewsScreen as HospitalReviewsManagementScreen } from "@/components/internal/trang-tong/hospital-reviews-screen";
+import { ReceptionCheckinScreen } from "@/components/internal/trang-tong/reception-checkin-screen";
 
 export function ReceptionScreens({ slug }: { slug: string }) {
   switch (slug) {
     case "tong-quan": return <StaffDashboard />;
     case "lich-hen": return <StaffAppointmentsScreen />;
-    case "tiep-nhan": return <ReceptionScreen />;
+    case "tiep-nhan": return <ReceptionCheckinScreen />;
     case "phong-kham": return <StaffRoomsScreen />;
     case "thanh-toan-cap-thuoc": return <PaymentDispensingScreen />;
     case "danh-gia": return <StaffReviewsScreen />;
@@ -109,36 +110,6 @@ function StaffAppointmentsScreen() {
           ["APT-10250", "Lê Minh Châu", "09:45", "Siêu âm tổng quát", "P.307", <StatusPill key="3" tone="green">Đã xác nhận</StatusPill>],
           ["APT-10251", "Phạm Thị Hồng", "10:00", "BS. Phạm Ngọc Anh", "P.205", <StatusPill key="4" tone="green">Đã xác nhận</StatusPill>],
         ]} />
-      </PortalSection>
-    </div>
-  );
-}
-
-function ReceptionScreen() {
-  return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Tiếp nhận tại quầy" title="Check-in người bệnh" description="Tìm lịch hợp lệ, xác nhận người đến khám và chuyển vào hàng chờ của phòng." />
-      <div className="grid gap-6 xl:grid-cols-[0.75fr_1.25fr]">
-        <PortalSection title="Tra cứu lịch hẹn" description="Nhập mã lịch, mã y tế hoặc số điện thoại.">
-          <form className="space-y-4 p-5">
-            <div className="space-y-2"><Label htmlFor="reception-search">Thông tin tra cứu</Label><Input id="reception-search" placeholder="Ví dụ: APT-10248" defaultValue="APT-10248" /></div>
-            <PortalAction variant="default">Tra cứu lịch</PortalAction>
-          </form>
-        </PortalSection>
-        <PortalSection title="Kết quả tra cứu" action={<StatusPill tone="green">Có thể check-in</StatusPill>}>
-          <DetailGrid>
-            <DetailItem label="Bệnh nhân" value="Nguyễn Thị Lan" />
-            <DetailItem label="Mã y tế" value="BN-10248" />
-            <DetailItem label="Thời gian" value="09:30 · 23/09/2026" />
-            <DetailItem label="Nội dung" value="Khám BS. Nguyễn Hoàng Minh" />
-            <DetailItem label="Phòng" value="P.203 · Khu B, tầng 2" />
-            <DetailItem label="Trạng thái" value={<StatusPill tone="blue">Đã xác nhận</StatusPill>} />
-          </DetailGrid>
-          <div className="flex flex-wrap justify-end gap-2 border-t p-5"><PortalAction>Đổi phòng</PortalAction><PortalAction variant="default"><UserCheck />Xác nhận check-in</PortalAction></div>
-        </PortalSection>
-      </div>
-      <PortalSection title="Hàng chờ sau check-in">
-        <PortalTable caption="Hàng chờ sau check-in" columns={["Số", "Bệnh nhân", "Giờ hẹn", "Khu vực", "Trạng thái"]} rows={queueRows} />
       </PortalSection>
     </div>
   );

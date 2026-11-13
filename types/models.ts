@@ -318,6 +318,7 @@ export enum AppointmentStatus {
   Approved = "Approved",
   Unconfirmed = "Unconfirmed",
   CheckedIn = "CheckedIn",
+  InProgress = "InProgress",
   Done = "Done",
   Cancelled = "Cancelled",
 }
@@ -406,6 +407,7 @@ export type TimeWorking = {
 };
 
 export type DoctorWorking = { uuid: Guid; doctorUuid: Guid; workingUuid: Guid };
+export type DoctorSchedule = { uuid: Guid; doctorUuid: Guid; workingUuid: Guid; roomUuid: Guid | null };
 export type HospitalWorking = { uuid: Guid; hospitalUuid: Guid; workingUuid: Guid };
 export type ServiceWorking = { uuid: Guid; serviceUuid: Guid; workingUuid: Guid };
 

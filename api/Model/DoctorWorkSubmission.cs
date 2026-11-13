@@ -8,7 +8,7 @@ public sealed class DoctorWorkSubmission
     [Key]
     public Guid Uuid { get; set; }
     public Guid DoctorUuid { get; set; }
-    public Guid? DoctorWorkingHourUuid { get; set; }
+    public Guid? DoctorScheduleUuid { get; set; }
     public Guid? PreviousWorkingHourUuid { get; set; }
     public Guid? RequestedWorkingHourUuid { get; set; }
     public DoctorWorkSubmissionType Type { get; set; } = DoctorWorkSubmissionType.Change;

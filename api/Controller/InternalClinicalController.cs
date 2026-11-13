@@ -4,6 +4,8 @@ using System.Security.Claims;
 using api.Contract;
 using api.Contract.Clinical;
 using api.Service;
+using api.Lib;
+using Microsoft.EntityFrameworkCore;
 
 namespace api.Controller;
 
@@ -13,12 +15,17 @@ namespace api.Controller;
 public class InternalClinicalController(
     DoctorAppointmentService appointmentService,
     ClinicalExaminationService examinationService,
-    PrescriptionManagementService prescriptionService) : ControllerBase
+    PrescriptionManagementService prescriptionService,
+    DBContext dbContext) : ControllerBase
 {
-    private Guid GetCurrentDoctorUuid()
+    private async Task<Guid?> GetCurrentDoctorUuidAsync(CancellationToken cancellationToken)
     {
-        var uuidClaim = User.FindFirst("uuid")?.Value;
-        return Guid.TryParse(uuidClaim, out var uuid) ? uuid : Guid.Empty;
+        var accountUuid = User.GetAccountUuid();
+        if (!accountUuid.HasValue) return null;
+        return await dbContext.DoctorProfiles.AsNoTracking()
+            .Where(item => item.AccountUuid == accountUuid && item.DeletedAt == null)
+            .Select(item => (Guid?)item.Uuid)
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     [HttpGet("appointments")]
@@ -26,9 +33,8 @@ public class InternalClinicalController(
     [FromQuery] string? date,
     CancellationToken cancellationToken)
     {
-        var uuidClaim = User.FindFirst("uuid")?.Value;
-
-        if (!Guid.TryParse(uuidClaim, out var doctorUuid))
+        var doctorUuid = await GetCurrentDoctorUuidAsync(cancellationToken);
+        if (!doctorUuid.HasValue)
         {
             return Unauthorized(new
             {
@@ -37,7 +43,7 @@ public class InternalClinicalController(
         }
 
         var result = await appointmentService.GetAppointmentsAsync(
-            doctorUuid,
+            doctorUuid.Value,
             date,
             cancellationToken
         );
@@ -51,8 +57,9 @@ public class InternalClinicalController(
     [HttpGet("appointments/{uuid}")]
     public async Task<IActionResult> GetAppointmentDetail(Guid uuid, CancellationToken cancellationToken)
     {
-        var doctorUuid = GetCurrentDoctorUuid();
-        var result = await appointmentService.GetAppointmentDetailAsync(doctorUuid, uuid, cancellationToken);
+        var doctorUuid = await GetCurrentDoctorUuidAsync(cancellationToken);
+        if (!doctorUuid.HasValue) return Unauthorized(new { message = "Không tìm thấy hồ sơ bác sĩ." });
+        var result = await appointmentService.GetAppointmentDetailAsync(doctorUuid.Value, uuid, cancellationToken);
 
         if (result is null)
             return ApiResponse<object>.NotFound("Không tìm thấy ca khám.");
@@ -63,9 +70,10 @@ public class InternalClinicalController(
     [HttpPut("appointments/{uuid}/status")]
     public async Task<IActionResult> UpdateAppointmentStatus(Guid uuid, [FromBody] UpdateStatusRequest request, CancellationToken cancellationToken)
     {
-        var doctorUuid = GetCurrentDoctorUuid();
+        var doctorUuid = await GetCurrentDoctorUuidAsync(cancellationToken);
+        if (!doctorUuid.HasValue) return Unauthorized(new { message = "Không tìm thấy hồ sơ bác sĩ." });
         // Nhận chuỗi lỗi từ Service
-        var errorMessage = await appointmentService.UpdateAppointmentStatusAsync(doctorUuid, uuid, request.Status, cancellationToken);
+        var errorMessage = await appointmentService.UpdateAppointmentStatusAsync(doctorUuid.Value, uuid, request.Status, cancellationToken);
 
         if (errorMessage != null)
             return ApiResponse<object>.BadRequest(null, errorMessage);
@@ -76,8 +84,9 @@ public class InternalClinicalController(
     [HttpPost("appointments/{uuid}/medical-services")]
     public async Task<IActionResult> AddMedicalService(Guid uuid, [FromBody] AddMedicalServiceRequest request, CancellationToken cancellationToken)
     {
-        var doctorUuid = GetCurrentDoctorUuid();
-        var result = await examinationService.AddMedicalServiceAsync(doctorUuid, uuid, request, cancellationToken);
+        var doctorUuid = await GetCurrentDoctorUuidAsync(cancellationToken);
+        if (!doctorUuid.HasValue) return Unauthorized(new { message = "Không tìm thấy hồ sơ bác sĩ." });
+        var result = await examinationService.AddMedicalServiceAsync(doctorUuid.Value, uuid, request, cancellationToken);
 
         if (result is null)
             return ApiResponse<object>.BadRequest(null, "Không thể thêm dịch vụ.");
@@ -88,8 +97,9 @@ public class InternalClinicalController(
     [HttpPut("appointments/{appointmentUuid}/medical-services/{serviceUuid}")]
     public async Task<IActionResult> UpdateMedicalService(Guid appointmentUuid, Guid serviceUuid, [FromBody] UpdateMedicalServiceRequest request, CancellationToken cancellationToken)
     {
-        var doctorUuid = GetCurrentDoctorUuid();
-        var result = await examinationService.UpdateMedicalServiceAsync(doctorUuid, appointmentUuid, serviceUuid, request, cancellationToken);
+        var doctorUuid = await GetCurrentDoctorUuidAsync(cancellationToken);
+        if (!doctorUuid.HasValue) return Unauthorized(new { message = "Không tìm thấy hồ sơ bác sĩ." });
+        var result = await examinationService.UpdateMedicalServiceAsync(doctorUuid.Value, appointmentUuid, serviceUuid, request, cancellationToken);
 
         if (result is null)
             return ApiResponse<object>.BadRequest(null, "Không thể cập nhật dịch vụ.");
@@ -100,9 +110,10 @@ public class InternalClinicalController(
     [HttpPost("appointments/{uuid}/diagnosis")]
     public async Task<IActionResult> SaveDiagnosis(Guid uuid, [FromBody] SaveDiagnosisRequest request, CancellationToken cancellationToken)
     {
-        var doctorUuid = GetCurrentDoctorUuid();
+        var doctorUuid = await GetCurrentDoctorUuidAsync(cancellationToken);
+        if (!doctorUuid.HasValue) return Unauthorized(new { message = "Không tìm thấy hồ sơ bác sĩ." });
         // Nhận kết quả bool từ Service
-        var success = await examinationService.SaveDiagnosisAsync(doctorUuid, uuid, request, cancellationToken);
+        var success = await examinationService.SaveDiagnosisAsync(doctorUuid.Value, uuid, request, cancellationToken);
 
         if (!success)
             return ApiResponse<object>.BadRequest(null, "Không tìm thấy ca khám hoặc thông tin chẩn đoán bị trống.");
@@ -131,9 +142,10 @@ public class InternalClinicalController(
     [HttpPost("appointments/{uuid}/prescription")]
     public async Task<IActionResult> SavePrescription(Guid uuid, [FromBody] SavePrescriptionRequest request, CancellationToken cancellationToken)
     {
-        var doctorUuid = GetCurrentDoctorUuid();
+        var doctorUuid = await GetCurrentDoctorUuidAsync(cancellationToken);
+        if (!doctorUuid.HasValue) return Unauthorized(new { message = "Không tìm thấy hồ sơ bác sĩ." });
         // Giải nén tuple từ Service trả về
-        var (data, errorMessage, statusCode) = await prescriptionService.SavePrescriptionAsync(doctorUuid, uuid, request, cancellationToken);
+        var (data, errorMessage, statusCode) = await prescriptionService.SavePrescriptionAsync(doctorUuid.Value, uuid, request, cancellationToken);
 
         if (errorMessage != null)
         {

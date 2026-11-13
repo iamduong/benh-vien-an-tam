@@ -32,19 +32,22 @@ import {
   type HospitalWorkingData,
   type HospitalWorkingSlot,
 } from "@/lib/services/hospital/HospitalWorkingService";
+import { hospitalService } from "@/lib/services/hospital/HospitalService";
+import { roomService } from "@/lib/services/hospital/RoomService";
 import {
   adminTimeWorkingService,
   type AdminTimeWorkingItem,
 } from "@/lib/services/time-working/AdminTimeWorkingService";
 import {
   doctorWorkSubmissionService,
+  type DoctorSchedule,
   type DoctorWorkingOverview,
   type DoctorWorkSubmission,
   type DoctorWorkSubmissionStatus,
   type DoctorWorkSubmissionType,
   type WorkingHourOption,
 } from "@/lib/services/doctor/DoctorWorkSubmissionService";
-import { BaseStatus, type TimeWorking } from "@/types/models";
+import { BaseStatus, type Room, type TimeWorking } from "@/types/models";
 
 const dayNames = [
   "Chủ Nhật",
@@ -291,7 +294,7 @@ function compareTimeWorking(left: TimeWorking, right: TimeWorking) {
   );
 }
 
-export function DoctorWorkingScreen() {
+export function DoctorWorkingScreen({ view = "schedule" }: { view?: "schedule" | "requests" }) {
   const [data, setData] = useState<DoctorWorkingOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -299,9 +302,9 @@ export function DoctorWorkingScreen() {
   const [success, setSuccess] = useState<string | null>(null);
   const [editingAssignmentUuid, setEditingAssignmentUuid] = useState("");
   const [requestedWorkingHourUuid, setRequestedWorkingHourUuid] = useState("");
+  const [requestedWorkingHourUuids, setRequestedWorkingHourUuids] = useState<string[]>([]);
   const [submissionType, setSubmissionType] =
     useState<DoctorWorkSubmissionType>("Change");
-  const [selectedDayOfWeek, setSelectedDayOfWeek] = useState(1);
   const [reason, setReason] = useState("");
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
@@ -330,22 +333,19 @@ export function DoctorWorkingScreen() {
 
   const activeAssignmentUuid = editingAssignmentUuid;
   const selectedAssignment = data?.schedule.find(
-    (item) => item.doctorWorkingHourUuid === activeAssignmentUuid,
+    (item) => item.doctorScheduleUuid === activeAssignmentUuid,
   );
   const pendingAssignmentUuids = new Set(
     data?.submissions
       .filter(
         (
           item,
-        ): item is DoctorWorkSubmission & { doctorWorkingHourUuid: string } =>
-          item.status === "Pending" && Boolean(item.doctorWorkingHourUuid),
+        ): item is DoctorWorkSubmission & { doctorScheduleUuid: string } =>
+          item.status === "Pending" && Boolean(item.doctorScheduleUuid),
       )
-      .map((item) => item.doctorWorkingHourUuid) ?? [],
+      .map((item) => item.doctorScheduleUuid) ?? [],
   );
-  const targetDayOfWeek =
-    submissionType === "Add"
-      ? selectedDayOfWeek
-      : selectedAssignment?.dayOfWeek;
+  const targetDayOfWeek = selectedAssignment?.dayOfWeek;
   const requestedOptions = (data?.availableWorkingHours ?? []).filter(
     (item) => {
       if (
@@ -362,32 +362,50 @@ export function DoctorWorkingScreen() {
       );
     },
   );
+  const pendingAddWorkingUuids = new Set(
+    (data?.submissions ?? [])
+      .filter((item) => item.type === "Add" && item.status === "Pending" && item.requestedWorkingHour)
+      .map((item) => item.requestedWorkingHour!.uuid),
+  );
+  const addableOptions = (data?.availableWorkingHours ?? []).filter(
+    (candidate) =>
+      !pendingAddWorkingUuids.has(candidate.uuid) &&
+      !(data?.schedule ?? []).some(
+        (assigned) =>
+          assigned.dayOfWeek === candidate.dayOfWeek &&
+          assigned.startTime.slice(0, 5) < candidate.endTime.slice(0, 5) &&
+          candidate.startTime.slice(0, 5) < assigned.endTime.slice(0, 5),
+      ),
+  );
+  const selectedAddWorkings = addableOptions.filter((item) =>
+    requestedWorkingHourUuids.includes(item.uuid),
+  );
   const activeRequestedWorkingHourUuid =
     requestedWorkingHourUuid || requestedOptions[0]?.uuid || "";
   const selectedRequestedWorkingHour = requestedOptions.find(
     (item) => item.uuid === activeRequestedWorkingHourUuid,
   );
   const changedPreviewSchedule = (data?.schedule ?? []).flatMap((item) => {
-    if (item.doctorWorkingHourUuid !== activeAssignmentUuid) return [item];
+    if (item.doctorScheduleUuid !== activeAssignmentUuid) return [item];
     if (submissionType === "Delete") return [];
     return selectedRequestedWorkingHour
       ? [
           {
             ...item,
             ...selectedRequestedWorkingHour,
-            doctorWorkingHourUuid: `preview-${item.doctorWorkingHourUuid}`,
+            doctorScheduleUuid: `preview-${item.doctorScheduleUuid}`,
           },
         ]
       : [item];
   });
   const previewSchedule =
-    submissionType === "Add" && selectedRequestedWorkingHour
+    submissionType === "Add" && selectedAddWorkings.length
       ? [
           ...(data?.schedule ?? []),
-          {
-            ...selectedRequestedWorkingHour,
-            doctorWorkingHourUuid: "preview-add",
-          },
+          ...selectedAddWorkings.map((working) => ({
+            ...working,
+            doctorScheduleUuid: `preview-add-${working.uuid}`,
+          })),
         ]
       : changedPreviewSchedule;
 
@@ -396,7 +414,7 @@ export function DoctorWorkingScreen() {
     type: DoctorWorkSubmissionType,
   ) {
     const assignment = data?.schedule.find(
-      (item) => item.doctorWorkingHourUuid === assignmentUuid,
+      (item) => item.doctorScheduleUuid === assignmentUuid,
     );
     setEditingAssignmentUuid(assignmentUuid);
     setRequestedWorkingHourUuid(
@@ -413,19 +431,10 @@ export function DoctorWorkingScreen() {
   }
 
   function startAddRequest() {
-    const firstOption = (data?.availableWorkingHours ?? []).find(
-      (candidate) =>
-        !(data?.schedule ?? []).some(
-          (assigned) =>
-            assigned.dayOfWeek === candidate.dayOfWeek &&
-            assigned.startTime.slice(0, 5) < candidate.endTime.slice(0, 5) &&
-            candidate.startTime.slice(0, 5) < assigned.endTime.slice(0, 5),
-        ),
-    );
     setEditingAssignmentUuid("");
     setSubmissionType("Add");
-    setSelectedDayOfWeek(firstOption?.dayOfWeek ?? 1);
-    setRequestedWorkingHourUuid(firstOption?.uuid ?? "");
+    setRequestedWorkingHourUuid("");
+    setRequestedWorkingHourUuids([]);
     setReason("");
     setError(null);
     setSuccess(null);
@@ -434,6 +443,7 @@ export function DoctorWorkingScreen() {
   function cancelRequest() {
     setEditingAssignmentUuid("");
     setRequestedWorkingHourUuid("");
+    setRequestedWorkingHourUuids([]);
     setReason("");
     setSubmissionType("Change");
   }
@@ -441,7 +451,8 @@ export function DoctorWorkingScreen() {
   async function submitRequest() {
     if (
       (submissionType !== "Add" && !activeAssignmentUuid) ||
-      (submissionType !== "Delete" && !activeRequestedWorkingHourUuid) ||
+      (submissionType === "Change" && !activeRequestedWorkingHourUuid) ||
+      (submissionType === "Add" && requestedWorkingHourUuids.length === 0) ||
       submitting
     )
       return;
@@ -451,10 +462,12 @@ export function DoctorWorkingScreen() {
     setSuccess(null);
     try {
       await doctorWorkSubmissionService.create({
-        doctorWorkingHourUuid:
+        doctorScheduleUuid:
           submissionType === "Add" ? null : activeAssignmentUuid,
         requestedWorkingHourUuid:
-          submissionType === "Delete" ? null : activeRequestedWorkingHourUuid,
+          submissionType === "Change" ? activeRequestedWorkingHourUuid : null,
+        requestedWorkingHourUuids:
+          submissionType === "Add" ? requestedWorkingHourUuids : [],
         type: submissionType,
         reason: reason.trim(),
       });
@@ -476,8 +489,8 @@ export function DoctorWorkingScreen() {
     <div className="space-y-6">
       <PortalPageHeader
         eyebrow="Lịch cá nhân"
-        title="Giờ làm việc của bác sĩ"
-        description="Xem lịch theo tuần và gửi đơn đổi khung giờ. Lịch mới chỉ có hiệu lực sau khi quản lý bệnh viện duyệt."
+        title={view === "schedule" ? "Giờ làm việc bác sĩ" : "Thay đổi giờ làm việc"}
+        description={view === "schedule" ? "Xem thời khóa biểu, ca trực và phòng làm việc đã được bệnh viện phân công." : "Tạo và theo dõi đơn đề nghị thêm, đổi hoặc xóa ca làm việc. Lịch chỉ thay đổi sau khi quản lý duyệt."}
         actions={
           <StatusPill tone="blue">
             {data?.schedule.length ?? 0} khung giờ
@@ -501,7 +514,7 @@ export function DoctorWorkingScreen() {
         </p>
       ) : null}
 
-      <PortalSection
+      {view === "schedule" ? <PortalSection
         title="Thời khóa biểu"
         description="Lịch làm việc theo tuần trong khung giờ cố định từ 06:00 đến 20:00."
       >
@@ -512,9 +525,9 @@ export function DoctorWorkingScreen() {
         ) : (
           <WeeklySchedule schedule={data?.schedule ?? []} />
         )}
-      </PortalSection>
+      </PortalSection> : null}
 
-      <PortalSection
+      {view === "requests" ? <PortalSection
         title="Giờ làm việc hiện tại của bạn"
         description="Chọn thao tác cho từng khung giờ. Thời khóa biểu phía trên chỉ dùng để xem."
         action={
@@ -528,13 +541,13 @@ export function DoctorWorkingScreen() {
           <div className="divide-y">
             {(data?.schedule ?? []).map((working, index) => {
               const pending = pendingAssignmentUuids.has(
-                working.doctorWorkingHourUuid,
+                working.doctorScheduleUuid,
               );
               const selected =
-                working.doctorWorkingHourUuid === activeAssignmentUuid;
+                working.doctorScheduleUuid === activeAssignmentUuid;
               return (
                 <div
-                  key={working.doctorWorkingHourUuid}
+                  key={working.doctorScheduleUuid}
                   className={`flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between ${selected ? "bg-primary/5" : ""}`}
                 >
                   <div>
@@ -543,7 +556,7 @@ export function DoctorWorkingScreen() {
                       {formatWorking(working)}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Khung giờ đang áp dụng
+                      {working.roomName ?? "Chưa được phân phòng"}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -557,7 +570,7 @@ export function DoctorWorkingScreen() {
                           variant="outline"
                           onClick={() =>
                             startRequest(
-                              working.doctorWorkingHourUuid,
+                              working.doctorScheduleUuid,
                               "Change",
                             )
                           }
@@ -571,7 +584,7 @@ export function DoctorWorkingScreen() {
                           variant="destructive"
                           onClick={() =>
                             startRequest(
-                              working.doctorWorkingHourUuid,
+                              working.doctorScheduleUuid,
                               "Delete",
                             )
                           }
@@ -591,9 +604,9 @@ export function DoctorWorkingScreen() {
             Bạn chưa được phân công giờ làm việc.
           </p>
         )}
-      </PortalSection>
+      </PortalSection> : null}
 
-      {selectedAssignment || submissionType === "Add" ? (
+      {view === "requests" && (selectedAssignment || submissionType === "Add") ? (
         <>
           <PortalSection
             title="Thông tin giờ làm việc mới"
@@ -601,37 +614,43 @@ export function DoctorWorkingScreen() {
               submissionType === "Delete"
                 ? "Bạn đang tạo đơn xin xóa khung giờ này."
                 : submissionType === "Add"
-                  ? "Chọn thứ và khung giờ muốn bổ sung."
+                  ? "Chỉ hiển thị ngày và khung giờ đang được bệnh viện áp dụng."
                   : `Chỉ hiển thị khung giờ thuộc ${dayNames[selectedAssignment!.dayOfWeek]}.`
             }
           >
             <div className="grid gap-5 p-5 sm:grid-cols-2">
               {submissionType === "Add" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="doctor-new-working-day">Thứ</Label>
-                  <select
-                    id="doctor-new-working-day"
-                    value={selectedDayOfWeek}
-                    onChange={(event) => {
-                      setSelectedDayOfWeek(Number(event.target.value));
-                      setRequestedWorkingHourUuid("");
-                    }}
-                    className="h-10 w-full rounded-md border px-3 text-sm"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 0].map((day) => (
-                      <option key={day} value={day}>
-                        {dayNames[day]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <fieldset className="space-y-3 sm:col-span-2">
+                  <legend className="text-sm font-medium">Chọn các khung giờ muốn bổ sung</legend>
+                  {addableOptions.length ? (
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {addableOptions.map((working) => {
+                        const checked = requestedWorkingHourUuids.includes(working.uuid);
+                        return (
+                          <label key={working.uuid} className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm ${checked ? "border-primary bg-primary/5" : "bg-white"}`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => setRequestedWorkingHourUuids((current) =>
+                                checked ? current.filter((uuid) => uuid !== working.uuid) : [...current, working.uuid],
+                              )}
+                              className="size-4 accent-primary"
+                            />
+                            <span>{formatWorking(working)}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : <p className="text-sm text-muted-foreground">Không còn khung giờ bệnh viện phù hợp để đề nghị thêm.</p>}
+                  <p className="text-xs text-muted-foreground">Đã chọn {requestedWorkingHourUuids.length} khung giờ. Tất cả dùng chung lý do bên dưới.</p>
+                </fieldset>
               ) : (
                 <div className="space-y-2">
                   <Label>Giờ làm việc hiện tại</Label>
                   <Input value={formatWorking(selectedAssignment!)} disabled />
                 </div>
               )}
-              {submissionType !== "Delete" ? (
+              {submissionType === "Change" ? (
                 <div className="space-y-2">
                   <Label htmlFor="doctor-requested-working">
                     Giờ làm việc mới
@@ -657,11 +676,11 @@ export function DoctorWorkingScreen() {
                     </p>
                   ) : null}
                 </div>
-              ) : (
+              ) : submissionType === "Delete" ? (
                 <div className="border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700">
                   Khung giờ sẽ được gỡ khỏi lịch nếu đơn được duyệt.
                 </div>
-              )}
+              ) : null}
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="doctor-working-reason">Lý do</Label>
                 <Textarea
@@ -706,8 +725,8 @@ export function DoctorWorkingScreen() {
                 }
                 disabled={
                   submitting ||
-                  (submissionType !== "Delete" &&
-                    requestedOptions.length === 0) ||
+                  (submissionType === "Change" && requestedOptions.length === 0) ||
+                  (submissionType === "Add" && requestedWorkingHourUuids.length === 0) ||
                   reason.trim().length < 5
                 }
                 onClick={() => void submitRequest()}
@@ -720,7 +739,7 @@ export function DoctorWorkingScreen() {
         </>
       ) : null}
 
-      <PortalSection
+      {view === "requests" ? <PortalSection
         title="Lịch sử đơn thay đổi"
         description={`${data?.submissions.length ?? 0} đơn đã gửi`}
       >
@@ -751,7 +770,7 @@ export function DoctorWorkingScreen() {
             submission.reviewNote || "—",
           ])}
         />
-      </PortalSection>
+      </PortalSection> : null}
     </div>
   );
 }
@@ -760,7 +779,7 @@ function WeeklySchedule({
   schedule,
   previewAssignmentUuid,
 }: {
-  schedule: Array<WorkingHourOption & { doctorWorkingHourUuid: string }>;
+  schedule: Array<WorkingHourOption & Pick<DoctorSchedule, "doctorScheduleUuid"> & Partial<Pick<DoctorSchedule, "roomName">>>;
   previewAssignmentUuid?: string;
 }) {
   const startHour = 6;
@@ -829,10 +848,11 @@ function WeeklySchedule({
                     ((endMinutes - startMinutes) / 60) * hourHeight;
                   const height = Math.max(rawHeight - 8, 48);
                   const isPreview =
-                    item.doctorWorkingHourUuid === previewAssignmentUuid;
+                    item.doctorScheduleUuid === previewAssignmentUuid ||
+                    (previewAssignmentUuid === "preview-add" && item.doctorScheduleUuid.startsWith("preview-add-"));
                   return (
                     <div
-                      key={item.doctorWorkingHourUuid}
+                      key={item.doctorScheduleUuid}
                       className={`absolute inset-x-2 z-10 flex overflow-hidden rounded-md border p-2.5 shadow-sm ${isPreview ? "border-emerald-400 bg-emerald-50" : "border-primary/35 bg-[#e8f6fb]"}`}
                       style={{ top: Math.max(top + 4, 4), height }}
                     >
@@ -844,7 +864,7 @@ function WeeklySchedule({
                           {item.endTime.slice(0, 5)}
                         </p>
                         <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
-                          {isPreview ? "Giờ làm việc mới" : "Giờ làm việc"}
+                          {isPreview ? "Giờ làm việc mới" : item.roomName ?? "Chưa phân phòng"}
                         </p>
                       </div>
                     </div>
@@ -863,7 +883,7 @@ function toMinutes(value: string) {
   return hour * 60 + minute;
 }
 
-export function HospitalWorkingScreen() {
+export function HospitalWorkingScreen({ view = "booking-hours" }: { view?: "booking-hours" | "submissions" }) {
   const [data, setData] = useState<HospitalWorkingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -878,6 +898,8 @@ export function HospitalWorkingScreen() {
   const [submissions, setSubmissions] = useState<DoctorWorkSubmission[]>([]);
   const [reviewingUuid, setReviewingUuid] = useState("");
   const [reviewNote, setReviewNote] = useState("");
+  const [reviewRoomUuid, setReviewRoomUuid] = useState("");
+  const [rooms, setRooms] = useState<Room[]>([]);
 
   const refresh = useCallback(
     async (signal?: AbortSignal, showLoading = false) => {
@@ -926,11 +948,15 @@ export function HospitalWorkingScreen() {
     Promise.all([
       hospitalWorkingService.getBranchWorkings(controller.signal),
       doctorWorkSubmissionService.getHospitalSubmissions(controller.signal),
+      hospitalService.getBranchProfile(controller.signal).then((hospitalResponse) =>
+        roomService.getAll(hospitalResponse.data.uuid, { page: 1, pageSize: 100 }, controller.signal),
+      ),
     ])
-      .then(([response, submissionResponse]) => {
+      .then(([response, submissionResponse, roomResponse]) => {
         if (controller.signal.aborted) return;
         setData(response.data);
         setSubmissions(submissionResponse.data);
+        setRooms(roomResponse.data.Items);
         setLoadError(null);
       })
       .catch((requestError: unknown) => {
@@ -1045,10 +1071,12 @@ export function HospitalWorkingScreen() {
         submission.uuid,
         status,
         reviewNote.trim(),
+        status === "Approved" ? reviewRoomUuid : undefined,
       );
       await Promise.all([refresh(), refreshSubmissions()]);
       setReviewingUuid("");
       setReviewNote("");
+      setReviewRoomUuid("");
       setSuccess(response.message);
     } catch (requestError) {
       setActionError(
@@ -1147,9 +1175,9 @@ export function HospitalWorkingScreen() {
   return (
     <div className="space-y-6">
       <PortalPageHeader
-        eyebrow="Lịch hoạt động cơ sở"
-        title="Giờ làm việc bệnh viện"
-        description="Chọn các khung giờ có sẵn để cấu hình lịch hoạt động của chi nhánh. Thay đổi được lưu trực tiếp và tải lại từ hệ thống."
+        eyebrow={view === "booking-hours" ? "Cấu hình nhận đặt lịch" : "Điều phối nhân sự"}
+        title={view === "booking-hours" ? "Khung giờ đặt lịch bệnh viện" : "Duyệt đơn thay đổi thời khóa biểu"}
+        description={view === "booking-hours" ? "Các khung giờ khách hàng được phép chọn khi đặt lịch tại chi nhánh; không phải thời khóa biểu làm việc của bác sĩ." : "Xử lý đề nghị thay đổi ca làm trong thời khóa biểu thực tế của bác sĩ."}
         actions={
           <StatusPill tone="blue">
             {assignedWorkings.length} khung giờ
@@ -1188,27 +1216,27 @@ export function HospitalWorkingScreen() {
           {success}
         </p>
       ) : null}
-      <PortalSection
-        title="Lịch đang áp dụng"
-        description="Các khung giờ này được lưu theo chi nhánh của tài khoản đang đăng nhập."
+      {view === "booking-hours" ? <PortalSection
+        title="Khung giờ nhận đặt lịch đang áp dụng"
+        description="Chỉ các ngày và khung giờ trong danh sách này mới xuất hiện ở màn hình đặt lịch bệnh viện."
       >
         {loading ? (
           <p className="p-5 text-sm text-muted-foreground">
-            Đang tải giờ làm việc...
+            Đang tải khung giờ nhận lịch...
           </p>
         ) : assignedWorkings.length ? (
           <PortalTable
-            caption="Giờ làm việc của chi nhánh"
+            caption="Khung giờ khách được đặt lịch tại chi nhánh"
             columns={["Ngày", "Khung giờ", "Trạng thái", "Thao tác"]}
             rows={rows}
           />
         ) : (
           <p className="p-5 text-sm text-muted-foreground">
-            Chi nhánh chưa cấu hình khung giờ làm việc.
+            Chi nhánh chưa cấu hình khung giờ nhận đặt lịch.
           </p>
         )}
-      </PortalSection>
-      <PortalSection
+      </PortalSection> : null}
+      {view === "submissions" ? <PortalSection
         title="Duyệt đơn thay đổi giờ làm"
         description={`${submissions.filter((item) => item.status === "Pending").length} đơn của bác sĩ đang chờ xử lý`}
       >
@@ -1258,6 +1286,7 @@ export function HospitalWorkingScreen() {
                   onClick={() => {
                     setReviewingUuid(submission.uuid);
                     setReviewNote("");
+                    setReviewRoomUuid(rooms[0]?.uuid ?? "");
                   }}
                 >
                   <FilePenLine />
@@ -1280,6 +1309,20 @@ export function HospitalWorkingScreen() {
         )}
         {submissions.find((item) => item.uuid === reviewingUuid) ? (
           <div className="space-y-4 border-t bg-[#fbfdfe] p-5">
+            {submissions.find((item) => item.uuid === reviewingUuid)?.type !== "Delete" ? (
+              <div className="space-y-2">
+                <Label htmlFor="working-review-room">Phòng làm việc</Label>
+                <select
+                  id="working-review-room"
+                  value={reviewRoomUuid}
+                  onChange={(event) => setReviewRoomUuid(event.target.value)}
+                  className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                >
+                  <option value="">Chọn phòng cho ca làm việc</option>
+                  {rooms.map((room) => <option key={room.uuid} value={room.uuid}>{room.name}</option>)}
+                </select>
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="working-review-note">Phản hồi của quản lý</Label>
               <Textarea
@@ -1294,7 +1337,7 @@ export function HospitalWorkingScreen() {
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                disabled={submitting}
+                disabled={submitting || (submissions.find((item) => item.uuid === reviewingUuid)?.type !== "Delete" && !reviewRoomUuid)}
                 onClick={() => {
                   const submission = submissions.find(
                     (item) => item.uuid === reviewingUuid,
@@ -1326,6 +1369,7 @@ export function HospitalWorkingScreen() {
                 onClick={() => {
                   setReviewingUuid("");
                   setReviewNote("");
+                  setReviewRoomUuid("");
                 }}
               >
                 Hủy
@@ -1333,9 +1377,9 @@ export function HospitalWorkingScreen() {
             </div>
           </div>
         ) : null}
-      </PortalSection>
-      <PortalSection
-        title="Thêm khung giờ"
+      </PortalSection> : null}
+      {view === "booking-hours" ? <PortalSection
+        title="Thêm khung giờ nhận đặt lịch"
         description="Danh sách lựa chọn được lấy từ danh mục khung giờ đang hoạt động."
       >
         {loading ? (
@@ -1348,7 +1392,7 @@ export function HospitalWorkingScreen() {
             className="flex flex-col gap-3 p-5 sm:flex-row sm:items-end"
           >
             <div className="min-w-0 flex-1 space-y-2">
-              <Label htmlFor="branch-working-slot">Khung giờ làm việc</Label>
+              <Label htmlFor="branch-working-slot">Khung giờ khách được đặt lịch</Label>
               <select
                 id="branch-working-slot"
                 value={selectedWorkingUuid || addableWorkings[0]?.uuid || ""}
@@ -1373,11 +1417,11 @@ export function HospitalWorkingScreen() {
               disabled={submitting || addableWorkings.length === 0}
             >
               <Plus />
-              {submitting ? "Đang lưu..." : "Thêm khung giờ"}
+              {submitting ? "Đang lưu..." : "Thêm giờ nhận lịch"}
             </Button>
           </form>
         )}
-      </PortalSection>
+      </PortalSection> : null}
     </div>
   );
 }

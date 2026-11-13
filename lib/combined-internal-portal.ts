@@ -98,7 +98,8 @@ export const combinedPortalSections: CombinedPortalSection[] = [
       item("don-thuoc-bac-si", "don-thuoc", "Đơn thuốc", "Tạo và quản lý đơn thuốc chưa thanh toán.", "prescription"),
       item("thuoc-kha-dung", "thuoc-kha-dung", "Thuốc khả dụng", "Tra cứu khả dụng của thuốc tại chi nhánh để hỗ trợ kê đơn.", "medicine"),
       item("ho-so-nghe-nghiep", "ho-so-nghe-nghiep", "Hồ sơ nghề nghiệp", "Cập nhật phần thông tin nghề nghiệp được cho phép.", "profile"),
-      item("gio-lam-viec-bac-si", "gio-lam-viec-bac-si", "Giờ làm việc", "Xem lịch làm việc và tạo đơn đề nghị thay đổi.", "schedule"),
+      item("gio-lam-viec-bac-si", "gio-lam-viec-bac-si", "Giờ làm việc bác sĩ", "Xem thời khóa biểu, ca trực và phòng làm việc được phân công.", "schedule"),
+      item("thay-doi-gio-lam-viec", "thay-doi-gio-lam-viec", "Thay đổi giờ làm việc", "Tạo và theo dõi đơn đề nghị thay đổi ca làm việc.", "audit"),
     ],
   },
   {

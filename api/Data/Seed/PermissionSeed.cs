@@ -40,7 +40,8 @@ public static class PermissionSeed
         Create(Guid.Parse("b10b0ded-d0f9-4682-baae-5df3c36933b5"), "prescription", "don-thuoc-bac-si", "Đơn thuốc", "Khám chữa bệnh"),
         Create(Guid.Parse("2e1486a8-fa76-47a5-a36a-02df91b7c813"), "medicine", "thuoc-kha-dung", "Thuốc khả dụng", "Khám chữa bệnh"),
         Create(Guid.Parse("cb86cb65-fda2-45a7-8633-acbd8af9e3b8"), "profile", "ho-so-nghe-nghiep", "Hồ sơ nghề nghiệp", "Khám chữa bệnh"),
-        Create(Guid.Parse("9e2633dc-adb9-4b2c-b01e-e1c3228cf165"), "schedule", "gio-lam-viec-bac-si", "Giờ làm việc", "Khám chữa bệnh"),
+        Create(Guid.Parse("9e2633dc-adb9-4b2c-b01e-e1c3228cf165"), "schedule", "gio-lam-viec-bac-si", "Giờ làm việc bác sĩ", "Khám chữa bệnh"),
+        Create(Guid.Parse("2b534faa-295c-4639-8ae4-5e9aec6c1f8a"), "audit", "thay-doi-gio-lam-viec", "Thay đổi giờ làm việc", "Khám chữa bệnh"),
 
         // Tiếp nhận và điều phối - Cần Hospitall Uuid
         Create(Guid.Parse("faf0d27e-c85c-47e2-9aae-4e833372fdaf"), "dashboard", "tong-quan-tiep-nhan", "Tổng quan lễ tân", "Tiếp nhận và điều phối"),

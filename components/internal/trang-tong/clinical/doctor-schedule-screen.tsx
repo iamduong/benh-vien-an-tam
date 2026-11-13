@@ -32,6 +32,7 @@ const statusLabels: Record<string, string> = {
     Pending: "Chờ xác nhận",
     Unconfirmed: "Không xác nhận",
     CheckedIn: "Đang khám",
+    InProgress: "Đang khám bệnh",
     Done: "Đã hoàn thành",
     Cancelled: "Đã hủy",
 };
@@ -41,6 +42,7 @@ const statusTones: Record<string, "amber" | "blue" | "green" | "red"> = {
     Pending: "amber",
     Unconfirmed: "red",
     CheckedIn: "blue",
+    InProgress: "blue",
     Done: "green",
     Cancelled: "red",
 };
@@ -129,7 +131,7 @@ export function DoctorScheduleScreen() {
             <PortalPageHeader
                 eyebrow="Ca được phân công"
                 title="Lịch khám của tôi"
-                description="Chỉ hiển thị lịch được phân công trực tiếp cho tài khoản bác sĩ hiện tại."
+                description="Hiển thị lịch đặt riêng và hàng chờ tại phòng, ca làm việc của bác sĩ hiện tại."
             />
 
             <PortalSection

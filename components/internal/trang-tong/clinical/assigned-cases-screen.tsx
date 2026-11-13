@@ -53,6 +53,7 @@ const statusLabels: Record<string, string> = {
     Pending: "Chờ xác nhận",
     Unconfirmed: "Không xác nhận",
     CheckedIn: "Đang khám",
+    InProgress: "Đang khám bệnh",
     Done: "Đã hoàn thành",
     Cancelled: "Đã hủy",
 };
@@ -62,6 +63,7 @@ const statusTones: Record<string, "amber" | "blue" | "green" | "red"> = {
     Pending: "amber",
     Unconfirmed: "red",
     CheckedIn: "blue",
+    InProgress: "blue",
     Done: "green",
     Cancelled: "red",
 };
@@ -198,13 +200,13 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
     const item = state.item;
     const dateTime = formatDateTime(item.appointmentAt);
 
-    const isApproved = item.status === "Approved";
     const isCheckedIn = item.status === "CheckedIn";
+    const isInProgress = item.status === "InProgress";
     const isDone = item.status === "Done";
     const prescriptionStatus = item.prescription?.status ?? "Unpaid";
 
     async function handleStartAppointment() {
-        await doctorAppointmentService.updateStatus(item.uuid, "CheckedIn");
+        await doctorAppointmentService.updateStatus(item.uuid, "InProgress");
         loadDetail();
     }
 
@@ -217,7 +219,7 @@ export function AssignedCaseDetailScreen({ uuid }: { uuid: string }) {
 
     async function handleCompleteAppointment() {
         try {
-            await doctorAppointmentService.updateStatus(item.uuid, "Completed");
+            await doctorAppointmentService.updateStatus(item.uuid, "Done");
             loadDetail();
         } catch (error: unknown) {
             alert(getRequestError(error, "Không thể hoàn thành ca khám."));
@@ -302,14 +304,14 @@ eyebrow = "Chi tiết ca khám"
 title = { item.patientName }
 description = {`Mã y tế ${item.medicalCode} · ${genderLabel(item.gender)} · Lịch được phân công trực tiếp cho bạn.`}
 actions = {
-    isApproved?(
+    isCheckedIn?(
                         <>
     <PortalAction variant="default" onClick = { handleStartAppointment } >
         <Play className="size-4 mr-1" /> Bắt đầu ca khám
             </PortalAction>
             < PortalAction onClick = { handleCancelAppointment } > Hủy ca </PortalAction>
                 </>
-                    ) : isCheckedIn ? (
+                    ) : isInProgress ? (
     <>
     <PortalAction onClick= { handleCancelAppointment } > Hủy ca </PortalAction>
         < PortalAction variant = "default" onClick = { handleCompleteAppointment } >
@@ -346,7 +348,7 @@ value = {
 description = "Theo dõi kết quả X-quang, nội soi, xét nghiệm và các dịch vụ cận lâm sàng."
     >
     <div className="space-y-4 p-5" >
-    { isCheckedIn && (
+    { isInProgress && (
             <div className="flex flex-col gap-3 sm:flex-row" >
                 <label className="min-w-0 flex-1" >
                     <span className="sr-only" > Chọn dịch vụ khám </span>
@@ -386,7 +388,7 @@ disabled = {!selectedService || isAddingService}
                                         key= { service.uuid }
                                         appointmentUuid = { item.uuid }
                                         service = { service }
-                                        canEdit = { isCheckedIn }
+                                        canEdit = { isInProgress }
                                         onUpdate = { updateMedicalService }
                 />
                                 ))
@@ -412,11 +414,11 @@ description = "Ghi nhận kết luận chẩn đoán bệnh cho bệnh nhân."
 id = "diagnosis-textarea"
 rows = { 3}
 value = { diagnosisNote }
-disabled = {!isCheckedIn}
+disabled = {!isInProgress}
 onChange = {(e) => setDiagnosisNote(e.target.value)}
 placeholder = "Nhập chẩn đoán lâm sàng, triệu chứng, kết luận bệnh..."
     />
-{ isCheckedIn && (
+{ isInProgress && (
         <div className="flex justify-end" >
             <Button type="button" size = "sm" onClick = { handleSaveDiagnosis } >
                 <Save className="size-4 mr-1" /> Lưu chẩn đoán

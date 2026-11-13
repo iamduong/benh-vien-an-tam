@@ -12,7 +12,14 @@ public class DoctorAppointmentService(DBContext dbContext)
         Guid doctorUuid, string? date, CancellationToken cancellationToken)
     {
         var query = dbContext.Appointments
-            .Where(x => x.DeletedAt == null && x.DoctorUuid == doctorUuid);
+            .Where(x => x.DeletedAt == null &&
+                (x.DoctorUuid == doctorUuid ||
+                 (x.DoctorUuid == null && x.Status == AppointmentStatus.CheckedIn
+                    && x.RoomUuid.HasValue && x.TimeSlot.HasValue
+                    && dbContext.DoctorSchedules.Any(working =>
+                        working.DoctorUuid == doctorUuid
+                        && working.RoomUuid == x.RoomUuid
+                        && working.WorkingHourUuid == x.TimeSlot))));
 
         if (!string.IsNullOrWhiteSpace(date) &&
     DateOnly.TryParseExact(
@@ -64,7 +71,14 @@ public class DoctorAppointmentService(DBContext dbContext)
         Guid doctorUuid, Guid appointmentUuid, CancellationToken cancellationToken)
     {
         var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == appointmentUuid && x.DeletedAt == null && x.DoctorUuid == doctorUuid)
+            .Where(x => x.Uuid == appointmentUuid && x.DeletedAt == null &&
+                (x.DoctorUuid == doctorUuid ||
+                 (x.DoctorUuid == null && x.Status == AppointmentStatus.CheckedIn
+                    && x.RoomUuid.HasValue && x.TimeSlot.HasValue
+                    && dbContext.DoctorSchedules.Any(working =>
+                        working.DoctorUuid == doctorUuid
+                        && working.RoomUuid == x.RoomUuid
+                        && working.WorkingHourUuid == x.TimeSlot))))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (appointment is null) return null;
@@ -173,8 +187,7 @@ public class DoctorAppointmentService(DBContext dbContext)
         Guid doctorUuid, Guid appointmentUuid, string newStatus, CancellationToken cancellationToken)
     {
         var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == appointmentUuid && x.DeletedAt == null && x.DoctorUuid == doctorUuid)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(x => x.Uuid == appointmentUuid && x.DeletedAt == null, cancellationToken);
 
         if (appointment is null) return "Không tìm thấy ca khám.";
 
@@ -183,9 +196,37 @@ public class DoctorAppointmentService(DBContext dbContext)
             return "Trạng thái không hợp lệ.";
         }
 
+        if (status == AppointmentStatus.InProgress)
+        {
+            if (appointment.Status != AppointmentStatus.CheckedIn)
+                return "Chỉ có thể bắt đầu ca đã được quầy tiếp nhận check-in.";
+
+            if (appointment.DoctorUuid.HasValue && appointment.DoctorUuid != doctorUuid)
+                return "Ca khám đã được đặt riêng với bác sĩ khác.";
+
+            if (!appointment.DoctorUuid.HasValue)
+            {
+                var worksInRoom = appointment.RoomUuid.HasValue && appointment.TimeSlot.HasValue
+                    && await dbContext.DoctorSchedules.AnyAsync(working =>
+                        working.DoctorUuid == doctorUuid
+                        && working.RoomUuid == appointment.RoomUuid
+                        && working.WorkingHourUuid == appointment.TimeSlot,
+                        cancellationToken);
+                if (!worksInRoom)
+                    return "Bạn không được xếp làm tại phòng và ca của lượt khám này.";
+                appointment.DoctorUuid = doctorUuid;
+            }
+        }
+        else if (appointment.DoctorUuid != doctorUuid)
+        {
+            return "Ca khám chưa được phân công cho bạn.";
+        }
+
         // Nghiệp vụ kiểm tra khi hoàn thành ca khám
         if (status == AppointmentStatus.Done)
         {
+            if (appointment.Status != AppointmentStatus.InProgress)
+                return "Ca khám chưa được bắt đầu.";
             if (string.IsNullOrWhiteSpace(appointment.DoctorNote))
             {
                 return "Vui lòng nhập thông tin chẩn đoán trước khi hoàn thành ca khám.";

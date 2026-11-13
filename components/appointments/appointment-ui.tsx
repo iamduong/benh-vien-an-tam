@@ -15,8 +15,12 @@ const statusConfig = {
     className: "border-orange-200 bg-orange-50 text-orange-800",
   },
   [AppointmentStatus.CheckedIn]: {
-    label: "Đang khám",
+    label: "Đã check-in",
     className: "border-blue-200 bg-blue-50 text-blue-800",
+  },
+  [AppointmentStatus.InProgress]: {
+    label: "Đang khám bệnh",
+    className: "border-violet-200 bg-violet-50 text-violet-800",
   },
   [AppointmentStatus.Done]: {
     label: "Đã hoàn thành",

@@ -17,16 +17,20 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
         if (doctor is null)
             return Forbid();
 
-        var schedule = await dbContext.DoctorWorkingHours
+        var schedule = await dbContext.DoctorSchedules
             .AsNoTracking()
             .Where(item => item.DoctorUuid == doctor.Uuid)
             .Join(
                 ActiveWorkingHours(),
                 assignment => assignment.WorkingHourUuid,
                 working => working.Uuid,
-                (assignment, working) => new DoctorWorkingHourResponse
+                (assignment, working) => new DoctorScheduleResponse
                 {
-                    DoctorWorkingHourUuid = assignment.Uuid,
+                    DoctorScheduleUuid = assignment.Uuid,
+                    RoomUuid = assignment.RoomUuid,
+                    RoomName = assignment.RoomUuid.HasValue
+                        ? dbContext.Rooms.Where(room => room.Uuid == assignment.RoomUuid).Select(room => room.Name).FirstOrDefault()
+                        : null,
                     Uuid = working.Uuid,
                     DayOfWeek = working.DayOfWeek,
                     StartTime = working.StartTime,
@@ -36,7 +40,7 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
             .ThenBy(item => item.StartTime)
             .ToListAsync(cancellationToken);
 
-        var availableWorkingHours = await ActiveWorkingHours()
+        var availableWorkingHours = await HospitalWorkingHours(doctor.HospitalUuid)
             .OrderBy(item => item.DayOfWeek)
             .ThenBy(item => item.StartTime)
             .Select(item => new WorkingHourOptionResponse
@@ -73,19 +77,22 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
         if (doctor is null)
             return Forbid();
 
-        DoctorWorkingHour? assignment = null;
+        if (request.Type == DoctorWorkSubmissionType.Add)
+            return await CreateAddSubmissions(doctor, request, cancellationToken);
+
+        DoctorSchedule? assignment = null;
         if (request.Type is DoctorWorkSubmissionType.Change or DoctorWorkSubmissionType.Delete)
         {
-            if (!request.DoctorWorkingHourUuid.HasValue)
+            if (!request.DoctorScheduleUuid.HasValue)
                 return BadRequest(new { message = "Vui lòng chọn giờ làm việc hiện tại." });
-            assignment = await dbContext.DoctorWorkingHours.FirstOrDefaultAsync(
-                item => item.Uuid == request.DoctorWorkingHourUuid.Value && item.DoctorUuid == doctor.Uuid,
+            assignment = await dbContext.DoctorSchedules.FirstOrDefaultAsync(
+                item => item.Uuid == request.DoctorScheduleUuid.Value && item.DoctorUuid == doctor.Uuid,
                 cancellationToken);
             if (assignment is null)
                 return NotFound(new { message = "Không tìm thấy giờ làm việc cần thay đổi." });
         }
 
-        if (request.Type is DoctorWorkSubmissionType.Change or DoctorWorkSubmissionType.Add &&
+        if (request.Type == DoctorWorkSubmissionType.Change &&
             !request.RequestedWorkingHourUuid.HasValue)
             return BadRequest(new { message = "Vui lòng chọn khung giờ đề nghị." });
         if (request.Type == DoctorWorkSubmissionType.Change &&
@@ -93,23 +100,17 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
             return BadRequest(new { message = "Khung giờ mới phải khác khung giờ hiện tại." });
 
         TimeWorking? requestedWorking = null;
-        if (request.Type is DoctorWorkSubmissionType.Change or DoctorWorkSubmissionType.Add)
+        if (request.Type == DoctorWorkSubmissionType.Change)
         {
-            requestedWorking = await ActiveWorkingHours().FirstOrDefaultAsync(
+            requestedWorking = await HospitalWorkingHours(doctor.HospitalUuid).FirstOrDefaultAsync(
                 item => item.Uuid == request.RequestedWorkingHourUuid!.Value,
                 cancellationToken);
             if (requestedWorking is null)
-                return NotFound(new { message = "Khung giờ đề nghị không tồn tại hoặc đã ngừng hoạt động." });
+                return NotFound(new { message = "Khung giờ đề nghị không thuộc giờ làm việc đang áp dụng của bệnh viện." });
         }
 
-        var hasPendingSubmission = request.Type == DoctorWorkSubmissionType.Add
-            ? await dbContext.DoctorWorkSubmissions.AnyAsync(
-                item => item.DoctorUuid == doctor.Uuid &&
-                        item.RequestedWorkingHourUuid == request.RequestedWorkingHourUuid &&
-                        item.Status == DoctorWorkSubmissionStatus.Pending,
-                cancellationToken)
-            : await dbContext.DoctorWorkSubmissions.AnyAsync(
-                item => item.DoctorWorkingHourUuid == assignment!.Uuid &&
+        var hasPendingSubmission = await dbContext.DoctorWorkSubmissions.AnyAsync(
+                item => item.DoctorScheduleUuid == assignment!.Uuid &&
                         item.Status == DoctorWorkSubmissionStatus.Pending,
                 cancellationToken);
         if (hasPendingSubmission)
@@ -127,7 +128,7 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
         {
             Uuid = Guid.NewGuid(),
             DoctorUuid = doctor.Uuid,
-            DoctorWorkingHourUuid = assignment?.Uuid,
+            DoctorScheduleUuid = assignment?.Uuid,
             PreviousWorkingHourUuid = assignment?.WorkingHourUuid,
             RequestedWorkingHourUuid = requestedWorking?.Uuid,
             Type = request.Type,
@@ -143,6 +144,77 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
         {
             message = "Đã gửi đơn thay đổi giờ làm việc.",
             data = await GetSubmissionQuery().FirstAsync(item => item.Uuid == submission.Uuid, cancellationToken),
+        });
+    }
+
+    private async Task<IActionResult> CreateAddSubmissions(
+        DoctorProfile doctor,
+        CreateDoctorWorkSubmissionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var requestedUuids = request.RequestedWorkingHourUuids
+            .Append(request.RequestedWorkingHourUuid ?? Guid.Empty)
+            .Where(item => item != Guid.Empty)
+            .Distinct()
+            .ToArray();
+        if (requestedUuids.Length == 0)
+            return BadRequest(new { message = "Vui lòng chọn ít nhất một khung giờ đề nghị." });
+        if (requestedUuids.Length > 14)
+            return BadRequest(new { message = "Mỗi đơn chỉ được chọn tối đa 14 khung giờ." });
+
+        var requestedWorkings = await HospitalWorkingHours(doctor.HospitalUuid)
+            .Where(item => requestedUuids.Contains(item.Uuid))
+            .ToListAsync(cancellationToken);
+        if (requestedWorkings.Count != requestedUuids.Length)
+            return BadRequest(new { message = "Có khung giờ không thuộc giờ làm việc đang áp dụng của bệnh viện." });
+        var hasInternalOverlap = requestedWorkings.Any(left => requestedWorkings.Any(right =>
+            left.Uuid != right.Uuid && left.DayOfWeek == right.DayOfWeek
+            && left.StartTime < right.EndTime && right.StartTime < left.EndTime));
+        if (hasInternalOverlap)
+            return Conflict(new { message = "Các khung giờ được chọn đang bị trùng nhau." });
+
+        var pendingUuids = await dbContext.DoctorWorkSubmissions.AsNoTracking()
+            .Where(item => item.DoctorUuid == doctor.Uuid
+                && item.RequestedWorkingHourUuid.HasValue
+                && requestedUuids.Contains(item.RequestedWorkingHourUuid.Value)
+                && item.Status == DoctorWorkSubmissionStatus.Pending)
+            .Select(item => item.RequestedWorkingHourUuid!.Value)
+            .ToArrayAsync(cancellationToken);
+        if (pendingUuids.Length > 0)
+            return Conflict(new { message = "Một hoặc nhiều khung giờ đã có đơn chờ duyệt." });
+
+        foreach (var working in requestedWorkings)
+        {
+            if (await HasDoctorScheduleConflictAsync(doctor.Uuid, working, null, cancellationToken))
+                return Conflict(new { message = $"Khung {working.StartTime.ToString("HH:mm")}–{working.EndTime.ToString("HH:mm")} bị trùng với thời khóa biểu hiện tại." });
+        }
+
+        var now = DateTime.UtcNow;
+        var submissions = requestedWorkings.Select(working => new DoctorWorkSubmission
+        {
+            Uuid = Guid.NewGuid(),
+            DoctorUuid = doctor.Uuid,
+            RequestedWorkingHourUuid = working.Uuid,
+            Type = DoctorWorkSubmissionType.Add,
+            Reason = request.Reason.Trim(),
+            Status = DoctorWorkSubmissionStatus.Pending,
+            CreatedAt = now,
+            UpdatedAt = now,
+        }).ToList();
+        dbContext.DoctorWorkSubmissions.AddRange(submissions);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var submissionUuids = submissions.Select(item => item.Uuid).ToArray();
+        var data = (await GetSubmissionQuery()
+            .Where(item => submissionUuids.Contains(item.Uuid))
+            .ToListAsync(cancellationToken))
+            .OrderBy(item => item.RequestedWorkingHour?.DayOfWeek)
+            .ThenBy(item => item.RequestedWorkingHour?.StartTime)
+            .ToList();
+        return Created("/api/doctor-work-submissions", new
+        {
+            message = $"Đã gửi đề nghị thêm {submissions.Count} khung giờ làm việc.",
+            data,
         });
     }
 
@@ -189,11 +261,11 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
         if (!doctorBelongsToHospital)
             return Forbid();
 
-        DoctorWorkingHour? assignment = null;
+        DoctorSchedule? assignment = null;
         if (submission.Type != DoctorWorkSubmissionType.Add)
         {
-            assignment = await dbContext.DoctorWorkingHours.FirstOrDefaultAsync(
-                item => item.Uuid == submission.DoctorWorkingHourUuid &&
+            assignment = await dbContext.DoctorSchedules.FirstOrDefaultAsync(
+                item => item.Uuid == submission.DoctorScheduleUuid &&
                         item.DoctorUuid == submission.DoctorUuid,
                 cancellationToken);
             if (assignment is null)
@@ -206,36 +278,52 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
         {
             if (submission.Type == DoctorWorkSubmissionType.Delete)
             {
-                dbContext.DoctorWorkingHours.Remove(assignment!);
+                dbContext.DoctorSchedules.Remove(assignment!);
             }
             else
             {
                 if (!submission.RequestedWorkingHourUuid.HasValue)
                     return Conflict(new { message = "Đơn thay đổi không có khung giờ đề nghị." });
-                var requestedWorking = await ActiveWorkingHours().FirstOrDefaultAsync(
+                var requestedWorking = await HospitalWorkingHours(hospitalUuid).FirstOrDefaultAsync(
                     item => item.Uuid == submission.RequestedWorkingHourUuid.Value,
                     cancellationToken);
                 if (requestedWorking is null)
-                    return Conflict(new { message = "Khung giờ đề nghị không còn hoạt động." });
+                    return Conflict(new { message = "Khung giờ đề nghị không còn thuộc giờ làm việc của bệnh viện." });
+                var roomUuid = request.RoomUuid ?? assignment?.RoomUuid;
+                if (!roomUuid.HasValue)
+                    return BadRequest(new { message = "Vui lòng chọn phòng làm việc cho ca này." });
+                var roomExists = await dbContext.Rooms.AnyAsync(item =>
+                    item.Uuid == roomUuid.Value && item.HospitalUuid == hospitalUuid.Value
+                    && item.DeletedAt == null && item.Status != RoomStatus.Maintenance,
+                    cancellationToken);
+                if (!roomExists)
+                    return BadRequest(new { message = "Phòng làm việc không khả dụng tại chi nhánh." });
                 if (await HasDoctorScheduleConflictAsync(
                         submission.DoctorUuid,
                         requestedWorking,
                         assignment?.Uuid,
                         cancellationToken))
                     return Conflict(new { message = "Không thể duyệt vì khung giờ mới bị trùng lịch." });
+                if (await HasRoomScheduleConflictAsync(roomUuid.Value, requestedWorking.Uuid, assignment?.Uuid, cancellationToken))
+                    return Conflict(new { message = "Phòng đã được phân cho bác sĩ khác trong ca này." });
 
                 if (submission.Type == DoctorWorkSubmissionType.Add)
                 {
-                    dbContext.DoctorWorkingHours.Add(new DoctorWorkingHour
+                    dbContext.DoctorSchedules.Add(new DoctorSchedule
                     {
                         Uuid = Guid.NewGuid(),
                         DoctorUuid = submission.DoctorUuid,
                         WorkingHourUuid = requestedWorking.Uuid,
+                        RoomUuid = roomUuid.Value,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
                     });
                 }
                 else
                 {
                     assignment!.WorkingHourUuid = requestedWorking.Uuid;
+                    assignment.RoomUuid = roomUuid.Value;
+                    assignment.UpdatedAt = DateTime.UtcNow;
                 }
             }
         }
@@ -271,6 +359,18 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
         dbContext.TimeWorkings.AsNoTracking().Where(item =>
             item.DeletedAt == null && item.Status == BaseStatus.Active);
 
+    private IQueryable<TimeWorking> HospitalWorkingHours(Guid? hospitalUuid)
+    {
+        if (!hospitalUuid.HasValue)
+            return ActiveWorkingHours().Where(_ => false);
+
+        return from working in ActiveWorkingHours()
+               join assignment in dbContext.HospitalWorkings.AsNoTracking()
+                   on working.Uuid equals assignment.WorkingUuid
+               where assignment.HospitalUuid == hospitalUuid.Value
+               select working;
+    }
+
     private IQueryable<DoctorWorkSubmissionResponse> GetSubmissionQuery() =>
         from submission in dbContext.DoctorWorkSubmissions.AsNoTracking()
         join doctor in dbContext.DoctorProfiles.AsNoTracking()
@@ -286,7 +386,7 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
             Uuid = submission.Uuid,
             DoctorUuid = submission.DoctorUuid,
             DoctorName = doctor.Name,
-            DoctorWorkingHourUuid = submission.DoctorWorkingHourUuid,
+            DoctorScheduleUuid = submission.DoctorScheduleUuid,
             Type = submission.Type,
             CurrentWorkingHour = previous == null ? null : new WorkingHourOptionResponse
                 {
@@ -316,7 +416,7 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
         Guid? excludedAssignmentUuid,
         CancellationToken cancellationToken)
     {
-        var assignedHours = await dbContext.DoctorWorkingHours
+        var assignedHours = await dbContext.DoctorSchedules
             .Where(item => item.DoctorUuid == doctorUuid &&
                            (!excludedAssignmentUuid.HasValue || item.Uuid != excludedAssignmentUuid.Value))
             .Join(
@@ -331,5 +431,15 @@ public sealed class DoctorWorkSubmissionsService(DBContext dbContext) : Controll
             item.StartTime < candidate.EndTime &&
             candidate.StartTime < item.EndTime);
     }
+
+    private Task<bool> HasRoomScheduleConflictAsync(
+        Guid roomUuid,
+        Guid workingHourUuid,
+        Guid? excludedScheduleUuid,
+        CancellationToken cancellationToken) =>
+        dbContext.DoctorSchedules.AnyAsync(item =>
+            item.RoomUuid == roomUuid && item.WorkingHourUuid == workingHourUuid
+            && (!excludedScheduleUuid.HasValue || item.Uuid != excludedScheduleUuid.Value),
+            cancellationToken);
 
 }

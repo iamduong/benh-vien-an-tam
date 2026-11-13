@@ -11,15 +11,17 @@ export type WorkingHourOption = {
   endTime: string;
 };
 
-export type DoctorWorkingHour = WorkingHourOption & {
-  doctorWorkingHourUuid: string;
+export type DoctorSchedule = WorkingHourOption & {
+  doctorScheduleUuid: string;
+  roomUuid: string | null;
+  roomName: string | null;
 };
 
 export type DoctorWorkSubmission = {
   uuid: string;
   doctorUuid: string;
   doctorName: string;
-  doctorWorkingHourUuid: string | null;
+  doctorScheduleUuid: string | null;
   type: DoctorWorkSubmissionType;
   currentWorkingHour: WorkingHourOption | null;
   requestedWorkingHour: WorkingHourOption | null;
@@ -32,7 +34,7 @@ export type DoctorWorkSubmission = {
 };
 
 export type DoctorWorkingOverview = {
-  schedule: DoctorWorkingHour[];
+  schedule: DoctorSchedule[];
   availableWorkingHours: WorkingHourOption[];
   submissions: DoctorWorkSubmission[];
 };
@@ -47,12 +49,13 @@ class DoctorWorkSubmissionService {
   }
 
   async create(payload: {
-    doctorWorkingHourUuid: string | null;
+    doctorScheduleUuid: string | null;
     requestedWorkingHourUuid: string | null;
+    requestedWorkingHourUuids?: string[];
     type: DoctorWorkSubmissionType;
     reason: string;
   }) {
-    const response = await httpClient.post<ApiResponse<DoctorWorkSubmission>>(
+    const response = await httpClient.post<ApiResponse<DoctorWorkSubmission | DoctorWorkSubmission[]>>(
       "/doctor-work-submissions",
       payload,
     );
@@ -71,10 +74,11 @@ class DoctorWorkSubmissionService {
     uuid: string,
     status: Extract<DoctorWorkSubmissionStatus, "Approved" | "Rejected">,
     reviewNote: string,
+    roomUuid?: string,
   ) {
     const response = await httpClient.put<ApiResponse<DoctorWorkSubmission>>(
       `/doctor-work-submissions/${encodeURIComponent(uuid)}/review`,
-      { status, reviewNote },
+      { status, reviewNote, roomUuid: roomUuid || null },
     );
     return response.data;
   }

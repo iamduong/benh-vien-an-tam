@@ -1,4 +1,4 @@
-export type ClinicalAppointmentStatus = "Approved" | "Pending" | "Unconfirmed" | "CheckedIn" | "Done" | "Cancelled";
+export type ClinicalAppointmentStatus = "Approved" | "Pending" | "Unconfirmed" | "CheckedIn" | "InProgress" | "Done" | "Cancelled";
 export type ClinicalMedicalServiceStatus = "InProgress" | "Completed";
 export type PrescriptionStatus = "Unpaid" | "Paid" | "Cancelled";
 

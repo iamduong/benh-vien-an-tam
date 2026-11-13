@@ -83,8 +83,8 @@ export function BranchScreens({ slug }: { slug: string }) {
     case "danh-gia": return <HospitalReviewsScreen />;
     case "bao-cao": return <HospitalReportsScreen />;
     case "nhat-ky": return <HospitalAuditScreen />;
-    case "gio-lam-viec-benh-vien": return <HospitalWorkingScreen />;
-    case "duyet-don-lam-viec": return <HospitalWorkingScreen />;
+    case "gio-lam-viec-benh-vien": return <HospitalWorkingScreen view="booking-hours" />;
+    case "duyet-don-lam-viec": return <HospitalWorkingScreen view="submissions" />;
     default: return null;
   }
 }

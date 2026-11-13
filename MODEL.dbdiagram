@@ -400,7 +400,8 @@ Enum AppointmentStatus {
   Approved     // Đã xác nhận
   Pending      // Chờ xác nhận
   Unconfirmed  // Không xác nhận
-  CheckedIn    // Đang khám
+  CheckedIn    // Đã check-in, đang chờ bác sĩ nhận
+  InProgress   // Bác sĩ đã nhận và bắt đầu khám
   Done         // Đã hoàn thành
   Cancelled    // Đã hủy
 }
@@ -525,6 +526,20 @@ Table DoctorWorking {
 
 Ref: DoctorWorking.DoctorUuid > DoctorProfile.Uuid
 Ref: DoctorWorking.WorkingUuid > TimeWorking.Uuid
+
+// Thời khóa biểu vận hành thực tế; tách khỏi khung giờ khách được đặt lịch.
+Table DoctorSchedule {
+  Uuid Guid
+  DoctorUuid Guid
+  WorkingUuid Guid
+  RoomUuid Guid [null]
+  CreatedAt Date
+  UpdatedAt Date
+}
+
+Ref: DoctorSchedule.DoctorUuid > DoctorProfile.Uuid
+Ref: DoctorSchedule.WorkingUuid > TimeWorking.Uuid
+Ref: DoctorSchedule.RoomUuid > Room.Uuid
 
 Table HospitalWorking {
   Uuid Guid

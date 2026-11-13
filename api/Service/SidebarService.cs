@@ -29,7 +29,7 @@ public sealed class SidebarService(DBContext dbContext, Jwt jwt) : ControllerBas
         "kho-thuoc", "danh-gia-chi-nhanh", "bao-cao-chi-nhanh", "nhat-ky-chi-nhanh",
         "gio-lam-viec-benh-vien", "duyet-don-lam-viec",
         "tong-quan-bac-si", "lich-kham", "ca-kham", "don-thuoc-bac-si",
-        "thuoc-kha-dung", "ho-so-nghe-nghiep", "gio-lam-viec-bac-si",
+        "thuoc-kha-dung", "ho-so-nghe-nghiep", "gio-lam-viec-bac-si", "thay-doi-gio-lam-viec",
         "tong-quan-tiep-nhan", "lich-hen-tiep-nhan", "tiep-nhan",
         "phong-kham-tiep-nhan", "thanh-toan-cap-thuoc", "danh-gia-tiep-nhan",
         "tong-quan-kho", "ton-kho", "nha-cung-cap", "nhap-hang", "xuat-hang",

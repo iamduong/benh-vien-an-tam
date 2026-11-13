@@ -350,6 +350,7 @@ function statusLabel(status: ClinicalAppointment["status"]) {
     return {
         Approved: "Đã xác nhận",
         CheckedIn: "Đã check-in",
+        InProgress: "Đang khám bệnh",
         Done: "Hoàn thành",
         Pending: "Chưa đến",
         Cancelled: "Đã hủy",
