@@ -107,21 +107,16 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             .Where(item => item.HospitalUuid == hospitalUuid && item.WorkingUuid.HasValue)
             .Select(item => item.WorkingUuid!.Value)
             .ToArrayAsync(cancellationToken);
-        if (type != "hospital" && hospitalWorkingUuids.Length > 0)
-        {
-            targetWorkingUuids = targetWorkingUuids.Length > 0
-                ? targetWorkingUuids.Intersect(hospitalWorkingUuids).ToArray()
-                : hospitalWorkingUuids;
-        }
+        if (type != "hospital")
+            targetWorkingUuids = targetWorkingUuids.Intersect(hospitalWorkingUuids).ToArray();
 
         var dayOfWeek = (int)date.DayOfWeek;
         var workingQuery = dbContext.TimeWorkings.AsNoTracking()
             .Where(item => item.DeletedAt == null && item.Status == BaseStatus.Active && item.DayOfWeek == dayOfWeek);
-        if (targetWorkingUuids.Length > 0)
-            workingQuery = workingQuery.Where(item => targetWorkingUuids.Contains(item.Uuid));
+        workingQuery = workingQuery.Where(item => targetWorkingUuids.Contains(item.Uuid));
         var workings = await workingQuery.OrderBy(item => item.StartTime).ToListAsync(cancellationToken);
 
-        var blockingStatuses = new[] { AppointmentStatus.Pending, AppointmentStatus.Approved, AppointmentStatus.Done, AppointmentStatus.CheckedIn };
+        var blockingStatuses = new[] { AppointmentStatus.Pending, AppointmentStatus.Approved, AppointmentStatus.Done, AppointmentStatus.CheckedIn, AppointmentStatus.InProgress };
         var slots = new List<object>();
         foreach (var working in workings)
         {
@@ -216,7 +211,7 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             appointmentType = AppointmentType.Service;
         }
 
-        var blockingStatuses = new[] { AppointmentStatus.Pending, AppointmentStatus.Approved, AppointmentStatus.Done, AppointmentStatus.CheckedIn };
+        var blockingStatuses = new[] { AppointmentStatus.Pending, AppointmentStatus.Approved, AppointmentStatus.Done, AppointmentStatus.CheckedIn, AppointmentStatus.InProgress };
         var patientConflict = await dbContext.Appointments.AsNoTracking().AnyAsync(item =>
             item.DeletedAt == null && item.PatientUuid == patient.Uuid && item.AppointmentDate == appointmentAtUtc
             && blockingStatuses.Contains(item.Status), cancellationToken);
@@ -242,6 +237,23 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             .FirstOrDefaultAsync(cancellationToken);
         if (!timeSlot.HasValue)
             return UnprocessableEntity(new { code = "OUTSIDE_WORKING_HOURS", message = "Thời gian nằm ngoài giờ làm việc." });
+
+        var hospitalAllowsBooking = await dbContext.HospitalWorkings.AsNoTracking().AnyAsync(item =>
+            item.HospitalUuid == request.HospitalUuid && item.WorkingUuid == timeSlot.Value, cancellationToken);
+        var targetAllowsBooking = appointmentType switch
+        {
+            AppointmentType.Doctor => doctorUuid.HasValue && await dbContext.DoctorWorkingHours.AsNoTracking().AnyAsync(item =>
+                item.DoctorUuid == doctorUuid.Value && item.WorkingHourUuid == timeSlot.Value, cancellationToken),
+            AppointmentType.Service => medicalServiceUuid.HasValue && await dbContext.ServiceWorkings.AsNoTracking().AnyAsync(item =>
+                item.ServiceUuid == medicalServiceUuid.Value && item.WorkingUuid == timeSlot.Value, cancellationToken),
+            _ => true
+        };
+        if (!hospitalAllowsBooking || !targetAllowsBooking)
+            return UnprocessableEntity(new
+            {
+                code = "OUTSIDE_BOOKING_HOURS",
+                message = "Khung giờ này không được cấu hình để nhận đặt lịch cho đối tượng đã chọn."
+            });
 
         var now = DateTime.UtcNow;
         var appointment = new Appointment
@@ -508,7 +520,7 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
 
     private async Task<bool> HasAppointmentConflictAsync(Appointment appointment, DateTime appointmentAt, CancellationToken cancellationToken)
     {
-        var blockingStatuses = new[] { AppointmentStatus.Pending, AppointmentStatus.Approved, AppointmentStatus.Done, AppointmentStatus.CheckedIn };
+        var blockingStatuses = new[] { AppointmentStatus.Pending, AppointmentStatus.Approved, AppointmentStatus.Done, AppointmentStatus.CheckedIn, AppointmentStatus.InProgress };
         var patientConflict = await dbContext.Appointments.AsNoTracking().AnyAsync(item =>
             item.Uuid != appointment.Uuid && item.DeletedAt == null && item.PatientUuid == appointment.PatientUuid
             && item.AppointmentDate == appointmentAt && blockingStatuses.Contains(item.Status), cancellationToken);
@@ -759,8 +771,8 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         if (appointment is null)
             return NotFound(new { message = "Appointment not found", error = "Resource does not exist" });
 
-        if (appointment.Status != AppointmentStatus.CheckedIn)
-            return BadRequest(new { message = "Invalid state", error = "Appointment must be in CheckedIn status" });
+        if (appointment.Status != AppointmentStatus.InProgress)
+            return BadRequest(new { message = "Invalid state", error = "Appointment must be in InProgress status" });
         if (!appointment.IsPaid)
             return Conflict(new { message = "Appointment must be paid before completion", error = "PAYMENT_REQUIRED" });
         if (await dbContext.AppointmentMedicalServices.AnyAsync(

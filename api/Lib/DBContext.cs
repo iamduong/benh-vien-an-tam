@@ -18,6 +18,7 @@ public class DBContext : DbContext
     public DbSet<DoctorDepartment> DoctorDepartments => Set<DoctorDepartment>();
     public DbSet<DoctorProfile> DoctorProfiles => Set<DoctorProfile>();
     public DbSet<DoctorWorkingHour> DoctorWorkingHours => Set<DoctorWorkingHour>();
+    public DbSet<DoctorSchedule> DoctorSchedules => Set<DoctorSchedule>();
     public DbSet<DoctorWorkSubmission> DoctorWorkSubmissions => Set<DoctorWorkSubmission>();
     public DbSet<ExportTicket> ExportTickets => Set<ExportTicket>();
     public DbSet<ExportTicketDetail> ExportTicketDetails => Set<ExportTicketDetail>();
@@ -74,6 +75,17 @@ public class DBContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<DoctorWorkingHour>().ToTable("DoctorWorking");
+        modelBuilder.Entity<DoctorWorkingHour>(entity =>
+        {
+            entity.HasIndex(item => new { item.DoctorUuid, item.WorkingHourUuid }).IsUnique();
+        });
+        modelBuilder.Entity<DoctorSchedule>(entity =>
+        {
+            entity.HasIndex(item => new { item.DoctorUuid, item.WorkingHourUuid }).IsUnique();
+            entity.HasIndex(item => new { item.RoomUuid, item.WorkingHourUuid })
+                .IsUnique()
+                .HasFilter("\"RoomUuid\" IS NOT NULL");
+        });
 
         modelBuilder.Entity<Role>()
             .HasIndex(role => role.Name)
@@ -135,6 +147,13 @@ public class DBContext : DbContext
         ConfigureOneToMany<RolePermission, Permission>(modelBuilder, nameof(RolePermission.PermissionUuid));
         ConfigureOneToMany<DoctorWorkingHour, DoctorProfile>(modelBuilder, nameof(DoctorWorkingHour.DoctorUuid));
         ConfigureOneToMany<DoctorWorkingHour, TimeWorking>(modelBuilder, nameof(DoctorWorkingHour.WorkingHourUuid));
+        ConfigureOneToMany<DoctorSchedule, DoctorProfile>(modelBuilder, nameof(DoctorSchedule.DoctorUuid));
+        ConfigureOneToMany<DoctorSchedule, TimeWorking>(modelBuilder, nameof(DoctorSchedule.WorkingHourUuid));
+        modelBuilder.Entity<DoctorSchedule>()
+            .HasOne<Room>()
+            .WithMany()
+            .HasForeignKey(item => item.RoomUuid)
+            .OnDelete(DeleteBehavior.SetNull);
         ConfigureOneToMany<DoctorWorkSubmission, DoctorProfile>(modelBuilder, nameof(DoctorWorkSubmission.DoctorUuid));
         ConfigureOneToMany<DoctorWorkSubmission, TimeWorking>(modelBuilder, nameof(DoctorWorkSubmission.PreviousWorkingHourUuid));
         ConfigureOneToMany<DoctorWorkSubmission, TimeWorking>(modelBuilder, nameof(DoctorWorkSubmission.RequestedWorkingHourUuid));
@@ -145,9 +164,9 @@ public class DBContext : DbContext
             entity.Property(item => item.Reason).HasMaxLength(1000);
             entity.Property(item => item.ReviewNote).HasMaxLength(1000);
             entity.HasIndex(item => new { item.DoctorUuid, item.Status });
-            entity.HasOne<DoctorWorkingHour>()
+            entity.HasOne<DoctorSchedule>()
                 .WithMany()
-                .HasForeignKey(item => item.DoctorWorkingHourUuid)
+                .HasForeignKey(item => item.DoctorScheduleUuid)
                 .OnDelete(DeleteBehavior.SetNull);
         });
         ConfigureOneToMany<HospitalWorking, Hospital>(modelBuilder, nameof(HospitalWorking.HospitalUuid));

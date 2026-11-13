@@ -94,6 +94,7 @@ export function AppointmentsPage() {
             <option value={AppointmentStatus.Approved}>Đã duyệt</option>
             <option value={AppointmentStatus.Unconfirmed}>Không xác nhận</option>
             <option value={AppointmentStatus.CheckedIn}>Đang khám</option>
+            <option value={AppointmentStatus.InProgress}>Đang khám bệnh</option>
             <option value={AppointmentStatus.Done}>Đã hoàn thành</option>
             <option value={AppointmentStatus.Cancelled}>Đã hủy</option>
           </FilterSelect>

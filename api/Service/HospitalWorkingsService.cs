@@ -60,7 +60,7 @@ public sealed class HospitalWorkingsService(DBContext dbContext) : ControllerBas
 
         return Ok(new
         {
-            message = "Lấy giờ làm việc của chi nhánh thành công.",
+            message = "Lấy khung giờ nhận đặt lịch của chi nhánh thành công.",
             data = new { availableWorkings, assignedWorkings },
         });
     }
@@ -95,7 +95,7 @@ public sealed class HospitalWorkingsService(DBContext dbContext) : ControllerBas
             $"/api/hospital-workings/{assignment.Uuid}",
             new
             {
-                message = "Thêm khung giờ thành công.",
+                message = "Thêm khung giờ nhận đặt lịch thành công.",
                 data = ToResponse(assignment, working),
             });
     }
@@ -129,7 +129,7 @@ public sealed class HospitalWorkingsService(DBContext dbContext) : ControllerBas
 
         return Ok(new
         {
-            message = "Cập nhật khung giờ thành công.",
+            message = "Cập nhật khung giờ nhận đặt lịch thành công.",
             data = ToResponse(assignment, working),
         });
     }
@@ -151,7 +151,7 @@ public sealed class HospitalWorkingsService(DBContext dbContext) : ControllerBas
         dbContext.HospitalWorkings.Remove(assignment);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return Ok(new { message = "Xóa khung giờ thành công." });
+        return Ok(new { message = "Xóa khung giờ nhận đặt lịch thành công." });
     }
 
     private async Task<Guid?> GetCurrentHospitalUuidAsync(CancellationToken cancellationToken)

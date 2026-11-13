@@ -10,9 +10,11 @@ public class WorkingHourOptionResponse
     public TimeOnly EndTime { get; init; }
 }
 
-public sealed class DoctorWorkingHourResponse : WorkingHourOptionResponse
+public sealed class DoctorScheduleResponse : WorkingHourOptionResponse
 {
-    public Guid DoctorWorkingHourUuid { get; init; }
+    public Guid DoctorScheduleUuid { get; init; }
+    public Guid? RoomUuid { get; init; }
+    public string? RoomName { get; init; }
 }
 
 public sealed class DoctorWorkSubmissionResponse
@@ -20,7 +22,7 @@ public sealed class DoctorWorkSubmissionResponse
     public Guid Uuid { get; init; }
     public Guid DoctorUuid { get; init; }
     public string DoctorName { get; init; } = string.Empty;
-    public Guid? DoctorWorkingHourUuid { get; init; }
+    public Guid? DoctorScheduleUuid { get; init; }
     public DoctorWorkSubmissionType Type { get; init; }
     public WorkingHourOptionResponse? CurrentWorkingHour { get; init; }
     public WorkingHourOptionResponse? RequestedWorkingHour { get; init; }
@@ -34,7 +36,7 @@ public sealed class DoctorWorkSubmissionResponse
 
 public sealed class DoctorWorkingOverviewResponse
 {
-    public IReadOnlyList<DoctorWorkingHourResponse> Schedule { get; init; } = [];
+    public IReadOnlyList<DoctorScheduleResponse> Schedule { get; init; } = [];
     public IReadOnlyList<WorkingHourOptionResponse> AvailableWorkingHours { get; init; } = [];
     public IReadOnlyList<DoctorWorkSubmissionResponse> Submissions { get; init; } = [];
 }

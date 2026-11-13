@@ -32,6 +32,7 @@ type LoadState =
 const statusLabels: Record<ClinicalAppointmentStatus, string> = {
   Approved: "Đã xác nhận",
   CheckedIn: "Đã check-in",
+  InProgress: "Đang khám bệnh",
   Done: "Hoàn thành",
   Pending: "Chưa đến",
   Cancelled: "Đã hủy",
@@ -172,6 +173,7 @@ function AppointmentStatus({ status }: { status: ClinicalAppointmentStatus }) {
   const tones: Record<ClinicalAppointmentStatus, "amber" | "blue" | "green"> = {
     Approved: "blue",
     CheckedIn: "blue",
+    InProgress: "blue",
     Done: "green",
     Pending: "amber",
     Cancelled: "amber",

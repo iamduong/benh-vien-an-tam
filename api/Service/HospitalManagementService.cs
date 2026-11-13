@@ -553,7 +553,8 @@ public sealed class HospitalManagementService(DBContext dbContext) : ControllerB
                      x.DeletedAt == null &&
                      (x.Status == AppointmentStatus.Pending ||
                       x.Status == AppointmentStatus.Approved ||
-                      x.Status == AppointmentStatus.CheckedIn),
+                       x.Status == AppointmentStatus.CheckedIn ||
+                       x.Status == AppointmentStatus.InProgress),
                 cancellationToken);
             if (hasActiveAppointments)
                 return Conflict(new
@@ -601,7 +602,8 @@ public sealed class HospitalManagementService(DBContext dbContext) : ControllerB
                  x.DeletedAt == null &&
                  (x.Status == AppointmentStatus.Pending ||
                   x.Status == AppointmentStatus.Approved ||
-                  x.Status == AppointmentStatus.CheckedIn),
+                   x.Status == AppointmentStatus.CheckedIn ||
+                   x.Status == AppointmentStatus.InProgress),
             cancellationToken);
         if (hasActiveAppointments)
             return Conflict(new

@@ -12,4 +12,5 @@ public sealed class DoctorWorkingHour
 
     [Column("WorkingUuid")]
     public Guid WorkingHourUuid { get; set; }
+
 }

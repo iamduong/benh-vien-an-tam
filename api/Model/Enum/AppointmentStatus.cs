@@ -8,5 +8,6 @@ public enum AppointmentStatus
     Done = 2,
     Cancelled = 3,
     Unconfirmed = 4,
-    CheckedIn = 5
+    CheckedIn = 5,
+    InProgress = 6
 }
