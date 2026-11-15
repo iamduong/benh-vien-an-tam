@@ -31,7 +31,6 @@ export type CreateHospitalStaffRequest = {
   roleUuid: Guid;
   name?: string;
   specialty?: string;
-  price?: number;
   departmentUuid?: Guid;
 };
 
@@ -115,7 +114,6 @@ export class StaffService {
         roleUuid: request.roleUuid,
         name: request.name,
         specialty: request.specialty,
-        price: request.price,
         departmentUuid: request.departmentUuid,
       },
     );

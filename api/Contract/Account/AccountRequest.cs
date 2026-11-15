@@ -43,9 +43,6 @@ public sealed class CreateAccountRequest
     [StringLength(2048)]
     public string? Avatar { get; init; }
 
-    [Range(0, int.MaxValue)]
-    public int? Price { get; init; }
-
     [StringLength(200)]
     public string? DepartmentDisplay { get; init; }
 
@@ -103,9 +100,6 @@ public sealed class UpdateAccountRequest
 
     [StringLength(2048)]
     public string? Avatar { get; init; }
-
-    [Range(0, int.MaxValue)]
-    public int? Price { get; init; }
 
     [StringLength(200)]
     public string? DepartmentDisplay { get; init; }

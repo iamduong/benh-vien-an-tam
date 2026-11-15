@@ -248,9 +248,7 @@ public sealed class ReviewsService(DBContext dbContext) : ControllerBase
                 item => item.HospitalUuid == targetUuid, cancellationToken),
             "doctor" => await appointments.FirstOrDefaultAsync(
                 item => item.DoctorUuid == targetUuid, cancellationToken),
-            "medical-service" => await appointments.FirstOrDefaultAsync(
-                item => item.MedicalServiceUuid == targetUuid, cancellationToken)
-                ?? await (from appointment in appointments
+            "medical-service" => await (from appointment in appointments
                           join service in dbContext.AppointmentMedicalServices
                               on appointment.Uuid equals service.AppointmentUuid
                           where service.MedicalServiceUuid == targetUuid
@@ -285,19 +283,6 @@ public sealed class ReviewsService(DBContext dbContext) : ControllerBase
             if (doctor is not null)
                 targets.Add(await BuildEligibilityTargetAsync(
                     "doctor", doctor.Uuid, doctor.Name, patientUuid, cancellationToken));
-        }
-        if (appointment.MedicalServiceUuid.HasValue)
-        {
-            var service = await dbContext.MedicalServices.AsNoTracking()
-                .Where(item => item.Uuid == appointment.MedicalServiceUuid.Value)
-                .Select(item => new { item.Uuid, item.Name })
-                .FirstOrDefaultAsync(cancellationToken);
-            if (service is not null)
-            {
-                targets.Add(await BuildEligibilityTargetAsync(
-                    "medical-service", service.Uuid, service.Name, patientUuid, cancellationToken));
-                serviceUuids.Add(service.Uuid);
-            }
         }
         var additionalServices = await (
             from appointmentService in dbContext.AppointmentMedicalServices.AsNoTracking()

@@ -24,7 +24,6 @@ import {
 import { hospitalService } from "@/lib/services/hospital/HospitalService";
 import {
   AppointmentStatus,
-  AppointmentType,
   Gender,
   type Hospital,
 } from "@/types/models";
@@ -48,12 +47,6 @@ const statusLabels: Record<AppointmentStatus, string> = {
   [AppointmentStatus.Cancelled]: "Đã hủy",
 };
 
-const typeLabels: Record<AppointmentType, string> = {
-  [AppointmentType.Doctor]: "Khám bác sĩ",
-  [AppointmentType.Hospital]: "Khám tại viện",
-  [AppointmentType.Service]: "Khám dịch vụ",
-};
-
 const vietnamDateTime = new Intl.DateTimeFormat("vi-VN", {
   dateStyle: "short",
   timeStyle: "short",
@@ -65,7 +58,6 @@ export function BranchAppointmentsScreen() {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all");
-  const [typeFilter, setTypeFilter] = useState<AppointmentType | "all">("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
@@ -73,9 +65,6 @@ export function BranchAppointmentsScreen() {
   const [patientName, setPatientName] = useState("");
   const [gender, setGender] = useState<Gender>(Gender.Other);
   const [appointmentDate, setAppointmentDate] = useState("");
-  const [appointmentType, setAppointmentType] = useState<AppointmentType>(
-    AppointmentType.Hospital,
-  );
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [state, setState] = useState<ScreenState>({ status: "loading" });
@@ -86,7 +75,6 @@ export function BranchAppointmentsScreen() {
     const query = {
       search: search.trim() || undefined,
       status: statusFilter === "all" ? undefined : statusFilter,
-      type: typeFilter === "all" ? undefined : typeFilter,
       from: fromDate || undefined,
       to: toDate || undefined,
       page: 1,
@@ -138,7 +126,7 @@ export function BranchAppointmentsScreen() {
       active = false;
       controller.abort();
     };
-  }, [attempt, fromDate, search, statusFilter, toDate, typeFilter]);
+  }, [attempt, fromDate, search, statusFilter, toDate]);
 
   if (state.status === "loading") {
     return <LoadingState label="Đang tải lịch hẹn chi nhánh" />;
@@ -187,7 +175,6 @@ export function BranchAppointmentsScreen() {
       patientName: patientName.trim(),
       gender,
       appointmentDate: new Date(appointmentDate).toISOString(),
-      type: appointmentType,
       note: note.trim(),
     };
     try {
@@ -209,7 +196,6 @@ export function BranchAppointmentsScreen() {
       setPatientName("");
       setGender(Gender.Other);
       setAppointmentDate("");
-      setAppointmentType(AppointmentType.Hospital);
       setNote("");
     } catch (error) {
       setMessage(getError(error, "Không thể tạo lịch hẹn. Vui lòng thử lại."));
@@ -254,7 +240,10 @@ export function BranchAppointmentsScreen() {
         <p className="mt-1 text-xs text-muted-foreground">Khách vãng lai</p>
       ) : null}
     </div>,
-    typeLabels[appointment.type],
+    <div key={`${appointment.uuid}-assignment`}>
+      <p className="font-medium">{appointment.doctorName || "Chưa phân bác sĩ"}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{appointment.roomName || "Chưa phân phòng"}</p>
+    </div>,
     <StatusPill
       key={`${appointment.uuid}-status`}
       tone={
@@ -352,22 +341,6 @@ export function BranchAppointmentsScreen() {
                 disabled={isSaving}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="branch-appointment-type">Loại lịch</Label>
-              <select
-                id="branch-appointment-type"
-                value={appointmentType}
-                onChange={(event) =>
-                  setAppointmentType(event.currentTarget.value as AppointmentType)
-                }
-                className="h-10 w-full rounded-md border px-3 text-sm"
-                disabled={isSaving}
-              >
-                {Object.values(AppointmentType).map((type) => (
-                  <option key={type} value={type}>{typeLabels[type]}</option>
-                ))}
-              </select>
-            </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="branch-appointment-note">Ghi chú</Label>
               <Textarea
@@ -400,7 +373,7 @@ export function BranchAppointmentsScreen() {
         title="Danh sách lịch hẹn"
         description={`${appointments.length} lịch theo điều kiện lọc`}
       >
-        <div className="grid gap-3 border-b bg-[#fbfdfe] p-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-3 border-b bg-[#fbfdfe] p-4 sm:grid-cols-2 xl:grid-cols-4">
           <Input
             aria-label="Tìm bệnh nhân hoặc mã y tế"
             value={search}
@@ -436,26 +409,12 @@ export function BranchAppointmentsScreen() {
               <option key={status} value={status}>{statusLabels[status]}</option>
             ))}
           </select>
-          <select
-            aria-label="Lọc loại lịch hẹn"
-            value={typeFilter}
-            onChange={(event) => {
-              setTypeFilter(event.currentTarget.value as AppointmentType | "all");
-              setPage(1);
-            }}
-            className="h-9 rounded-md border bg-white px-3 text-sm"
-          >
-            <option value="all">Mọi loại lịch</option>
-            {Object.values(AppointmentType).map((type) => (
-              <option key={type} value={type}>{typeLabels[type]}</option>
-            ))}
-          </select>
         </div>
         {rows.length ? (
           <>
             <PortalTable
               caption="Lịch hẹn thuộc chi nhánh"
-              columns={["Ngày / giờ", "Bệnh nhân", "Loại lịch", "Trạng thái", ""]}
+              columns={["Ngày / giờ", "Bệnh nhân", "Điều phối", "Trạng thái", ""]}
               rows={rows}
             />
             <PortalPagination page={safePage} totalItems={appointments.length} onPageChange={setPage} />
@@ -477,7 +436,8 @@ export function BranchAppointmentsScreen() {
           <div className="grid gap-3 p-5 sm:grid-cols-2">
             <Detail label="Đối tượng" value={selected.isWalkIn ? "Khách vãng lai" : "Người bệnh"} />
             <Detail label="Giới tính" value={genderLabels[selected.gender as Gender] ?? selected.gender} />
-            <Detail label="Loại lịch" value={typeLabels[selected.type]} />
+            <Detail label="Bác sĩ" value={selected.doctorName || "Chưa phân bác sĩ"} />
+            <Detail label="Phòng khám" value={selected.roomName || "Chưa phân phòng"} />
             <Detail label="Trạng thái" value={statusLabels[selected.status]} />
             <div className="border p-3 sm:col-span-2">
               <p className="text-xs text-muted-foreground">Ghi chú</p>

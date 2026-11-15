@@ -19,8 +19,5 @@ public sealed class CreateHospitalStaffRequest
     [StringLength(100, MinimumLength = 2)]
     public string? Specialty { get; init; }
 
-    [Range(0, int.MaxValue)]
-    public int? Price { get; init; }
-
     public Guid? DepartmentUuid { get; init; }
 }

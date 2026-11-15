@@ -12,7 +12,7 @@ using api.Lib;
 namespace api.Migrations
 {
     [DbContext(typeof(DBContext))]
-    [Migration("20261027000953_Init")]
+    [Migration("20261115022835_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -36,6 +36,11 @@ namespace api.Migrations
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
 
                     b.Property<Guid?>("HospitalUuid")
                         .HasColumnType("uuid");
@@ -75,6 +80,7 @@ namespace api.Migrations
                         {
                             Uuid = new Guid("b5c30c02-2fcb-4ae5-99db-15debd3ab001"),
                             CreatedAt = new DateTime(2026, 10, 13, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "",
                             Password = "$2a$12$W1mt0UsXqdFWuoc0vT3lUuk1pPbK2HzmYhQCDWmH6bZGMmRvrfhkW",
                             Phone = "0900000000",
                             RoleUuid = new Guid("ac448f86-bbf0-416f-95d0-8a32008880a8"),
@@ -118,9 +124,6 @@ namespace api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("MedicalServiceUuid")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Note")
                         .IsRequired()
                         .HasColumnType("text");
@@ -144,9 +147,6 @@ namespace api.Migrations
                     b.Property<int>("TotalPrice")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -155,8 +155,6 @@ namespace api.Migrations
                     b.HasIndex("DoctorUuid");
 
                     b.HasIndex("HospitalUuid");
-
-                    b.HasIndex("MedicalServiceUuid");
 
                     b.HasIndex("PatientUuid");
 
@@ -198,17 +196,6 @@ namespace api.Migrations
                     b.ToTable("AppointmentMedicalService");
                 });
 
-            modelBuilder.Entity("api.Model.AuditLog", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Uuid");
-
-                    b.ToTable("AuditLog");
-                });
-
             modelBuilder.Entity("api.Model.Department", b =>
                 {
                     b.Property<Guid>("Uuid")
@@ -246,6 +233,173 @@ namespace api.Migrations
                     b.HasKey("Uuid");
 
                     b.ToTable("Department");
+
+                    b.HasData(
+                        new
+                        {
+                            Uuid = new Guid("3a8d2865-ede9-4224-b8ee-7e90d9235d29"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Khám, chẩn đoán và theo dõi các bệnh lý nội khoa thường gặp ở người trưởng thành.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Nội tổng quát",
+                            Slug = "noi-tong-quat",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("275f8f9c-a2f3-4367-b4ac-605a38b61a92"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tầm soát và điều trị bệnh lý tim, mạch máu, tăng huyết áp và rối loạn nhịp.",
+                            Icon = "/images/departments/cardiology.svg",
+                            Name = "Tim mạch",
+                            Slug = "tim-mach",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("cb4ef8d3-c441-40a9-8399-e05312ce46cf"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Chăm sóc sức khỏe, theo dõi tăng trưởng và điều trị bệnh lý ở trẻ em.",
+                            Icon = "/images/departments/pediatrics.svg",
+                            Name = "Nhi khoa",
+                            Slug = "nhi-khoa",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("dd8d50bb-e41f-4fe0-b804-0303166d51a0"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Khám và điều trị các vấn đề về da, tóc, móng và bệnh lây truyền qua da.",
+                            Icon = "/images/departments/dermatology.svg",
+                            Name = "Da liễu",
+                            Slug = "da-lieu",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("dc0b229d-7b35-4be3-8140-f7f7c24961c6"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Chăm sóc thai kỳ, sức khỏe sinh sản và điều trị các bệnh lý phụ khoa.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Sản phụ khoa",
+                            Slug = "san-phu-khoa",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("94959244-65d0-4f43-9c19-f102b54f4b7a"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Chẩn đoán và điều trị bệnh lý tai, mũi, xoang, họng và vùng đầu cổ.",
+                            Icon = "/images/departments/pediatrics.svg",
+                            Name = "Tai Mũi Họng",
+                            Slug = "tai-mui-hong",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("d9cd01b6-2f11-4850-b0da-2792defbccf2"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Khám, điều trị và dự phòng các bệnh lý răng miệng, hàm và mặt.",
+                            Icon = "/images/departments/dermatology.svg",
+                            Name = "Răng Hàm Mặt",
+                            Slug = "rang-ham-mat",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("baba10d4-8362-4be9-b021-14d54bee66bb"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Kiểm tra thị lực, chẩn đoán và điều trị các bệnh lý nhãn khoa.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Mắt",
+                            Slug = "mat",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("9097e2b0-f4a2-4809-8e24-71c4197e8dc7"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Điều trị bệnh lý cơ, xương, khớp và tư vấn phục hồi khả năng vận động.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Cơ Xương Khớp",
+                            Slug = "co-xuong-khop",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("61e09e13-12ad-4aa5-a7bc-570b6be1e322"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Khám và điều trị bệnh lý não, tủy sống, dây thần kinh và cơ.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Thần kinh",
+                            Slug = "than-kinh",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("044d982b-f38c-4256-8dc8-a8609fea49eb"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Chẩn đoán và điều trị bệnh lý thực quản, dạ dày, ruột, gan, mật và tụy.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Tiêu hóa",
+                            Slug = "tieu-hoa",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("abf3d2c7-9fec-4168-9906-a96881580c38"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Khám, theo dõi và điều trị các bệnh lý đường thở, phổi và màng phổi.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Hô hấp",
+                            Slug = "ho-hap",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("7ac9a12d-008a-4926-85b0-d089b6b2b6e7"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Quản lý đái tháo đường và các rối loạn tuyến giáp, tuyến yên, tuyến thượng thận.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Nội tiết",
+                            Slug = "noi-tiet",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("cd6b83dc-d9d8-4cb6-ab63-624793312d0e"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tầm soát, chẩn đoán và phối hợp điều trị các bệnh lý ung thư.",
+                            Icon = "/images/departments/internal-medicine.svg",
+                            Name = "Ung bướu",
+                            Slug = "ung-buou",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("930ebb0c-612f-4226-a777-2df6ed5ac466"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Đánh giá chức năng và xây dựng chương trình vật lý trị liệu, phục hồi vận động.",
+                            Icon = "/images/departments/cardiology.svg",
+                            Name = "Phục hồi chức năng",
+                            Slug = "phuc-hoi-chuc-nang",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("api.Model.DoctorDepartment", b =>
@@ -254,10 +408,10 @@ namespace api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("DepartmentUuid")
+                    b.Property<Guid>("DepartmentUuid")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("DoctorUuid")
+                    b.Property<Guid>("DoctorUuid")
                         .HasColumnType("uuid");
 
                     b.HasKey("Uuid");
@@ -310,9 +464,6 @@ namespace api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Price")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasColumnType("text");
@@ -338,25 +489,55 @@ namespace api.Migrations
                     b.ToTable("DoctorProfile");
                 });
 
-            modelBuilder.Entity("api.Model.DoctorWorking", b =>
+            modelBuilder.Entity("api.Model.DoctorSchedule", b =>
                 {
                     b.Property<Guid>("Uuid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("DoctorUuid")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DoctorUuid")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("WorkingUuid")
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Uuid");
+
+                    b.HasIndex("DoctorUuid")
+                        .IsUnique();
+
+                    b.ToTable("DoctorSchedule");
+                });
+
+            modelBuilder.Entity("api.Model.DoctorWorkingHour", b =>
+                {
+                    b.Property<Guid>("Uuid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DoctorScheduleUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoomUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkingHourUuid")
                         .HasColumnType("uuid");
 
                     b.HasKey("Uuid");
 
-                    b.HasIndex("DoctorUuid");
+                    b.HasIndex("WorkingHourUuid");
 
-                    b.HasIndex("WorkingUuid");
+                    b.HasIndex("DoctorScheduleUuid", "WorkingHourUuid")
+                        .IsUnique();
 
-                    b.ToTable("DoctorWorking");
+                    b.HasIndex("RoomUuid", "WorkingHourUuid")
+                        .IsUnique();
+
+                    b.ToTable("DoctorWorkingHour");
                 });
 
             modelBuilder.Entity("api.Model.ExportTicket", b =>
@@ -479,6 +660,168 @@ namespace api.Migrations
                     b.HasKey("Uuid");
 
                     b.ToTable("Hospital");
+
+                    b.HasData(
+                        new
+                        {
+                            Uuid = new Guid("64fe32c1-af1f-4ed3-b7e9-ae588a14a560"),
+                            Address = "78 đường Giải Phóng, phường Kim Liên, Hà Nội",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Bạch Mai** là bệnh viện đa khoa hạng đặc biệt, tuyến cuối tại Hà Nội. Bệnh viện tiếp nhận khám, cấp cứu và điều trị nhiều nhóm bệnh lý chuyên sâu.\n\n- Cấp cứu và hồi sức tích cực\n- Tim mạch, hô hấp, thần kinh\n- Xét nghiệm và chẩn đoán hình ảnh",
+                            DetailService = "**Khi đến khám**\n\nNgười bệnh nên mang theo giấy tờ tùy thân, thẻ bảo hiểm y tế, giấy chuyển tuyến (nếu có), đơn thuốc và kết quả xét nghiệm gần nhất. Lịch của từng khoa có thể thay đổi; nên kiểm tra trên kênh chính thức trước khi đến.",
+                            Image = "https://bachmai.gov.vn/assets/images/ad1.jpg",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Bach+Mai&output=embed",
+                            Name = "Bệnh viện Bạch Mai",
+                            NumberOfRoom = 120,
+                            Slug = "benh-vien-bach-mai",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 07:30 - 16:30; khám theo yêu cầu có lịch cuối tuần"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("a79a1b4f-ebb2-4bd8-b227-c8d0b0ab62ae"),
+                            Address = "40 Tràng Thi, phường Cửa Nam, Hà Nội",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Hữu nghị Việt Đức** là cơ sở ngoại khoa tuyến cuối, nổi bật với điều trị chấn thương, phẫu thuật tiêu hóa, thần kinh, tim mạch và ghép tạng.\n\n- Khám ngoại khoa chuyên sâu\n- Cấp cứu chấn thương\n- Phẫu thuật và phục hồi sau mổ",
+                            DetailService = "**Chuẩn bị hồ sơ**\n\n- Giấy tờ tùy thân và thẻ bảo hiểm y tế\n- Giấy chuyển tuyến nếu khám đúng tuyến\n- Phim chụp, kết quả xét nghiệm và hồ sơ phẫu thuật cũ\n\nNgười bệnh cần làm theo hướng dẫn phân luồng tại khu tiếp đón.",
+                            Image = "https://upload.wikimedia.org/wikipedia/commons/d/d0/B%E1%BB%87nh_vi%E1%BB%87n_Vi%E1%BB%87t_%C4%90%E1%BB%A9c%2C_Tr%C3%A0ng_Thi%2C_H%C3%A0_N%E1%BB%99i_002.JPG",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Huu+nghi+Viet+Duc&output=embed",
+                            Name = "Bệnh viện Hữu nghị Việt Đức",
+                            NumberOfRoom = 90,
+                            Slug = "benh-vien-huu-nghi-viet-duc",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 07:00 - 16:30; cấp cứu 24/7"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("30eb8e2a-1290-47bf-9cdb-82060c5a896e"),
+                            Address = "1 Trần Hưng Đạo, phường Hai Bà Trưng, Hà Nội",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Trung ương Quân đội 108** là bệnh viện đa khoa, chuyên khoa sâu tuyến cuối của quân đội và phục vụ người dân.\n\nCác thế mạnh gồm chấn thương chỉnh hình, tim mạch, ung bướu, đột quỵ, ghép mô và tạng.",
+                            DetailService = "**Lưu ý khi đăng ký khám**\n\nNgười bệnh nên xác định khu khám phù hợp, đến trước giờ hẹn và chuẩn bị đầy đủ hồ sơ y tế. Một số kỹ thuật hoặc chuyên gia làm việc theo lịch riêng.",
+                            Image = "https://upload.wikimedia.org/wikipedia/commons/e/e8/Benh_vien_Trung_uong_Quan_doi_108.jpg",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Trung+uong+Quan+doi+108&output=embed",
+                            Name = "Bệnh viện Trung ương Quân đội 108",
+                            NumberOfRoom = 110,
+                            Slug = "benh-vien-trung-uong-quan-doi-108",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 06:30 - 17:00; một số khu khám làm việc Thứ Bảy"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("b892126f-bad5-47ed-a714-1e620f12e385"),
+                            Address = "201B Nguyễn Chí Thanh, phường Chợ Lớn, TP. Hồ Chí Minh",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Chợ Rẫy** là bệnh viện đa khoa hạng đặc biệt, tuyến cuối khu vực phía Nam. Bệnh viện tiếp nhận nhiều ca bệnh nặng và cần phối hợp đa chuyên khoa.\n\n- Cấp cứu, hồi sức và chống độc\n- Tim mạch, ung bướu, huyết học\n- Ngoại khoa và ghép tạng",
+                            DetailService = "**Hướng dẫn chung**\n\nNgười bệnh có lịch hẹn nên đến sớm để xác nhận thông tin. Khi khám bảo hiểm y tế, cần mang bản gốc giấy tờ liên quan và giấy chuyển tuyến còn hiệu lực nếu được yêu cầu.",
+                            Image = "https://upload.wikimedia.org/wikipedia/commons/a/a7/C%E1%BB%95ng_b%E1%BB%87nh_vi%E1%BB%87n_Ch%E1%BB%A3_R%E1%BA%ABy_2016.jpg",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Cho+Ray&output=embed",
+                            Name = "Bệnh viện Chợ Rẫy",
+                            NumberOfRoom = 130,
+                            Slug = "benh-vien-cho-ray",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 07:00 - 16:00; khám dịch vụ có lịch Thứ Bảy"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("26c92e11-d112-426b-b689-fb44e45d7052"),
+                            Address = "284 Cống Quỳnh, phường Bến Thành, TP. Hồ Chí Minh",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Từ Dũ** là bệnh viện chuyên khoa phụ sản tại TP. Hồ Chí Minh, cung cấp dịch vụ chăm sóc thai kỳ, sinh nở, phụ khoa và hỗ trợ sinh sản.\n\n- Khám sản và quản lý thai\n- Khám, điều trị phụ khoa\n- Chăm sóc sơ sinh",
+                            DetailService = "**Khi khám thai hoặc phụ khoa**\n\nNên mang sổ khám thai, kết quả siêu âm, xét nghiệm và danh sách thuốc đang sử dụng. Trường hợp có dấu hiệu cấp cứu sản khoa cần đến khu cấp cứu ngay, không chờ lịch hẹn.",
+                            Image = "https://upload.wikimedia.org/wikipedia/commons/6/6c/Tu_Du_Maternity_Hospital_01.jpg",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Tu+Du&output=embed",
+                            Name = "Bệnh viện Từ Dũ",
+                            NumberOfRoom = 85,
+                            Slug = "benh-vien-tu-du",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Khám theo lịch từ Thứ Hai - Chủ Nhật; cấp cứu sản phụ khoa 24/7"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("9e70212a-f0db-49ec-8d70-f83ea9362f6d"),
+                            Address = "341 Sư Vạn Hạnh, phường Hòa Hưng, TP. Hồ Chí Minh",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Nhi Đồng 1** là bệnh viện chuyên khoa nhi, tiếp nhận khám và điều trị trẻ em với nhiều chuyên khoa nội, ngoại và cấp cứu.\n\n- Nhi tổng quát và chuyên khoa\n- Cấp cứu, hồi sức nhi\n- Ngoại nhi và chăm sóc sơ sinh",
+                            DetailService = "**Phụ huynh cần chuẩn bị**\n\n- Giấy khai sinh hoặc giấy tờ của trẻ\n- Thẻ bảo hiểm y tế\n- Sổ khám, đơn thuốc và thông tin dị ứng\n\nKhông tự ý cho trẻ dùng thêm thuốc trước khi được nhân viên y tế đánh giá nếu trẻ có biểu hiện bất thường.",
+                            Image = "https://upload.wikimedia.org/wikipedia/commons/c/cb/Benh_vien_nhi_dong_1-ph%C6%B0%E1%BB%9Dng_10%2C_Qu%E1%BA%ADn_10%2C_TPHCM%2C_Vi%E1%BB%87t_Nam_-_panoramio.jpg",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Nhi+Dong+1&output=embed",
+                            Name = "Bệnh viện Nhi Đồng 1",
+                            NumberOfRoom = 80,
+                            Slug = "benh-vien-nhi-dong-1",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Chủ Nhật theo từng khu khám; cấp cứu 24/7"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("59ef0150-3a93-4b7b-aa28-778866eede6a"),
+                            Address = "16 Lê Lợi, phường Thuận Hóa, TP. Huế",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Trung ương Huế** là bệnh viện đa khoa hạng đặc biệt, tuyến cuối khu vực miền Trung. Cơ sở thực hiện khám, điều trị chuyên sâu và đào tạo y khoa.\n\n- Tim mạch, đột quỵ và hồi sức\n- Ung bướu, huyết học\n- Ngoại khoa và ghép tạng",
+                            DetailService = "**Trước khi đến khám**\n\nNgười bệnh nên kiểm tra đúng cơ sở, khu khám và lịch chuyên gia. Mang theo hồ sơ điều trị cũ để tránh lặp lại xét nghiệm không cần thiết khi bác sĩ có thể sử dụng kết quả còn giá trị.",
+                            Image = "https://upload.wikimedia.org/wikipedia/commons/0/04/BV_TW_Hu%E1%BA%BF_2025.jpg",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Trung+uong+Hue&output=embed",
+                            Name = "Bệnh viện Trung ương Huế",
+                            NumberOfRoom = 115,
+                            Slug = "benh-vien-trung-uong-hue",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 07:00 - 17:00; cấp cứu 24/7"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("510eb5df-e6b3-4476-b8ac-f36989949b2e"),
+                            Address = "43 Tràng Thi, phường Cửa Nam, Hà Nội",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Phụ sản Trung ương** là cơ sở chuyên khoa đầu ngành về sản khoa, phụ khoa, sơ sinh và hỗ trợ sinh sản.\n\nBệnh viện tiếp nhận khám định kỳ, điều trị chuyên sâu và cấp cứu sản phụ khoa.",
+                            DetailService = "**Hồ sơ nên mang theo**\n\n- Sổ khám thai và phiếu siêu âm\n- Kết quả xét nghiệm gần nhất\n- Thông tin thuốc, bệnh nền và tiền sử dị ứng\n\nLịch khám chuyên gia và khám theo yêu cầu cần được xác nhận trước.",
+                            Image = "https://upload.wikimedia.org/wikipedia/commons/e/eb/B%E1%BB%87nh_vi%E1%BB%87n_ph%E1%BB%A5_s%E1%BA%A3n_trung_%C6%B0%C6%A1ng%2C_Tri%E1%BB%87u_Qu%E1%BB%91c_%C4%90%E1%BA%A1t%2C_H%C3%A0_N%E1%BB%99i_004.JPG",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Phu+san+Trung+uong&output=embed",
+                            Name = "Bệnh viện Phụ sản Trung ương",
+                            NumberOfRoom = 70,
+                            Slug = "benh-vien-phu-san-trung-uong",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 06:30 - 16:30; khám dịch vụ theo lịch cuối tuần"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("39ae7eb7-27c9-46b2-8897-de60ee8532fd"),
+                            Address = "1 Lý Thường Kiệt, phường Tân Sơn Nhất, TP. Hồ Chí Minh",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Thống Nhất** là bệnh viện đa khoa tuyến cuối tại TP. Hồ Chí Minh, có thế mạnh chăm sóc người cao tuổi và điều trị các bệnh lý nội khoa phối hợp.\n\n- Tim mạch và lão khoa\n- Nội tiết, hô hấp, tiêu hóa\n- Ngoại khoa và phục hồi chức năng",
+                            DetailService = "**Lưu ý**\n\nNgười bệnh có nhiều bệnh nền nên mang đầy đủ đơn thuốc đang dùng và kết quả theo dõi gần nhất. Không tự ngưng thuốc trước buổi khám nếu chưa có hướng dẫn chuyên môn.",
+                            Image = "https://upload.wikimedia.org/wikipedia/commons/f/f0/Hinh-anh-benh-vien-thong-nhat.jpg",
+                            MapUrl = "https://www.google.com/maps?q=Benh+vien+Thong+Nhat&output=embed",
+                            Name = "Bệnh viện Thống Nhất",
+                            NumberOfRoom = 95,
+                            Slug = "benh-vien-thong-nhat",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 07:00 - 16:30; cấp cứu 24/7"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("bbb8ca82-4e3d-4074-9bf7-86f1640ed0c7"),
+                            Address = "3 đường 17A, phường An Lạc, TP. Hồ Chí Minh",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Bệnh viện Quốc tế City** là bệnh viện đa khoa tại khu Y tế kỹ thuật cao Hoa Lâm Shangri-La, cung cấp khám ngoại trú, điều trị nội trú và cấp cứu.\n\n- Nội, ngoại và nhi khoa\n- Sản phụ khoa\n- Chẩn đoán hình ảnh và xét nghiệm",
+                            DetailService = "**Đặt lịch khám**\n\nNgười bệnh nên xác nhận bác sĩ, chuyên khoa, chi phí dự kiến và phạm vi bảo lãnh của đơn vị bảo hiểm trước khi đến. Mang theo hồ sơ cũ để bác sĩ có đủ thông tin đánh giá.",
+                            Image = "https://commons.wikimedia.org/wiki/Special:FilePath/City%20International%20Hospital%20Vietnam.jpg",
+                            MapUrl = "https://www.google.com/maps?q=City+International+Hospital+Vietnam&output=embed",
+                            Name = "Bệnh viện Quốc tế City",
+                            NumberOfRoom = 65,
+                            Slug = "benh-vien-quoc-te-city",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy theo lịch chuyên khoa; cấp cứu 24/7"
+                        });
                 });
 
             modelBuilder.Entity("api.Model.HospitalDepartment", b =>
@@ -670,6 +1013,348 @@ namespace api.Migrations
                     b.HasKey("Uuid");
 
                     b.ToTable("MedicalService");
+
+                    b.HasData(
+                        new
+                        {
+                            Uuid = new Guid("0abbfe08-a2eb-40ba-9a06-d9007a5c6723"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Nội tổng quát** giúp đánh giá các triệu chứng thường gặp, bệnh nền và tình trạng sức khỏe chung của người trưởng thành.\n\n- Khai thác tiền sử và thuốc đang dùng\n- Khám lâm sàng\n- Tư vấn xét nghiệm hoặc chuyên khoa phù hợp",
+                            DetailService = "**Chuẩn bị**\n\nMang theo hồ sơ khám gần nhất, danh sách thuốc và ghi lại diễn tiến triệu chứng.\n\n**Quy trình**\n\n1. Tiếp nhận và đo dấu hiệu sinh tồn\n2. Khám với bác sĩ\n3. Nhận chỉ định và hướng dẫn theo dõi",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = true,
+                            IsInsured = true,
+                            Name = "Khám Nội tổng quát",
+                            Price = 250000,
+                            Slug = "kham-noi-tong-quat",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:00 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("c4b2c06c-4524-4434-8fef-d5175e2c20e9"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Tim mạch** hỗ trợ đánh giá tăng huyết áp, đau ngực, hồi hộp, khó thở và các yếu tố nguy cơ tim mạch.\n\nKết luận được đưa ra dựa trên thăm khám và các chỉ định phù hợp.",
+                            DetailService = "**Nên mang theo**\n\n- Sổ theo dõi huyết áp, nhịp tim\n- Điện tâm đồ hoặc siêu âm tim cũ\n- Danh sách thuốc đang sử dụng\n\nKhông tự ý ngừng thuốc tim mạch trước buổi khám.",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = true,
+                            IsInsured = true,
+                            Name = "Khám Tim mạch",
+                            Price = 350000,
+                            Slug = "kham-tim-mach",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:30 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("c96496be-2faf-4485-ad5f-5a79f711e90b"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Nhi khoa** dành cho trẻ có triệu chứng cấp tính, cần theo dõi bệnh mạn tính hoặc đánh giá tăng trưởng và phát triển.",
+                            DetailService = "**Phụ huynh cần chuẩn bị**\n\n- Sổ khám và sổ tiêm chủng của trẻ\n- Thông tin cân nặng, nhiệt độ và triệu chứng\n- Danh sách thuốc trẻ đã dùng\n\nTrẻ có dấu hiệu nặng cần đến khu cấp cứu thay vì chờ lịch khám.",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = true,
+                            IsInsured = true,
+                            Name = "Khám Nhi khoa",
+                            Price = 280000,
+                            Slug = "kham-nhi-khoa",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Chủ Nhật, 07:00 - 17:00"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("59bb50a3-4655-42f6-ae97-e95e37e63a1e"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Da liễu** đánh giá các vấn đề về da, tóc và móng, kết hợp tiền sử, thăm khám trực tiếp và xét nghiệm khi cần.",
+                            DetailService = "**Trước buổi khám**\n\n- Hạn chế trang điểm hoặc bôi sản phẩm lên vùng cần khám\n- Mang thuốc và mỹ phẩm đang sử dụng\n- Chuẩn bị ảnh chụp diễn tiến tổn thương nếu có",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 0,
+                            IsFeatured = false,
+                            IsInsured = false,
+                            Name = "Khám Da liễu",
+                            Price = 300000,
+                            Slug = "kham-da-lieu",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 08:00 - 17:00"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("65d34919-ded3-4f69-bb60-2334e4499763"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Sản phụ khoa** hỗ trợ chăm sóc thai kỳ, sức khỏe sinh sản và đánh giá các triệu chứng phụ khoa.",
+                            DetailService = "**Hồ sơ nên mang theo**\n\n- Sổ khám thai hoặc hồ sơ phụ khoa trước đây\n- Kết quả siêu âm, xét nghiệm gần nhất\n- Thông tin chu kỳ và thuốc đang dùng\n\nNội dung khám được điều chỉnh theo tình trạng thực tế.",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = true,
+                            IsInsured = true,
+                            Name = "Khám Sản phụ khoa",
+                            Price = 350000,
+                            Slug = "kham-san-phu-khoa",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Chủ Nhật, 07:00 - 17:00"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("bf313821-f3a3-41ce-8ebf-db272e78898b"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Tai Mũi Họng** đánh giá các triệu chứng ở tai, mũi, xoang, họng, thanh quản và vùng đầu cổ.",
+                            DetailService = "**Quy trình dự kiến**\n\n1. Khai thác triệu chứng và tiền sử\n2. Khám tai, mũi và họng\n3. Nội soi hoặc xét nghiệm khi có chỉ định\n4. Tư vấn điều trị và tái khám",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Khám Tai Mũi Họng",
+                            Price = 280000,
+                            Slug = "kham-tai-mui-hong",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:30 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("4006a2d0-abc8-437e-84c2-d8a84fc49dc1"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Mắt tổng quát** kiểm tra thị lực và hỗ trợ phát hiện các vấn đề thường gặp của mắt.",
+                            DetailService = "**Lưu ý**\n\nMang kính đang sử dụng và đơn kính cũ. Một số trường hợp cần nhỏ thuốc giãn đồng tử, vì vậy người khám nên hạn chế tự lái xe sau khi thực hiện nếu thị lực còn mờ.",
+                            Image = "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Khám Mắt tổng quát",
+                            Price = 300000,
+                            Slug = "kham-mat-tong-quat",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:30 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("d82ad43a-baa1-4156-9b62-e85eae266106"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Cơ Xương Khớp** đánh giá đau, sưng, cứng khớp, hạn chế vận động và các bệnh lý cơ xương khớp mạn tính.",
+                            DetailService = "**Nên chuẩn bị**\n\n- Phim X-quang, CT hoặc MRI cũ\n- Kết quả xét nghiệm liên quan\n- Danh sách thuốc giảm đau đã sử dụng\n\nMặc trang phục thuận tiện để bác sĩ kiểm tra vận động.",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Khám Cơ Xương Khớp",
+                            Price = 320000,
+                            Slug = "kham-co-xuong-khop",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:30 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("589142f2-a8a3-41ee-b3d6-5e25ee778e21"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Thần kinh** hỗ trợ đánh giá đau đầu, chóng mặt, tê yếu, rối loạn vận động, co giật và các triệu chứng thần kinh khác.",
+                            DetailService = "**Chuẩn bị**\n\nMang theo phim chụp não hoặc cột sống, điện não đồ, đơn thuốc và ghi chú thời điểm xuất hiện triệu chứng. Người bệnh có cơn bất thường nên đi cùng người thân nếu có thể.",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Khám Thần kinh",
+                            Price = 380000,
+                            Slug = "kham-than-kinh",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 07:30 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("fc740d36-d7de-48a6-95ac-fc3c7b7df465"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Tiêu hóa** đánh giá triệu chứng liên quan thực quản, dạ dày, ruột, gan, mật và tụy.",
+                            DetailService = "**Khi đến khám**\n\nMang kết quả nội soi, siêu âm, xét nghiệm gan và danh sách thuốc gần nhất. Chỉ nhịn ăn khi đã được cơ sở xác nhận có xét nghiệm hoặc thủ thuật yêu cầu chuẩn bị.",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Khám Tiêu hóa",
+                            Price = 320000,
+                            Slug = "kham-tieu-hoa",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:00 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("6401edbe-2788-4aa7-8287-0ec81abbbe04"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Hô hấp** dành cho các triệu chứng ho, khó thở, khò khè, đau ngực khi thở hoặc bệnh phổi cần theo dõi.",
+                            DetailService = "**Nên mang theo**\n\n- Phim X-quang hoặc CT ngực\n- Kết quả đo chức năng hô hấp\n- Bình hít và thuốc đang sử dụng\n\nThông báo ngay nếu có khó thở tăng nhanh hoặc đau ngực dữ dội.",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Khám Hô hấp",
+                            Price = 320000,
+                            Slug = "kham-ho-hap",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:30 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("4e941bd7-8a0d-4087-81eb-af8b03424a35"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám Nội tiết** hỗ trợ quản lý đái tháo đường, bệnh tuyến giáp và các rối loạn hormone khác.",
+                            DetailService = "**Chuẩn bị**\n\nMang sổ theo dõi đường huyết, kết quả HbA1c hoặc xét nghiệm hormone, đơn thuốc và thông tin chế độ ăn. Không tự ý bỏ thuốc trước khi khám.",
+                            Image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Khám Nội tiết",
+                            Price = 320000,
+                            Slug = "kham-noi-tiet",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Sáu, 07:30 - 16:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("47f3f9db-eb80-4861-8281-68fcb39a6e16"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Siêu âm ổ bụng tổng quát** sử dụng sóng âm để khảo sát hình thái một số cơ quan trong ổ bụng theo chỉ định.",
+                            DetailService = "**Chuẩn bị**\n\nNgười thực hiện có thể được yêu cầu nhịn ăn hoặc uống nước tùy mục tiêu khảo sát. Cần xác nhận hướng dẫn cụ thể tại thời điểm đặt lịch.\n\nKết quả phải được bác sĩ diễn giải cùng triệu chứng và xét nghiệm liên quan.",
+                            Image = "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = true,
+                            IsInsured = true,
+                            Name = "Siêu âm ổ bụng tổng quát",
+                            Price = 350000,
+                            Slug = "sieu-am-o-bung-tong-quat",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:30 - 17:00"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("9e62b6a7-e98e-4a5d-b565-d779ed380942"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Xét nghiệm công thức máu** cung cấp thông tin về hồng cầu, bạch cầu và tiểu cầu, hỗ trợ đánh giá nhiều tình trạng sức khỏe.",
+                            DetailService = "**Quy trình**\n\n1. Đối chiếu thông tin người bệnh\n2. Lấy mẫu máu tĩnh mạch\n3. Phân tích mẫu và trả kết quả\n\nViệc có cần nhịn ăn hay không phụ thuộc các xét nghiệm thực hiện cùng lúc.",
+                            Image = "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = true,
+                            IsInsured = true,
+                            Name = "Xét nghiệm công thức máu",
+                            Price = 150000,
+                            Slug = "xet-nghiem-cong-thuc-mau",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Chủ Nhật, 06:30 - 11:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("afe98471-45f0-4be9-8d2b-e217c74404c6"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Xét nghiệm đường huyết và HbA1c** hỗ trợ đánh giá mức glucose tại thời điểm lấy mẫu và xu hướng kiểm soát đường huyết trong thời gian gần đây.",
+                            DetailService = "**Lưu ý**\n\nXác nhận yêu cầu nhịn ăn trước khi đến. Thông báo thuốc đang dùng và không tự ý thay đổi liều insulin hoặc thuốc hạ đường huyết nếu chưa được hướng dẫn.",
+                            Image = "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = true,
+                            IsInsured = true,
+                            Name = "Xét nghiệm đường huyết và HbA1c",
+                            Price = 280000,
+                            Slug = "xet-nghiem-duong-huyet-hba1c",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Chủ Nhật, 06:30 - 11:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("b5e11c20-fd42-4352-97b5-596352222bd9"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Điện tâm đồ 12 chuyển đạo** ghi lại hoạt động điện của tim, hỗ trợ đánh giá nhịp tim và một số bất thường tim mạch.",
+                            DetailService = "**Trước khi thực hiện**\n\nNghỉ vài phút, tránh vận động gắng sức ngay trước đo và thông báo thuốc tim mạch đang sử dụng. Thủ thuật không xâm lấn và thường hoàn thành trong thời gian ngắn.",
+                            Image = "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = true,
+                            IsInsured = true,
+                            Name = "Điện tâm đồ 12 chuyển đạo",
+                            Price = 180000,
+                            Slug = "dien-tam-do-12-chuyen-dao",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Chủ Nhật, 07:00 - 17:00"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("a3d977bb-31c3-46e7-ade7-97a36c1db751"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**X-quang ngực thẳng** hỗ trợ khảo sát phổi, tim và các cấu trúc trong lồng ngực theo chỉ định chuyên môn.",
+                            DetailService = "**Lưu ý an toàn**\n\nThông báo cho nhân viên y tế nếu đang hoặc có khả năng mang thai. Tháo vật kim loại tại vùng chụp và làm theo hướng dẫn nín thở để hình ảnh đạt yêu cầu.",
+                            Image = "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "X-quang ngực thẳng",
+                            Price = 220000,
+                            Slug = "x-quang-nguc-thang",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Chủ Nhật, 07:00 - 17:00"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("7d8af6a5-e1b9-4ee9-b7b8-56d4d9dc602e"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Nội soi dạ dày không gây mê** giúp bác sĩ quan sát niêm mạc đường tiêu hóa trên và thực hiện lấy mẫu khi có chỉ định.",
+                            DetailService = "**Chuẩn bị bắt buộc**\n\n- Nhịn ăn và uống theo thời gian cơ sở hướng dẫn\n- Thông báo thuốc chống đông, dị ứng và bệnh nền\n- Mang kết quả nội soi cũ nếu có\n\nChỉ thực hiện sau khi được sàng lọc và giải thích thủ thuật.",
+                            Image = "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Nội soi dạ dày không gây mê",
+                            Price = 750000,
+                            Slug = "noi-soi-da-day-khong-gay-me",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:00 - 11:30"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("1893e6df-8119-4f49-bdb2-3ad389c6ed62"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Vật lý trị liệu phục hồi vận động** được xây dựng theo tình trạng chức năng, mục tiêu và khả năng đáp ứng của từng người bệnh.",
+                            DetailService = "**Buổi đầu tiên**\n\n1. Đánh giá đau, tầm vận động và sức cơ\n2. Xác định mục tiêu phục hồi\n3. Hướng dẫn bài tập và kỹ thuật phù hợp\n4. Lập lịch đánh giá lại\n\nNên mặc trang phục thuận tiện cho vận động.",
+                            Image = "https://images.unsplash.com/photo-1573497491208-6b1acb260507?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 1,
+                            IsFeatured = false,
+                            IsInsured = true,
+                            Name = "Vật lý trị liệu phục hồi vận động",
+                            Price = 400000,
+                            Slug = "vat-ly-tri-lieu-phuc-hoi-van-dong",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:30 - 17:00"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("06d3f5d6-d6ea-44d8-90d1-3ad3993f8a9b"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "**Khám sức khỏe tổng quát** kết hợp khám lâm sàng và danh mục cận lâm sàng cơ bản để ghi nhận tình trạng sức khỏe tại thời điểm kiểm tra.\n\nDanh mục cụ thể được điều chỉnh theo tuổi, giới, tiền sử và nhu cầu.",
+                            DetailService = "**Chuẩn bị**\n\n- Đặt lịch và xác nhận yêu cầu nhịn ăn\n- Mang giấy tờ, hồ sơ sức khỏe và đơn thuốc\n- Tránh rượu bia và vận động gắng sức trước ngày khám\n\n**Quy trình**\n\n1. Đăng ký và đo chỉ số cơ bản\n2. Lấy mẫu, chẩn đoán hình ảnh theo danh mục\n3. Khám bác sĩ và nhận tư vấn tổng hợp",
+                            Image = "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+                            InsuranceCap = 0,
+                            IsFeatured = true,
+                            IsInsured = false,
+                            Name = "Khám sức khỏe tổng quát",
+                            Price = 1200000,
+                            Slug = "kham-suc-khoe-tong-quat",
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            WorkingHour = "Thứ Hai - Thứ Bảy, 07:00 - 11:30"
+                        });
                 });
 
             modelBuilder.Entity("api.Model.Medicine", b =>
@@ -717,6 +1402,708 @@ namespace api.Migrations
                     b.HasKey("Uuid");
 
                     b.ToTable("Medicine");
+
+                    b.HasData(
+                        new
+                        {
+                            Uuid = new Guid("036aeccd-f365-42a6-9e04-d068c7164baf"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc giảm đau, hạ sốt; sử dụng đúng liều được hướng dẫn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Paracetamol 500 mg",
+                            Price = 1200,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("9e5b33fc-15bd-425d-9ad1-8fa05bb266af"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc giảm đau, kháng viêm không steroid; cần lưu ý nguy cơ trên dạ dày.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Ibuprofen 400 mg",
+                            Price = 1800,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("82e9b25d-d872-4aef-bc5e-22bf9e23c8b7"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Kháng sinh penicillin, chỉ sử dụng khi có chỉ định của bác sĩ.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Amoxicillin 500 mg",
+                            Price = 2500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("6c23dad5-8938-4a06-af07-21dc9ba17978"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Kháng sinh phối hợp; dùng đủ liệu trình theo đơn và lưu ý tiền sử dị ứng penicillin.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Amoxicillin/Clavulanate 875/125 mg",
+                            Price = 14500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("55d0a06a-9934-4bff-a146-113d6a28ae46"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Kháng sinh nhóm macrolide, sử dụng theo chẩn đoán và đơn thuốc.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Azithromycin 500 mg",
+                            Price = 12000,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("c815e301-5461-4417-8f33-8130020d759f"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Kháng sinh cephalosporin; không tự ý dùng cho nhiễm virus thông thường.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Cefuroxime 500 mg",
+                            Price = 15000,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("65af0a2b-3fa4-479c-949c-50b241d41e86"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc điều trị một số nhiễm khuẩn kỵ khí và ký sinh trùng theo chỉ định.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Metronidazole 250 mg",
+                            Price = 900,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("c5b5e8b1-decf-4f59-bbd0-d2d9e72c73e7"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc ức chế tiết acid dạ dày, thường dùng trước bữa ăn theo hướng dẫn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Omeprazole 20 mg",
+                            Price = 1300,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("0a687332-e663-43ff-8ab4-359906254dab"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc ức chế bơm proton dùng trong một số bệnh lý liên quan acid dạ dày.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Esomeprazole 40 mg",
+                            Price = 5500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("f85251fb-7e9d-4a1d-8e9d-c623e2752829"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc giảm tiết acid dạ dày; thời gian sử dụng theo chỉ định chuyên môn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Pantoprazole 40 mg",
+                            Price = 3500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("ca281ba6-e73b-491a-b334-861d990a6d97"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc hỗ trợ điều trị buồn nôn và rối loạn vận động tiêu hóa theo chỉ định.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Domperidone 10 mg",
+                            Price = 1600,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("1918e16c-2921-4d8e-a84f-7c7983dbe90e"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bột bù nước và điện giải; pha đúng lượng nước ghi trên bao bì.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Oresol áp lực thẩm thấu thấp",
+                            Price = 4500,
+                            Status = 0,
+                            Unit = 5,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("8ab64ed5-dca4-4f0b-9b81-4f8cde3bfe00"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc dạng gói hỗ trợ điều trị triệu chứng tiêu chảy theo hướng dẫn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Diosmectite 3 g",
+                            Price = 4000,
+                            Status = 0,
+                            Unit = 5,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("1fcb3999-4793-4381-bf96-d8d7a11d203c"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Dung dịch nhuận tràng thẩm thấu, liều dùng được điều chỉnh theo đáp ứng.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Lactulose 3.35 g/5 ml - 100 ml",
+                            Price = 48000,
+                            Status = 0,
+                            Unit = 2,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("3b22896a-efbd-4976-b9d0-dc7eedcf1ee2"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc nhuận tràng kích thích, chỉ nên dùng ngắn hạn theo hướng dẫn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Bisacodyl 5 mg",
+                            Price = 900,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("5a815127-0801-434e-ad98-6e77c930590c"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc giãn phế quản dạng hít; cần được hướng dẫn kỹ thuật sử dụng bình hít.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Salbutamol bình hít 100 mcg/liều",
+                            Price = 72000,
+                            Status = 0,
+                            Unit = 2,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("0f7e50a7-d269-41f1-bf84-71882c1e2774"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Corticosteroid dạng khí dung kiểm soát viêm đường thở, dùng theo đơn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Budesonide khí dung 0.5 mg/2 ml",
+                            Price = 135000,
+                            Status = 0,
+                            Unit = 3,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("35d71696-f7c4-4162-ac93-112b90a300c8"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc kháng histamine hỗ trợ giảm triệu chứng dị ứng.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Cetirizine 10 mg",
+                            Price = 1200,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("6fd78f28-5720-4299-b9f5-039691329d80"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc kháng histamine dùng trong viêm mũi dị ứng và mày đay.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Loratadine 10 mg",
+                            Price = 1500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("8bb56dd6-9f04-4833-9d68-4f479b308e1e"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc kháng histamine có thể gây buồn ngủ; thận trọng khi lái xe.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Chlorpheniramine 4 mg",
+                            Price = 500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("e4dc79f2-cfde-4db5-84b2-48688778acbc"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Siro giảm ho khan; không dùng thay thế việc đánh giá nguyên nhân ho kéo dài.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0f,
+                            IsInsured = false,
+                            Name = "Dextromethorphan siro 15 mg/5 ml - 100 ml",
+                            Price = 38000,
+                            Status = 0,
+                            Unit = 2,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("92b6ae12-1264-444f-9c6b-21ad099cd8c2"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc long đờm dạng gói; hòa tan hoàn toàn trước khi uống.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Acetylcysteine 200 mg",
+                            Price = 2500,
+                            Status = 0,
+                            Unit = 5,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("f854d43f-b17f-4882-be04-131dc91c9383"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc tiêu nhầy, hỗ trợ làm loãng đờm trong bệnh lý đường hô hấp.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Ambroxol 30 mg",
+                            Price = 1200,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("c91ae78d-2bd4-4680-9163-69ca0d70da91"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc điều trị tăng huyết áp; cần theo dõi huyết áp và chức năng thận.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Losartan 50 mg",
+                            Price = 2200,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("fdbbdc1a-4c2a-4617-b26b-0f9272fe3158"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc chẹn kênh canxi điều trị tăng huyết áp và một số trường hợp đau thắt ngực.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Amlodipine 5 mg",
+                            Price = 1000,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("fb9e8dc2-196d-491c-bcc2-507d205f3876"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc chẹn beta; không tự ý ngừng đột ngột khi đang điều trị.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Bisoprolol 5 mg",
+                            Price = 3000,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("d6ae74b5-74ec-43d1-853e-19d0fc5a6bbd"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc hạ lipid máu nhóm statin, kết hợp chế độ ăn và theo dõi định kỳ.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Atorvastatin 20 mg",
+                            Price = 2500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("985c68d7-8d12-45c9-b05b-17e392217dc6"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc hạ cholesterol nhóm statin, dùng theo đánh giá nguy cơ tim mạch.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Rosuvastatin 10 mg",
+                            Price = 4500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("a49b2f0a-fce2-42a4-9298-76f193da0b4f"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc kháng kết tập tiểu cầu liều thấp; chỉ dùng khi đã được đánh giá nguy cơ chảy máu.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Aspirin 81 mg",
+                            Price = 1000,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("21671875-846f-43c1-b817-5753ad9057f2"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc kháng kết tập tiểu cầu, sử dụng theo chỉ định tim mạch hoặc thần kinh.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Clopidogrel 75 mg",
+                            Price = 5500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("b229c4c7-984c-4c42-86f7-5026e6a6923a"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc điều trị đái tháo đường type 2, dùng cùng chế độ dinh dưỡng phù hợp.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Metformin 500 mg",
+                            Price = 900,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("2476615a-8777-4bb1-813d-6e69f3700b2b"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc hạ đường huyết phóng thích kéo dài; lưu ý nguy cơ hạ đường huyết.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Gliclazide MR 30 mg",
+                            Price = 2500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("289aa313-b1ea-49c9-a9d6-056f55a13ab1"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Insulin tác dụng kéo dài; bảo quản và tiêm đúng kỹ thuật được hướng dẫn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Insulin glargine 100 IU/ml - bút 3 ml",
+                            Price = 285000,
+                            Status = 0,
+                            Unit = 3,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("a7ad1d42-9230-407f-b23c-c8e58983166b"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Hormone tuyến giáp tổng hợp; thường uống lúc đói và theo dõi xét nghiệm định kỳ.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Levothyroxine 50 mcg",
+                            Price = 1800,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("61b33d56-8b3a-4c00-a13e-83979c60c950"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc giảm tạo acid uric trong điều trị dài hạn; không dùng để cắt cơn gút cấp.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Allopurinol 300 mg",
+                            Price = 2500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("9479e702-5a84-4690-8fc5-06012f21c751"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc dùng trong một số trường hợp gút; cần tuân thủ chặt chẽ liều kê đơn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Colchicine 1 mg",
+                            Price = 3200,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("3a0e5044-b2e3-4f08-8c2d-ae38329bb703"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gel bôi ngoài da hỗ trợ giảm đau tại chỗ; không bôi lên vết thương hở.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0f,
+                            IsInsured = false,
+                            Name = "Diclofenac gel 1% - 20 g",
+                            Price = 29000,
+                            Status = 0,
+                            Unit = 4,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("0e8ce2f7-692f-4070-ac51-e1ecacf6d45d"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc giảm đau kháng viêm không steroid, dùng liều thấp nhất trong thời gian phù hợp.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Meloxicam 7.5 mg",
+                            Price = 1800,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("c2aaf13f-8c14-4f70-9ec0-757058723f90"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc dùng trong một số đau thần kinh và động kinh; có thể gây chóng mặt, buồn ngủ.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Gabapentin 300 mg",
+                            Price = 3500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("0cc4ac88-1c60-48e4-90fd-b7bbb781b74c"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc điều trị một số dạng đau thần kinh, sử dụng theo đơn và đánh giá đáp ứng.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Pregabalin 75 mg",
+                            Price = 8500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("06cea414-bc4a-4536-bfb1-315122590d38"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thuốc chống trầm cảm nhóm SSRI; hiệu quả và tác dụng không mong muốn cần được theo dõi.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Sertraline 50 mg",
+                            Price = 4000,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("06dd189c-9492-4587-8eff-b3c65439ea3a"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Sản phẩm bổ sung vitamin C khi khẩu phần không đáp ứng đủ nhu cầu.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0f,
+                            IsInsured = false,
+                            Name = "Vitamin C 500 mg",
+                            Price = 1800,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("7f242f9c-380d-4125-917f-5266ea216441"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bổ sung vitamin D theo nhu cầu và hướng dẫn của nhân viên y tế.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0f,
+                            IsInsured = false,
+                            Name = "Vitamin D3 1000 IU",
+                            Price = 2200,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("c99c115e-4faa-4fed-a36a-24a80a9eb8e2"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bổ sung calci và vitamin D; cần lưu ý tổng lượng calci từ thực phẩm và thuốc.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0f,
+                            IsInsured = false,
+                            Name = "Calcium carbonate 500 mg + Vitamin D3",
+                            Price = 3500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("116fc685-f1ec-4dfe-99a0-b0e5faf681dc"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bổ sung sắt và acid folic trong các trường hợp được xác định có nhu cầu.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Sắt fumarate + Acid folic",
+                            Price = 2800,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("6e8f0bc6-92d7-4482-8533-d140d57e3186"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bổ sung kẽm theo độ tuổi, tình trạng dinh dưỡng và hướng dẫn chuyên môn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0f,
+                            IsInsured = false,
+                            Name = "Kẽm 10 mg",
+                            Price = 1500,
+                            Status = 0,
+                            Unit = 1,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("395bd57b-bd92-4f6b-bf40-d5932e348eb9"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Dung dịch natri clorid đẳng trương dùng trong cơ sở y tế theo chỉ định.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.8f,
+                            IsInsured = true,
+                            Name = "Natri clorid 0.9% - 500 ml",
+                            Price = 18000,
+                            Status = 0,
+                            Unit = 2,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("615f7045-5c22-44ed-b726-2b94d1718921"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Dung dịch sát khuẩn dùng ngoài da; tránh dùng khi có chống chỉ định với iod.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0f,
+                            IsInsured = false,
+                            Name = "Povidone iodine 10% - 90 ml",
+                            Price = 24000,
+                            Status = 0,
+                            Unit = 2,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("f056d891-c813-4f21-aafe-c459714646be"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Kem bôi kháng nấm ngoài da, dùng đủ thời gian được hướng dẫn.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Clotrimazole cream 1% - 15 g",
+                            Price = 28000,
+                            Status = 0,
+                            Unit = 4,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("92302b4c-4662-44b0-bbcb-ed0159e5b242"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Corticosteroid bôi da mức độ nhẹ; không tự ý bôi kéo dài hoặc trên diện rộng.",
+                            Image = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+                            InsuranceCap = 0.5f,
+                            IsInsured = true,
+                            Name = "Hydrocortisone cream 1% - 15 g",
+                            Price = 32000,
+                            Status = 0,
+                            Unit = 4,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("api.Model.MedicineInventory", b =>
@@ -753,17 +2140,6 @@ namespace api.Migrations
                     b.HasIndex("MedicineUuid");
 
                     b.ToTable("MedicineInventory");
-                });
-
-            modelBuilder.Entity("api.Model.MomoLog", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Uuid");
-
-                    b.ToTable("MomoLog");
                 });
 
             modelBuilder.Entity("api.Model.PatientProfile", b =>
@@ -985,15 +2361,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            Description = "Vận hành chi nhánh",
-                            Icon = "prescription",
-                            Name = "Đơn thuốc",
-                            Scope = 1,
-                            Slug = "don-thuoc-chi-nhanh"
-                        },
-                        new
-                        {
                             Uuid = new Guid("52edd052-303c-462a-9a27-70bd3c37cbcf"),
                             Description = "Vận hành chi nhánh",
                             Icon = "inventory",
@@ -1021,21 +2388,21 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            Description = "Vận hành chi nhánh",
-                            Icon = "audit",
-                            Name = "Nhật ký hoạt động",
-                            Scope = 1,
-                            Slug = "nhat-ky-chi-nhanh"
-                        },
-                        new
-                        {
                             Uuid = new Guid("9a7ed0c1-53bb-4252-8dc5-d76810e583cb"),
                             Description = "Vận hành chi nhánh",
                             Icon = "schedule",
                             Name = "Giờ làm việc bệnh viện",
                             Scope = 1,
                             Slug = "gio-lam-viec-benh-vien"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
+                            Description = "Vận hành chi nhánh",
+                            Icon = "schedule",
+                            Name = "Phân ca làm việc bác sĩ",
+                            Scope = 1,
+                            Slug = "phan-ca-lam-viec-bac-si"
                         },
                         new
                         {
@@ -1096,7 +2463,7 @@ namespace api.Migrations
                             Uuid = new Guid("9e2633dc-adb9-4b2c-b01e-e1c3228cf165"),
                             Description = "Khám chữa bệnh",
                             Icon = "schedule",
-                            Name = "Giờ làm việc",
+                            Name = "Giờ làm việc bác sĩ",
                             Scope = 1,
                             Slug = "gio-lam-viec-bac-si"
                         },
@@ -1111,15 +2478,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            Description = "Tiếp nhận và điều phối",
-                            Icon = "appointment",
-                            Name = "Lịch hẹn",
-                            Scope = 1,
-                            Slug = "lich-hen-tiep-nhan"
-                        },
-                        new
-                        {
                             Uuid = new Guid("e5bb398e-98f1-4bfb-8afc-efe729ed9532"),
                             Description = "Tiếp nhận và điều phối",
                             Icon = "patient",
@@ -1129,30 +2487,12 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            Description = "Tiếp nhận và điều phối",
-                            Icon = "room",
-                            Name = "Phòng khám",
-                            Scope = 1,
-                            Slug = "phong-kham-tiep-nhan"
-                        },
-                        new
-                        {
                             Uuid = new Guid("3d8e5193-cfa3-4ecd-9c69-01a3cf875ba2"),
                             Description = "Tiếp nhận và điều phối",
                             Icon = "payment",
                             Name = "Thanh toán & cấp thuốc",
                             Scope = 1,
                             Slug = "thanh-toan-cap-thuoc"
-                        },
-                        new
-                        {
-                            Uuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
-                            Description = "Tiếp nhận và điều phối",
-                            Icon = "review",
-                            Name = "Đánh giá",
-                            Scope = 1,
-                            Slug = "danh-gia-tiep-nhan"
                         },
                         new
                         {
@@ -1186,27 +2526,18 @@ namespace api.Migrations
                             Uuid = new Guid("952d3443-6ca0-4001-a67e-5547b2c57f3c"),
                             Description = "Kho thuốc",
                             Icon = "ticket",
-                            Name = "Phiếu nhập xuất",
+                            Name = "Nhập hàng",
                             Scope = 1,
-                            Slug = "phieu-nhap-xuat"
+                            Slug = "nhap-hang"
                         },
                         new
                         {
-                            Uuid = new Guid("0d7511d1-4ed5-478f-ae55-aa0691fb4e7f"),
+                            Uuid = new Guid("4fe03c32-9a96-467f-a591-ff7eb7ae3a8f"),
                             Description = "Kho thuốc",
-                            Icon = "medicine",
-                            Name = "Điều chỉnh tồn",
+                            Icon = "ticket",
+                            Name = "Xuất hàng",
                             Scope = 1,
-                            Slug = "dieu-chinh-ton"
-                        },
-                        new
-                        {
-                            Uuid = new Guid("3a8ded95-de99-4ba7-98e6-147328997e06"),
-                            Description = "Kho thuốc",
-                            Icon = "history",
-                            Name = "Lịch sử kho",
-                            Scope = 1,
-                            Slug = "lich-su"
+                            Slug = "xuat-hang"
                         },
                         new
                         {
@@ -2027,34 +3358,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("22ebb9de-3172-f44d-1c1d-393a6c665859"),
-                            Action = 0,
-                            PermissionUuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("2c998e5e-d542-1e8d-c4c7-ea60514d2a0e"),
-                            Action = 1,
-                            PermissionUuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("525af95b-18d9-c966-8b11-e20b8818b2c5"),
-                            Action = 2,
-                            PermissionUuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("cc9012c7-16a1-ca03-445f-4f8dcea90489"),
-                            Action = 3,
-                            PermissionUuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
                             Uuid = new Guid("f98392a6-86fc-6843-e589-227e97250b0c"),
                             Action = 0,
                             PermissionUuid = new Guid("52edd052-303c-462a-9a27-70bd3c37cbcf"),
@@ -2139,34 +3442,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("0bee497d-c238-1c2c-6377-c6c2038b0825"),
-                            Action = 0,
-                            PermissionUuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("ded1b71c-d3bc-0247-2dfd-faedf83cec29"),
-                            Action = 1,
-                            PermissionUuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("3034bb73-d3ad-3022-cb66-aff02f51f7c7"),
-                            Action = 2,
-                            PermissionUuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("c8534f3d-8f1d-09ca-38fd-f4eb1e958cc9"),
-                            Action = 3,
-                            PermissionUuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
                             Uuid = new Guid("51f6fa9b-cbc8-9129-3e07-8ca94f727fb2"),
                             Action = 0,
                             PermissionUuid = new Guid("9a7ed0c1-53bb-4252-8dc5-d76810e583cb"),
@@ -2191,6 +3466,34 @@ namespace api.Migrations
                             Uuid = new Guid("c0dc14b8-d7d1-fea1-6644-4b84d314efec"),
                             Action = 3,
                             PermissionUuid = new Guid("9a7ed0c1-53bb-4252-8dc5-d76810e583cb"),
+                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
+                        },
+                        new
+                        {
+                            Uuid = new Guid("e139d3f0-ead5-e4b1-7ceb-061a4360f6c6"),
+                            Action = 0,
+                            PermissionUuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
+                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
+                        },
+                        new
+                        {
+                            Uuid = new Guid("baf225f9-7340-27f6-9b58-f37c29f52254"),
+                            Action = 1,
+                            PermissionUuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
+                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
+                        },
+                        new
+                        {
+                            Uuid = new Guid("a23cba51-d7e4-e118-a44d-6aa07a05176f"),
+                            Action = 2,
+                            PermissionUuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
+                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
+                        },
+                        new
+                        {
+                            Uuid = new Guid("6cd28dcb-b1f4-9287-c33b-63b52f6a0f2e"),
+                            Action = 3,
+                            PermissionUuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
                             RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
                         },
                         new
@@ -2419,34 +3722,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("69af6b0d-06cc-0add-d194-c9e39e91c311"),
-                            Action = 0,
-                            PermissionUuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("b977f04e-c741-f7a1-a49f-6dfba8a0b406"),
-                            Action = 1,
-                            PermissionUuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("fc8e67e5-9f48-63d2-8ff1-58539da9d9a2"),
-                            Action = 2,
-                            PermissionUuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("c575151a-e46c-caa4-a3ec-a26ad5fbaef3"),
-                            Action = 3,
-                            PermissionUuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
                             Uuid = new Guid("4ad70528-e9b8-06a2-fb73-fb25aec06164"),
                             Action = 0,
                             PermissionUuid = new Guid("e5bb398e-98f1-4bfb-8afc-efe729ed9532"),
@@ -2475,34 +3750,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("87093728-fc5f-021c-b3b1-264947313a1a"),
-                            Action = 0,
-                            PermissionUuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("3b7eef62-c687-72f0-7775-87f5327d7ebe"),
-                            Action = 1,
-                            PermissionUuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("be5cf44d-58fe-d7f9-eb66-6d9c72b93109"),
-                            Action = 2,
-                            PermissionUuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("37f699f2-3aab-5823-06d6-4c60f39e229e"),
-                            Action = 3,
-                            PermissionUuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
                             Uuid = new Guid("30fe9ce0-f8a2-83cc-f3ea-7152f189e517"),
                             Action = 0,
                             PermissionUuid = new Guid("3d8e5193-cfa3-4ecd-9c69-01a3cf875ba2"),
@@ -2527,34 +3774,6 @@ namespace api.Migrations
                             Uuid = new Guid("62ae2e24-976e-34d2-c5e6-b9d840412bf2"),
                             Action = 3,
                             PermissionUuid = new Guid("3d8e5193-cfa3-4ecd-9c69-01a3cf875ba2"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("b500ef6d-a5bc-dd9c-c3ea-fd50719f7aae"),
-                            Action = 0,
-                            PermissionUuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("7e7c489a-ea1a-db7f-1299-fbe172c1b705"),
-                            Action = 1,
-                            PermissionUuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("dc5b5b6e-a606-7e56-98ba-5bea9eae90fe"),
-                            Action = 2,
-                            PermissionUuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("0356dd1d-007e-e49e-abb7-bc6556633d49"),
-                            Action = 3,
-                            PermissionUuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
                             RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
                         },
                         new
@@ -2671,58 +3890,30 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("341f06d0-d1eb-329e-52ed-dcbda9bf2215"),
+                            Uuid = new Guid("88e6a082-db09-429d-b348-a7b06323a40f"),
                             Action = 0,
-                            PermissionUuid = new Guid("0d7511d1-4ed5-478f-ae55-aa0691fb4e7f"),
+                            PermissionUuid = new Guid("4fe03c32-9a96-467f-a591-ff7eb7ae3a8f"),
                             RoleUuid = new Guid("5264371e-ea25-47a3-ae34-b10d6a4b5c31")
                         },
                         new
                         {
-                            Uuid = new Guid("894b5451-a6ca-a946-f9b7-ef06735ae9fc"),
+                            Uuid = new Guid("1c70972e-e680-aeb0-80e0-efe661e79063"),
                             Action = 1,
-                            PermissionUuid = new Guid("0d7511d1-4ed5-478f-ae55-aa0691fb4e7f"),
+                            PermissionUuid = new Guid("4fe03c32-9a96-467f-a591-ff7eb7ae3a8f"),
                             RoleUuid = new Guid("5264371e-ea25-47a3-ae34-b10d6a4b5c31")
                         },
                         new
                         {
-                            Uuid = new Guid("ff63c159-04f7-11db-1082-1d6f36058925"),
+                            Uuid = new Guid("fac04d32-d18e-e1c6-a771-67c2087efc08"),
                             Action = 2,
-                            PermissionUuid = new Guid("0d7511d1-4ed5-478f-ae55-aa0691fb4e7f"),
+                            PermissionUuid = new Guid("4fe03c32-9a96-467f-a591-ff7eb7ae3a8f"),
                             RoleUuid = new Guid("5264371e-ea25-47a3-ae34-b10d6a4b5c31")
                         },
                         new
                         {
-                            Uuid = new Guid("546d20ee-a24e-be8d-88fd-43d93651424d"),
+                            Uuid = new Guid("b8b04a78-ba6e-4b54-675c-719eee90e89b"),
                             Action = 3,
-                            PermissionUuid = new Guid("0d7511d1-4ed5-478f-ae55-aa0691fb4e7f"),
-                            RoleUuid = new Guid("5264371e-ea25-47a3-ae34-b10d6a4b5c31")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("dd913a3d-9a64-147a-4daa-59c51d5f1796"),
-                            Action = 0,
-                            PermissionUuid = new Guid("3a8ded95-de99-4ba7-98e6-147328997e06"),
-                            RoleUuid = new Guid("5264371e-ea25-47a3-ae34-b10d6a4b5c31")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("0dce1f69-eed9-bb28-c23c-dfbf34f15c99"),
-                            Action = 1,
-                            PermissionUuid = new Guid("3a8ded95-de99-4ba7-98e6-147328997e06"),
-                            RoleUuid = new Guid("5264371e-ea25-47a3-ae34-b10d6a4b5c31")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("54a616d1-9e03-4641-44d3-ac65f1d2e4af"),
-                            Action = 2,
-                            PermissionUuid = new Guid("3a8ded95-de99-4ba7-98e6-147328997e06"),
-                            RoleUuid = new Guid("5264371e-ea25-47a3-ae34-b10d6a4b5c31")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("6b0958b3-d33e-59c8-3496-046154074229"),
-                            Action = 3,
-                            PermissionUuid = new Guid("3a8ded95-de99-4ba7-98e6-147328997e06"),
+                            PermissionUuid = new Guid("4fe03c32-9a96-467f-a591-ff7eb7ae3a8f"),
                             RoleUuid = new Guid("5264371e-ea25-47a3-ae34-b10d6a4b5c31")
                         },
                         new
@@ -2787,27 +3978,6 @@ namespace api.Migrations
                     b.ToTable("Room");
                 });
 
-            modelBuilder.Entity("api.Model.ServiceWorking", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ServiceUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("WorkingUuid")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Uuid");
-
-                    b.HasIndex("ServiceUuid");
-
-                    b.HasIndex("WorkingUuid");
-
-                    b.ToTable("ServiceWorking");
-                });
-
             modelBuilder.Entity("api.Model.TimeWorking", b =>
                 {
                     b.Property<Guid>("Uuid")
@@ -2838,6 +4008,118 @@ namespace api.Migrations
                     b.HasKey("Uuid");
 
                     b.ToTable("TimeWorking");
+
+                    b.HasData(
+                        new
+                        {
+                            Uuid = new Guid("a01e0b59-47cd-4c69-aea1-9ff571fe9c9b"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 1,
+                            EndTime = new TimeOnly(11, 30, 0),
+                            StartTime = new TimeOnly(7, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("2f1ac953-1140-44de-80a1-4c1841dea41f"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 1,
+                            EndTime = new TimeOnly(17, 0, 0),
+                            StartTime = new TimeOnly(13, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("f791f367-dded-433c-a460-661d13f1b7f8"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 2,
+                            EndTime = new TimeOnly(11, 30, 0),
+                            StartTime = new TimeOnly(7, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("922dff60-04b2-4758-ae68-5ef4c9443c7f"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 2,
+                            EndTime = new TimeOnly(17, 0, 0),
+                            StartTime = new TimeOnly(13, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("d700f392-bd1b-4377-aac7-76a0f04bf22e"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 3,
+                            EndTime = new TimeOnly(11, 30, 0),
+                            StartTime = new TimeOnly(7, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("13ff7285-5624-4cd3-b4d0-6456c97d2577"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 3,
+                            EndTime = new TimeOnly(17, 0, 0),
+                            StartTime = new TimeOnly(13, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("bf05d060-321c-4740-8907-de93d1457add"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 4,
+                            EndTime = new TimeOnly(11, 30, 0),
+                            StartTime = new TimeOnly(7, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("0ea57126-f2e9-40f5-9d32-357e7f26bf74"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 4,
+                            EndTime = new TimeOnly(17, 0, 0),
+                            StartTime = new TimeOnly(13, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("3272b0c4-75a7-4c26-b5e2-1ab56aac7ca4"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 5,
+                            EndTime = new TimeOnly(11, 30, 0),
+                            StartTime = new TimeOnly(7, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("edcfebdd-0799-49aa-a731-1ea626d8e2c1"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 5,
+                            EndTime = new TimeOnly(17, 0, 0),
+                            StartTime = new TimeOnly(13, 0, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Uuid = new Guid("e4aec806-9bfa-4b9f-a09a-078e9a984738"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = 6,
+                            EndTime = new TimeOnly(11, 30, 0),
+                            StartTime = new TimeOnly(7, 30, 0),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("api.Model.Account", b =>
@@ -2863,11 +4145,6 @@ namespace api.Migrations
                     b.HasOne("api.Model.Hospital", null)
                         .WithMany()
                         .HasForeignKey("HospitalUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("api.Model.MedicalService", null)
-                        .WithMany()
-                        .HasForeignKey("MedicalServiceUuid")
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("api.Model.PatientProfile", null)
@@ -2904,12 +4181,14 @@ namespace api.Migrations
                     b.HasOne("api.Model.Department", null)
                         .WithMany()
                         .HasForeignKey("DepartmentUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("api.Model.DoctorProfile", null)
                         .WithMany()
                         .HasForeignKey("DoctorUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("api.Model.DoctorProfile", b =>
@@ -2925,17 +4204,34 @@ namespace api.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
-            modelBuilder.Entity("api.Model.DoctorWorking", b =>
+            modelBuilder.Entity("api.Model.DoctorSchedule", b =>
                 {
                     b.HasOne("api.Model.DoctorProfile", null)
                         .WithMany()
                         .HasForeignKey("DoctorUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("api.Model.DoctorWorkingHour", b =>
+                {
+                    b.HasOne("api.Model.DoctorSchedule", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorScheduleUuid")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("api.Model.Room", null)
+                        .WithMany()
+                        .HasForeignKey("RoomUuid")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("api.Model.TimeWorking", null)
                         .WithMany()
-                        .HasForeignKey("WorkingUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("WorkingHourUuid")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("api.Model.ExportTicket", b =>
@@ -3148,19 +4444,6 @@ namespace api.Migrations
                     b.HasOne("api.Model.Hospital", null)
                         .WithMany()
                         .HasForeignKey("HospitalUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-                });
-
-            modelBuilder.Entity("api.Model.ServiceWorking", b =>
-                {
-                    b.HasOne("api.Model.MedicalService", null)
-                        .WithMany()
-                        .HasForeignKey("ServiceUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("api.Model.TimeWorking", null)
-                        .WithMany()
-                        .HasForeignKey("WorkingUuid")
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 #pragma warning restore 612, 618

@@ -10,14 +10,11 @@ public sealed class BranchAppointmentResponse
     public DateTime AppointmentDate { get; init; }
     public Guid? TimeSlot { get; init; }
     public string Time { get; init; } = string.Empty;
-    public string Type { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public Guid? PatientUuid { get; init; }
     public Guid? HospitalUuid { get; init; }
     public Guid? DoctorUuid { get; init; }
     public string? DoctorName { get; init; }
-    public Guid? MedicalServiceUuid { get; init; }
-    public string? MedicalServiceName { get; init; }
     public Guid? RoomUuid { get; init; }
     public string? RoomName { get; init; }
     public string DoctorNote { get; init; } = string.Empty;

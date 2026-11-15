@@ -43,20 +43,7 @@ export type HospitalBookingRequest = CommonAppointmentRequest & {
   type: "hospital";
 };
 
-export type DoctorBookingRequest = CommonAppointmentRequest & {
-  type: "doctor";
-  doctorUuid: string;
-};
-
-export type MedicalServiceBookingRequest = CommonAppointmentRequest & {
-  type: "medical-service";
-  medicalServiceUuid: string;
-};
-
-export type CreateAppointmentRequest =
-  | HospitalBookingRequest
-  | DoctorBookingRequest
-  | MedicalServiceBookingRequest;
+export type CreateAppointmentRequest = HospitalBookingRequest;
 
 export type WalkInAppointmentRequest = {
   type: BookingType;
@@ -108,10 +95,9 @@ type AppointmentViewBase = {
   updatedAt: Date;
 };
 
-export type Appointment =
-  | AppointmentViewBase
-  | (AppointmentViewBase & { doctorUuid: string })
-  | (AppointmentViewBase & { medicalServiceUuid: string });
+export type Appointment = AppointmentViewBase & {
+  doctorUuid: string | null;
+};
 
 export type AppointmentConfirmation = {
   type: BookingType;

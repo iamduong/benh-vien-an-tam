@@ -11,8 +11,12 @@ export type HospitalWorkingSlot = {
   status: BaseStatus;
 };
 
+export type AvailableHospitalWorking = Omit<HospitalWorkingSlot, "workingUuid"> & {
+  workingUuid?: never;
+};
+
 export type HospitalWorkingData = {
-  availableWorkings: HospitalWorkingSlot[];
+  availableWorkings: Array<Pick<HospitalWorkingSlot, "dayOfWeek" | "startTime" | "endTime" | "status"> & { uuid: string }>;
   assignedWorkings: HospitalWorkingSlot[];
 };
 

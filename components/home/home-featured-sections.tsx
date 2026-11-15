@@ -104,7 +104,7 @@ export function HomeFeaturedSections() {
       >
         {departments.length ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {departments.map((department) => (
+            {departments.slice(0, 8).map((department) => (
               <DepartmentCard key={department.uuid} department={department} />
             ))}
           </div>

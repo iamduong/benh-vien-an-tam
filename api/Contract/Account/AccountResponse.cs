@@ -34,7 +34,6 @@ public sealed record DoctorProfileResponse(
     string Avatar,
     string Slug,
     string Name,
-    int Price,
     string DepartmentDisplay,
     string Introduction,
     string Expertise,

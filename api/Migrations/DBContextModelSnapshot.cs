@@ -121,9 +121,6 @@ namespace api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("MedicalServiceUuid")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Note")
                         .IsRequired()
                         .HasColumnType("text");
@@ -147,9 +144,6 @@ namespace api.Migrations
                     b.Property<int>("TotalPrice")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -158,8 +152,6 @@ namespace api.Migrations
                     b.HasIndex("DoctorUuid");
 
                     b.HasIndex("HospitalUuid");
-
-                    b.HasIndex("MedicalServiceUuid");
 
                     b.HasIndex("PatientUuid");
 
@@ -199,17 +191,6 @@ namespace api.Migrations
                     b.HasIndex("MedicalServiceUuid");
 
                     b.ToTable("AppointmentMedicalService");
-                });
-
-            modelBuilder.Entity("api.Model.AuditLog", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Uuid");
-
-                    b.ToTable("AuditLog");
                 });
 
             modelBuilder.Entity("api.Model.Department", b =>
@@ -424,10 +405,10 @@ namespace api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("DepartmentUuid")
+                    b.Property<Guid>("DepartmentUuid")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("DoctorUuid")
+                    b.Property<Guid>("DoctorUuid")
                         .HasColumnType("uuid");
 
                     b.HasKey("Uuid");
@@ -480,9 +461,6 @@ namespace api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Price")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasColumnType("text");
@@ -520,88 +498,15 @@ namespace api.Migrations
                     b.Property<Guid>("DoctorUuid")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("RoomUuid")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("WorkingHourUuid")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Uuid");
 
-                    b.HasIndex("WorkingHourUuid");
-
-                    b.HasIndex("DoctorUuid", "WorkingHourUuid")
+                    b.HasIndex("DoctorUuid")
                         .IsUnique();
 
-                    b.HasIndex("RoomUuid", "WorkingHourUuid")
-                        .IsUnique()
-                        .HasFilter("\"RoomUuid\" IS NOT NULL");
-
                     b.ToTable("DoctorSchedule");
-                });
-
-            modelBuilder.Entity("api.Model.DoctorWorkSubmission", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("DoctorScheduleUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("DoctorUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("PreviousWorkingHourUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<Guid?>("RequestedWorkingHourUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReviewNote")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ReviewedByAccountUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Uuid");
-
-                    b.HasIndex("DoctorScheduleUuid");
-
-                    b.HasIndex("PreviousWorkingHourUuid");
-
-                    b.HasIndex("RequestedWorkingHourUuid");
-
-                    b.HasIndex("ReviewedByAccountUuid");
-
-                    b.HasIndex("DoctorUuid", "Status");
-
-                    b.ToTable("DoctorWorkSubmission");
                 });
 
             modelBuilder.Entity("api.Model.DoctorWorkingHour", b =>
@@ -610,21 +515,26 @@ namespace api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("DoctorUuid")
+                    b.Property<Guid>("DoctorScheduleUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoomUuid")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("WorkingHourUuid")
-                        .HasColumnType("uuid")
-                        .HasColumnName("WorkingUuid");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Uuid");
 
                     b.HasIndex("WorkingHourUuid");
 
-                    b.HasIndex("DoctorUuid", "WorkingHourUuid")
+                    b.HasIndex("DoctorScheduleUuid", "WorkingHourUuid")
                         .IsUnique();
 
-                    b.ToTable("DoctorWorking", (string)null);
+                    b.HasIndex("RoomUuid", "WorkingHourUuid")
+                        .IsUnique();
+
+                    b.ToTable("DoctorWorkingHour");
                 });
 
             modelBuilder.Entity("api.Model.ExportTicket", b =>
@@ -2229,17 +2139,6 @@ namespace api.Migrations
                     b.ToTable("MedicineInventory");
                 });
 
-            modelBuilder.Entity("api.Model.MomoLog", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Uuid");
-
-                    b.ToTable("MomoLog");
-                });
-
             modelBuilder.Entity("api.Model.PatientProfile", b =>
                 {
                     b.Property<Guid>("Uuid")
@@ -2459,15 +2358,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            Description = "Vận hành chi nhánh",
-                            Icon = "prescription",
-                            Name = "Đơn thuốc",
-                            Scope = 1,
-                            Slug = "don-thuoc-chi-nhanh"
-                        },
-                        new
-                        {
                             Uuid = new Guid("52edd052-303c-462a-9a27-70bd3c37cbcf"),
                             Description = "Vận hành chi nhánh",
                             Icon = "inventory",
@@ -2495,21 +2385,21 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            Description = "Vận hành chi nhánh",
-                            Icon = "audit",
-                            Name = "Nhật ký hoạt động",
-                            Scope = 1,
-                            Slug = "nhat-ky-chi-nhanh"
-                        },
-                        new
-                        {
                             Uuid = new Guid("9a7ed0c1-53bb-4252-8dc5-d76810e583cb"),
                             Description = "Vận hành chi nhánh",
                             Icon = "schedule",
                             Name = "Giờ làm việc bệnh viện",
                             Scope = 1,
                             Slug = "gio-lam-viec-benh-vien"
+                        },
+                        new
+                        {
+                            Uuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
+                            Description = "Vận hành chi nhánh",
+                            Icon = "schedule",
+                            Name = "Phân ca làm việc bác sĩ",
+                            Scope = 1,
+                            Slug = "phan-ca-lam-viec-bac-si"
                         },
                         new
                         {
@@ -2576,30 +2466,12 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("2b534faa-295c-4639-8ae4-5e9aec6c1f8a"),
-                            Description = "Khám chữa bệnh",
-                            Icon = "audit",
-                            Name = "Thay đổi giờ làm việc",
-                            Scope = 1,
-                            Slug = "thay-doi-gio-lam-viec"
-                        },
-                        new
-                        {
                             Uuid = new Guid("faf0d27e-c85c-47e2-9aae-4e833372fdaf"),
                             Description = "Tiếp nhận và điều phối",
                             Icon = "dashboard",
                             Name = "Tổng quan lễ tân",
                             Scope = 1,
                             Slug = "tong-quan-tiep-nhan"
-                        },
-                        new
-                        {
-                            Uuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            Description = "Tiếp nhận và điều phối",
-                            Icon = "appointment",
-                            Name = "Lịch hẹn",
-                            Scope = 1,
-                            Slug = "lich-hen-tiep-nhan"
                         },
                         new
                         {
@@ -2612,30 +2484,12 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            Description = "Tiếp nhận và điều phối",
-                            Icon = "room",
-                            Name = "Phòng khám",
-                            Scope = 1,
-                            Slug = "phong-kham-tiep-nhan"
-                        },
-                        new
-                        {
                             Uuid = new Guid("3d8e5193-cfa3-4ecd-9c69-01a3cf875ba2"),
                             Description = "Tiếp nhận và điều phối",
                             Icon = "payment",
                             Name = "Thanh toán & cấp thuốc",
                             Scope = 1,
                             Slug = "thanh-toan-cap-thuoc"
-                        },
-                        new
-                        {
-                            Uuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
-                            Description = "Tiếp nhận và điều phối",
-                            Icon = "review",
-                            Name = "Đánh giá",
-                            Scope = 1,
-                            Slug = "danh-gia-tiep-nhan"
                         },
                         new
                         {
@@ -3501,34 +3355,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("22ebb9de-3172-f44d-1c1d-393a6c665859"),
-                            Action = 0,
-                            PermissionUuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("2c998e5e-d542-1e8d-c4c7-ea60514d2a0e"),
-                            Action = 1,
-                            PermissionUuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("525af95b-18d9-c966-8b11-e20b8818b2c5"),
-                            Action = 2,
-                            PermissionUuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("cc9012c7-16a1-ca03-445f-4f8dcea90489"),
-                            Action = 3,
-                            PermissionUuid = new Guid("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
                             Uuid = new Guid("f98392a6-86fc-6843-e589-227e97250b0c"),
                             Action = 0,
                             PermissionUuid = new Guid("52edd052-303c-462a-9a27-70bd3c37cbcf"),
@@ -3613,34 +3439,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("0bee497d-c238-1c2c-6377-c6c2038b0825"),
-                            Action = 0,
-                            PermissionUuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("ded1b71c-d3bc-0247-2dfd-faedf83cec29"),
-                            Action = 1,
-                            PermissionUuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("3034bb73-d3ad-3022-cb66-aff02f51f7c7"),
-                            Action = 2,
-                            PermissionUuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("c8534f3d-8f1d-09ca-38fd-f4eb1e958cc9"),
-                            Action = 3,
-                            PermissionUuid = new Guid("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"),
-                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
-                        },
-                        new
-                        {
                             Uuid = new Guid("51f6fa9b-cbc8-9129-3e07-8ca94f727fb2"),
                             Action = 0,
                             PermissionUuid = new Guid("9a7ed0c1-53bb-4252-8dc5-d76810e583cb"),
@@ -3665,6 +3463,34 @@ namespace api.Migrations
                             Uuid = new Guid("c0dc14b8-d7d1-fea1-6644-4b84d314efec"),
                             Action = 3,
                             PermissionUuid = new Guid("9a7ed0c1-53bb-4252-8dc5-d76810e583cb"),
+                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
+                        },
+                        new
+                        {
+                            Uuid = new Guid("e139d3f0-ead5-e4b1-7ceb-061a4360f6c6"),
+                            Action = 0,
+                            PermissionUuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
+                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
+                        },
+                        new
+                        {
+                            Uuid = new Guid("baf225f9-7340-27f6-9b58-f37c29f52254"),
+                            Action = 1,
+                            PermissionUuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
+                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
+                        },
+                        new
+                        {
+                            Uuid = new Guid("a23cba51-d7e4-e118-a44d-6aa07a05176f"),
+                            Action = 2,
+                            PermissionUuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
+                            RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
+                        },
+                        new
+                        {
+                            Uuid = new Guid("6cd28dcb-b1f4-9287-c33b-63b52f6a0f2e"),
+                            Action = 3,
+                            PermissionUuid = new Guid("1458ad5d-6741-426b-98ee-d19f6ab72890"),
                             RoleUuid = new Guid("0811c3b0-f5b6-4572-a136-45b791696ca7")
                         },
                         new
@@ -3865,34 +3691,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("a807547a-7365-e549-eaa1-8664de3250b7"),
-                            Action = 0,
-                            PermissionUuid = new Guid("2b534faa-295c-4639-8ae4-5e9aec6c1f8a"),
-                            RoleUuid = new Guid("bfa1dca7-b976-4c68-a7f4-c3610b3c7a8f")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("6c33bc7c-b8f8-d9a6-559c-b41c45d6ff85"),
-                            Action = 1,
-                            PermissionUuid = new Guid("2b534faa-295c-4639-8ae4-5e9aec6c1f8a"),
-                            RoleUuid = new Guid("bfa1dca7-b976-4c68-a7f4-c3610b3c7a8f")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("b6a39b74-2f38-9ef5-283d-ae9fb2eca56b"),
-                            Action = 2,
-                            PermissionUuid = new Guid("2b534faa-295c-4639-8ae4-5e9aec6c1f8a"),
-                            RoleUuid = new Guid("bfa1dca7-b976-4c68-a7f4-c3610b3c7a8f")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("c98058c3-2958-dd09-3949-5a0bd8fd4b17"),
-                            Action = 3,
-                            PermissionUuid = new Guid("2b534faa-295c-4639-8ae4-5e9aec6c1f8a"),
-                            RoleUuid = new Guid("bfa1dca7-b976-4c68-a7f4-c3610b3c7a8f")
-                        },
-                        new
-                        {
                             Uuid = new Guid("82010e50-b546-5f56-f7de-2a176dd415a2"),
                             Action = 0,
                             PermissionUuid = new Guid("faf0d27e-c85c-47e2-9aae-4e833372fdaf"),
@@ -3917,34 +3715,6 @@ namespace api.Migrations
                             Uuid = new Guid("e84c3cf1-5ad7-81af-2845-b385f7235b4a"),
                             Action = 3,
                             PermissionUuid = new Guid("faf0d27e-c85c-47e2-9aae-4e833372fdaf"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("69af6b0d-06cc-0add-d194-c9e39e91c311"),
-                            Action = 0,
-                            PermissionUuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("b977f04e-c741-f7a1-a49f-6dfba8a0b406"),
-                            Action = 1,
-                            PermissionUuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("fc8e67e5-9f48-63d2-8ff1-58539da9d9a2"),
-                            Action = 2,
-                            PermissionUuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("c575151a-e46c-caa4-a3ec-a26ad5fbaef3"),
-                            Action = 3,
-                            PermissionUuid = new Guid("e8adca19-51ca-4815-809b-20eab76e1d20"),
                             RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
                         },
                         new
@@ -3977,34 +3747,6 @@ namespace api.Migrations
                         },
                         new
                         {
-                            Uuid = new Guid("87093728-fc5f-021c-b3b1-264947313a1a"),
-                            Action = 0,
-                            PermissionUuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("3b7eef62-c687-72f0-7775-87f5327d7ebe"),
-                            Action = 1,
-                            PermissionUuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("be5cf44d-58fe-d7f9-eb66-6d9c72b93109"),
-                            Action = 2,
-                            PermissionUuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("37f699f2-3aab-5823-06d6-4c60f39e229e"),
-                            Action = 3,
-                            PermissionUuid = new Guid("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
                             Uuid = new Guid("30fe9ce0-f8a2-83cc-f3ea-7152f189e517"),
                             Action = 0,
                             PermissionUuid = new Guid("3d8e5193-cfa3-4ecd-9c69-01a3cf875ba2"),
@@ -4029,34 +3771,6 @@ namespace api.Migrations
                             Uuid = new Guid("62ae2e24-976e-34d2-c5e6-b9d840412bf2"),
                             Action = 3,
                             PermissionUuid = new Guid("3d8e5193-cfa3-4ecd-9c69-01a3cf875ba2"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("b500ef6d-a5bc-dd9c-c3ea-fd50719f7aae"),
-                            Action = 0,
-                            PermissionUuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("7e7c489a-ea1a-db7f-1299-fbe172c1b705"),
-                            Action = 1,
-                            PermissionUuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("dc5b5b6e-a606-7e56-98ba-5bea9eae90fe"),
-                            Action = 2,
-                            PermissionUuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
-                            RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
-                        },
-                        new
-                        {
-                            Uuid = new Guid("0356dd1d-007e-e49e-abb7-bc6556633d49"),
-                            Action = 3,
-                            PermissionUuid = new Guid("fb8ec9b7-1625-4eba-bb6e-14893287cda4"),
                             RoleUuid = new Guid("ef26813a-7ab9-435c-b5c5-86325dd14946")
                         },
                         new
@@ -4261,27 +3975,6 @@ namespace api.Migrations
                     b.ToTable("Room");
                 });
 
-            modelBuilder.Entity("api.Model.ServiceWorking", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ServiceUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("WorkingUuid")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Uuid");
-
-                    b.HasIndex("ServiceUuid");
-
-                    b.HasIndex("WorkingUuid");
-
-                    b.ToTable("ServiceWorking");
-                });
-
             modelBuilder.Entity("api.Model.TimeWorking", b =>
                 {
                     b.Property<Guid>("Uuid")
@@ -4451,11 +4144,6 @@ namespace api.Migrations
                         .HasForeignKey("HospitalUuid")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("api.Model.MedicalService", null)
-                        .WithMany()
-                        .HasForeignKey("MedicalServiceUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("api.Model.PatientProfile", null)
                         .WithMany()
                         .HasForeignKey("PatientUuid")
@@ -4490,12 +4178,14 @@ namespace api.Migrations
                     b.HasOne("api.Model.Department", null)
                         .WithMany()
                         .HasForeignKey("DepartmentUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("api.Model.DoctorProfile", null)
                         .WithMany()
                         .HasForeignKey("DoctorUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("api.Model.DoctorProfile", b =>
@@ -4518,53 +4208,19 @@ namespace api.Migrations
                         .HasForeignKey("DoctorUuid")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("api.Model.Room", null)
-                        .WithMany()
-                        .HasForeignKey("RoomUuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("api.Model.TimeWorking", null)
-                        .WithMany()
-                        .HasForeignKey("WorkingHourUuid")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("api.Model.DoctorWorkSubmission", b =>
-                {
-                    b.HasOne("api.Model.DoctorSchedule", null)
-                        .WithMany()
-                        .HasForeignKey("DoctorScheduleUuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("api.Model.DoctorProfile", null)
-                        .WithMany()
-                        .HasForeignKey("DoctorUuid")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("api.Model.TimeWorking", null)
-                        .WithMany()
-                        .HasForeignKey("PreviousWorkingHourUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("api.Model.TimeWorking", null)
-                        .WithMany()
-                        .HasForeignKey("RequestedWorkingHourUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("api.Model.Account", null)
-                        .WithMany()
-                        .HasForeignKey("ReviewedByAccountUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("api.Model.DoctorWorkingHour", b =>
                 {
-                    b.HasOne("api.Model.DoctorProfile", null)
+                    b.HasOne("api.Model.DoctorSchedule", null)
                         .WithMany()
-                        .HasForeignKey("DoctorUuid")
+                        .HasForeignKey("DoctorScheduleUuid")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("api.Model.Room", null)
+                        .WithMany()
+                        .HasForeignKey("RoomUuid")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -4785,19 +4441,6 @@ namespace api.Migrations
                     b.HasOne("api.Model.Hospital", null)
                         .WithMany()
                         .HasForeignKey("HospitalUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-                });
-
-            modelBuilder.Entity("api.Model.ServiceWorking", b =>
-                {
-                    b.HasOne("api.Model.MedicalService", null)
-                        .WithMany()
-                        .HasForeignKey("ServiceUuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("api.Model.TimeWorking", null)
-                        .WithMany()
-                        .HasForeignKey("WorkingUuid")
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 #pragma warning restore 612, 618

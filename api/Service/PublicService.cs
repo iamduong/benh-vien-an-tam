@@ -67,7 +67,6 @@ public class PublicService(DBContext context)
             Workplace = x.Workplace,
             Introduction = x.Introduction,
             Expertise = x.Expertise,
-            Price = x.Price,
             Slug = x.Slug,
             HospitalUuid = x.HospitalUuid
         }).Take(6).ToListAsync();
@@ -214,7 +213,6 @@ public class PublicService(DBContext context)
                 Workplace = x.Workplace,
                 Introduction = x.Introduction,
                 Expertise = x.Expertise,
-                Price = x.Price,
                 Slug = x.Slug,
                 HospitalUuid = x.HospitalUuid
             })
@@ -402,7 +400,6 @@ public class PublicService(DBContext context)
                 Workplace = x.Workplace,
                 Introduction = x.Introduction,
                 Expertise = x.Expertise,
-                Price = x.Price,
                 Slug = x.Slug,
                 HospitalUuid = x.HospitalUuid
             })
@@ -550,7 +547,6 @@ public class PublicService(DBContext context)
                 Workplace = doctor.Workplace,
                 Introduction = doctor.Introduction,
                 Expertise = doctor.Expertise,
-                Price = doctor.Price,
                 Slug = doctor.Slug,
                 HospitalUuid = doctor.HospitalUuid
             }).ToArrayAsync();

@@ -42,8 +42,6 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
     }
 
     public async Task<IActionResult> GetAvailability(
-        string type,
-        Guid targetUuid,
         Guid hospitalUuid,
         Guid accountUuid,
         DateOnly date,
@@ -64,56 +62,15 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         if (hospital is null)
             return UnprocessableEntity(new { code = "INVALID_BRANCH", message = "Cơ sở khám không hợp lệ." });
 
-        Guid[] targetWorkingUuids;
-        Guid? doctorUuid = null;
-        if (type == "hospital")
-        {
-            if (targetUuid != hospitalUuid)
-                return UnprocessableEntity(new { code = "INVALID_BRANCH", message = "Cơ sở khám không hợp lệ." });
-            targetWorkingUuids = await dbContext.HospitalWorkings.AsNoTracking()
-                .Where(item => item.HospitalUuid == hospitalUuid && item.WorkingUuid.HasValue)
-                .Select(item => item.WorkingUuid!.Value)
-                .ToArrayAsync(cancellationToken);
-        }
-        else if (type == "doctor")
-        {
-            var doctorExists = await dbContext.DoctorProfiles.AsNoTracking()
-                .AnyAsync(item => item.Uuid == targetUuid && item.HospitalUuid == hospitalUuid && item.DeletedAt == null, cancellationToken);
-            if (!doctorExists)
-                return UnprocessableEntity(new { code = "INVALID_BRANCH", message = "Bác sĩ không thuộc cơ sở đã chọn." });
-            doctorUuid = targetUuid;
-            targetWorkingUuids = await dbContext.DoctorWorkingHours.AsNoTracking()
-                .Where(item => item.DoctorUuid == targetUuid)
-                .Select(item => item.WorkingHourUuid)
-                .ToArrayAsync(cancellationToken);
-        }
-        else if (type == "medical-service")
-        {
-            var serviceExists = await dbContext.HospitalMedicalServices.AsNoTracking()
-                .AnyAsync(item => item.HospitalUuid == hospitalUuid && item.MedicalServiceUuid == targetUuid, cancellationToken);
-            if (!serviceExists)
-                return UnprocessableEntity(new { code = "INVALID_BRANCH", message = "Dịch vụ không khả dụng tại cơ sở đã chọn." });
-            targetWorkingUuids = await dbContext.ServiceWorkings.AsNoTracking()
-                .Where(item => item.ServiceUuid == targetUuid && item.WorkingUuid.HasValue)
-                .Select(item => item.WorkingUuid!.Value)
-                .ToArrayAsync(cancellationToken);
-        }
-        else
-        {
-            return UnprocessableEntity(new { code = "INVALID_TYPE", message = "Loại lịch hẹn không hợp lệ." });
-        }
-
         var hospitalWorkingUuids = await dbContext.HospitalWorkings.AsNoTracking()
             .Where(item => item.HospitalUuid == hospitalUuid && item.WorkingUuid.HasValue)
             .Select(item => item.WorkingUuid!.Value)
             .ToArrayAsync(cancellationToken);
-        if (type != "hospital")
-            targetWorkingUuids = targetWorkingUuids.Intersect(hospitalWorkingUuids).ToArray();
 
         var dayOfWeek = (int)date.DayOfWeek;
         var workingQuery = dbContext.TimeWorkings.AsNoTracking()
             .Where(item => item.DeletedAt == null && item.Status == BaseStatus.Active && item.DayOfWeek == dayOfWeek);
-        workingQuery = workingQuery.Where(item => targetWorkingUuids.Contains(item.Uuid));
+        workingQuery = workingQuery.Where(item => hospitalWorkingUuids.Contains(item.Uuid));
         var workings = await workingQuery.OrderBy(item => item.StartTime).ToListAsync(cancellationToken);
 
         var blockingStatuses = new[] { AppointmentStatus.Pending, AppointmentStatus.Approved, AppointmentStatus.Done, AppointmentStatus.CheckedIn, AppointmentStatus.InProgress };
@@ -127,9 +84,6 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
                 var patientConflict = await dbContext.Appointments.AsNoTracking().AnyAsync(item =>
                     item.DeletedAt == null && item.PatientUuid == patientUuid && item.AppointmentDate == appointmentAt
                     && blockingStatuses.Contains(item.Status), cancellationToken);
-                var doctorConflict = doctorUuid.HasValue && await dbContext.Appointments.AsNoTracking().AnyAsync(item =>
-                    item.DeletedAt == null && item.DoctorUuid == doctorUuid && item.AppointmentDate == appointmentAt
-                    && blockingStatuses.Contains(item.Status), cancellationToken);
                 var appointmentCount = await dbContext.Appointments.AsNoTracking().CountAsync(item =>
                     item.DeletedAt == null && item.HospitalUuid == hospitalUuid && item.AppointmentDate == appointmentAt
                     && blockingStatuses.Contains(item.Status), cancellationToken);
@@ -140,7 +94,7 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
                 {
                     appointmentAt,
                     time = time.ToString("HH:mm"),
-                    isAvailable = appointmentAt > DateTime.UtcNow && !patientConflict && !doctorConflict && appointmentCount < capacity
+                    isAvailable = appointmentAt > DateTime.UtcNow && !patientConflict && appointmentCount < capacity
                 });
             }
         }
@@ -156,15 +110,9 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
     }
 
     public Task<IActionResult> CreateHospitalBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) =>
-        CreatePatientBooking("hospital", request, cancellationToken);
+        CreatePatientBooking(request, cancellationToken);
 
-    public Task<IActionResult> CreateDoctorBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) =>
-        CreatePatientBooking("doctor", request, cancellationToken);
-
-    public Task<IActionResult> CreateMedicalServiceBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) =>
-        CreatePatientBooking("medical-service", request, cancellationToken);
-
-    private async Task<IActionResult> CreatePatientBooking(string type, CreatePatientBookingRequest request, CancellationToken cancellationToken)
+    private async Task<IActionResult> CreatePatientBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken)
     {
         if (User.GetAccountUuid() != request.AccountUuid)
             return Unauthorized(new { code = "UNAUTHORIZED", message = "Phiên đăng nhập không hợp lệ." });
@@ -180,50 +128,16 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         if (hospital is null)
             return UnprocessableEntity(new { code = "INVALID_BRANCH", message = "Cơ sở khám không hợp lệ." });
 
-        Guid? doctorUuid = null;
-        Guid? medicalServiceUuid = null;
-        var totalPrice = 0;
-        var appointmentType = AppointmentType.Hospital;
-        if (type == "doctor")
-        {
-            if (!request.DoctorUuid.HasValue)
-                return UnprocessableEntity(new { code = "INVALID_REQUEST", message = "Thiếu thông tin bác sĩ." });
-            var doctor = await dbContext.DoctorProfiles.AsNoTracking().FirstOrDefaultAsync(item =>
-                item.Uuid == request.DoctorUuid && item.HospitalUuid == request.HospitalUuid && item.DeletedAt == null, cancellationToken);
-            if (doctor is null)
-                return UnprocessableEntity(new { code = "INVALID_BRANCH", message = "Bác sĩ không thuộc cơ sở đã chọn." });
-            doctorUuid = doctor.Uuid;
-            totalPrice = doctor.Price;
-            appointmentType = AppointmentType.Doctor;
-        }
-        else if (type == "medical-service")
-        {
-            if (!request.MedicalServiceUuid.HasValue)
-                return UnprocessableEntity(new { code = "INVALID_REQUEST", message = "Thiếu thông tin dịch vụ." });
-            var service = await dbContext.MedicalServices.AsNoTracking().FirstOrDefaultAsync(item =>
-                item.Uuid == request.MedicalServiceUuid && item.DeletedAt == null && item.Status == BaseStatus.Active, cancellationToken);
-            var assigned = service is not null && await dbContext.HospitalMedicalServices.AsNoTracking().AnyAsync(item =>
-                item.HospitalUuid == request.HospitalUuid && item.MedicalServiceUuid == request.MedicalServiceUuid, cancellationToken);
-            if (!assigned)
-                return UnprocessableEntity(new { code = "INVALID_BRANCH", message = "Dịch vụ không khả dụng tại cơ sở đã chọn." });
-            medicalServiceUuid = service!.Uuid;
-            totalPrice = service.Price;
-            appointmentType = AppointmentType.Service;
-        }
-
         var blockingStatuses = new[] { AppointmentStatus.Pending, AppointmentStatus.Approved, AppointmentStatus.Done, AppointmentStatus.CheckedIn, AppointmentStatus.InProgress };
         var patientConflict = await dbContext.Appointments.AsNoTracking().AnyAsync(item =>
             item.DeletedAt == null && item.PatientUuid == patient.Uuid && item.AppointmentDate == appointmentAtUtc
-            && blockingStatuses.Contains(item.Status), cancellationToken);
-        var doctorConflict = doctorUuid.HasValue && await dbContext.Appointments.AsNoTracking().AnyAsync(item =>
-            item.DeletedAt == null && item.DoctorUuid == doctorUuid && item.AppointmentDate == appointmentAtUtc
             && blockingStatuses.Contains(item.Status), cancellationToken);
         var appointmentCount = await dbContext.Appointments.AsNoTracking().CountAsync(item =>
             item.DeletedAt == null && item.HospitalUuid == request.HospitalUuid && item.AppointmentDate == appointmentAtUtc
             && blockingStatuses.Contains(item.Status), cancellationToken);
         var roomCapacity = await dbContext.Rooms.AsNoTracking().CountAsync(item =>
             item.DeletedAt == null && item.HospitalUuid == request.HospitalUuid && item.Status == RoomStatus.Available, cancellationToken);
-        if (patientConflict || doctorConflict || appointmentCount >= (roomCapacity > 0 ? roomCapacity : Math.Max(hospital.NumberOfRoom, 1)))
+        if (patientConflict || appointmentCount >= (roomCapacity > 0 ? roomCapacity : Math.Max(hospital.NumberOfRoom, 1)))
             return Conflict(new { code = "SLOT_CONFLICT", message = "Thời gian này vừa không còn khả dụng. Vui lòng chọn thời gian khác." });
 
         var localAppointment = TimeZoneInfo.ConvertTimeFromUtc(appointmentAtUtc, GetVietnamTimeZone());
@@ -240,19 +154,11 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
 
         var hospitalAllowsBooking = await dbContext.HospitalWorkings.AsNoTracking().AnyAsync(item =>
             item.HospitalUuid == request.HospitalUuid && item.WorkingUuid == timeSlot.Value, cancellationToken);
-        var targetAllowsBooking = appointmentType switch
-        {
-            AppointmentType.Doctor => doctorUuid.HasValue && await dbContext.DoctorWorkingHours.AsNoTracking().AnyAsync(item =>
-                item.DoctorUuid == doctorUuid.Value && item.WorkingHourUuid == timeSlot.Value, cancellationToken),
-            AppointmentType.Service => medicalServiceUuid.HasValue && await dbContext.ServiceWorkings.AsNoTracking().AnyAsync(item =>
-                item.ServiceUuid == medicalServiceUuid.Value && item.WorkingUuid == timeSlot.Value, cancellationToken),
-            _ => true
-        };
-        if (!hospitalAllowsBooking || !targetAllowsBooking)
+        if (!hospitalAllowsBooking)
             return UnprocessableEntity(new
             {
                 code = "OUTSIDE_BOOKING_HOURS",
-                message = "Khung giờ này không được cấu hình để nhận đặt lịch cho đối tượng đã chọn."
+                message = "Khung giờ này không được cấu hình để bệnh viện nhận đăng ký khám."
             });
 
         var now = DateTime.UtcNow;
@@ -265,13 +171,12 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             Note = request.Note.Trim(),
             AppointmentDate = appointmentAtUtc,
             TimeSlot = timeSlot,
-            Type = appointmentType,
             Status = AppointmentStatus.Pending,
             PatientUuid = patient.Uuid,
             HospitalUuid = hospital.Uuid,
-            DoctorUuid = doctorUuid,
-            MedicalServiceUuid = medicalServiceUuid,
-            TotalPrice = totalPrice,
+            DoctorUuid = null,
+            RoomUuid = null,
+            TotalPrice = 0,
             IsPaid = false,
             CreatedAt = now,
             UpdatedAt = now
@@ -295,7 +200,6 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
                 hospitalUuid = hospital.Uuid,
                 roomUuid = appointment.RoomUuid,
                 doctorUuid = appointment.DoctorUuid,
-                medicalServiceUuid = appointment.MedicalServiceUuid,
                 isWalkIn = false,
                 guestPhone = (string?)null,
                 appointment.CreatedAt,
@@ -315,7 +219,6 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         int page = 1,
         int pageSize = 20,
         AppointmentStatus? status = null,
-        string? type = null,
         DateOnly? from = null,
         DateOnly? to = null,
         CancellationToken cancellationToken = default)
@@ -324,9 +227,6 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             return Unauthorized(new { code = "UNAUTHORIZED", message = "Phiên đăng nhập không hợp lệ." });
         if (page < 1 || pageSize < 1 || pageSize > 20 || (from.HasValue && to.HasValue && from > to))
             return UnprocessableEntity(new { code = "INVALID_FILTER", message = "Bộ lọc lịch hẹn không hợp lệ." });
-        if (type is not null && type is not ("hospital" or "doctor" or "medical-service"))
-            return UnprocessableEntity(new { code = "INVALID_FILTER", message = "Loại lịch hẹn không hợp lệ." });
-
         var patientUuid = await dbContext.PatientProfiles.AsNoTracking()
             .Where(item => item.AccountUuid == accountUuid)
             .Select(item => (Guid?)item.Uuid)
@@ -336,9 +236,6 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         var query = dbContext.Appointments.AsNoTracking().Where(item =>
             item.DeletedAt == null && item.PatientUuid == patientUuid);
         if (status.HasValue) query = query.Where(item => item.Status == status.Value);
-        if (type == "hospital") query = query.Where(item => item.Type == AppointmentType.Hospital);
-        else if (type == "doctor") query = query.Where(item => item.Type == AppointmentType.Doctor);
-        else if (type == "medical-service") query = query.Where(item => item.Type == AppointmentType.Service);
         if (from.HasValue)
         {
             var fromUtc = new DateTimeOffset(from.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(7)).UtcDateTime;
@@ -358,23 +255,19 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
 
         var hospitalUuids = appointments.Where(item => item.HospitalUuid.HasValue).Select(item => item.HospitalUuid!.Value).Distinct().ToArray();
         var doctorUuids = appointments.Where(item => item.DoctorUuid.HasValue).Select(item => item.DoctorUuid!.Value).Distinct().ToArray();
-        var serviceUuids = appointments.Where(item => item.MedicalServiceUuid.HasValue).Select(item => item.MedicalServiceUuid!.Value).Distinct().ToArray();
         var roomUuids = appointments.Where(item => item.RoomUuid.HasValue).Select(item => item.RoomUuid!.Value).Distinct().ToArray();
         var hospitals = await dbContext.Hospitals.AsNoTracking().Where(item => hospitalUuids.Contains(item.Uuid)).ToDictionaryAsync(item => item.Uuid, cancellationToken);
         var doctors = await dbContext.DoctorProfiles.AsNoTracking().Where(item => doctorUuids.Contains(item.Uuid)).ToDictionaryAsync(item => item.Uuid, cancellationToken);
-        var services = await dbContext.MedicalServices.AsNoTracking().Where(item => serviceUuids.Contains(item.Uuid)).ToDictionaryAsync(item => item.Uuid, cancellationToken);
         var rooms = await dbContext.Rooms.AsNoTracking().Where(item => roomUuids.Contains(item.Uuid)).ToDictionaryAsync(item => item.Uuid, cancellationToken);
 
         var items = appointments.Select(item =>
         {
             hospitals.TryGetValue(item.HospitalUuid ?? Guid.Empty, out var hospital);
             doctors.TryGetValue(item.DoctorUuid ?? Guid.Empty, out var doctor);
-            services.TryGetValue(item.MedicalServiceUuid ?? Guid.Empty, out var service);
             rooms.TryGetValue(item.RoomUuid ?? Guid.Empty, out var room);
-            var bookingType = item.Type == AppointmentType.Doctor ? "doctor" : item.Type == AppointmentType.Service ? "medical-service" : "hospital";
             return new
             {
-                type = bookingType,
+                type = "hospital",
                 appointment = new
                 {
                     item.Uuid,
@@ -388,16 +281,15 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
                     hospitalUuid = item.HospitalUuid,
                     roomUuid = item.RoomUuid,
                     doctorUuid = item.DoctorUuid,
-                    medicalServiceUuid = item.MedicalServiceUuid,
                     isWalkIn = false,
                     guestPhone = (string?)null,
                     item.CreatedAt,
                     item.UpdatedAt
                 },
-                targetName = doctor?.Name ?? service?.Name ?? hospital?.Name ?? "Cơ sở y tế",
+                targetName = doctor?.Name ?? hospital?.Name ?? "Cơ sở y tế",
                 hospitalName = hospital?.Name ?? "Cơ sở y tế",
                 hospitalSlug = hospital?.Slug ?? string.Empty,
-                targetSlug = doctor?.Slug ?? service?.Slug ?? hospital?.Slug ?? string.Empty,
+                targetSlug = doctor?.Slug ?? hospital?.Slug ?? string.Empty,
                 roomName = room?.Name ?? string.Empty
             };
         }).ToList();
@@ -423,12 +315,10 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             Note = appointment.Note,
             AppointmentDate = appointment.AppointmentDate,
             TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
             Status = appointment.Status.ToString(),
             PatientUuid = appointment.PatientUuid,
             HospitalUuid = appointment.HospitalUuid,
             DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
             RoomUuid = appointment.RoomUuid,
             DoctorNote = appointment.DoctorNote,
             TotalPrice = appointment.TotalPrice,
@@ -551,16 +441,12 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         var doctor = appointment.DoctorUuid.HasValue
             ? await dbContext.DoctorProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.Uuid == appointment.DoctorUuid, cancellationToken)
             : null;
-        var medicalService = appointment.MedicalServiceUuid.HasValue
-            ? await dbContext.MedicalServices.AsNoTracking().FirstOrDefaultAsync(item => item.Uuid == appointment.MedicalServiceUuid, cancellationToken)
-            : null;
         var room = appointment.RoomUuid.HasValue
             ? await dbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(item => item.Uuid == appointment.RoomUuid, cancellationToken)
             : null;
-        var type = appointment.Type == AppointmentType.Doctor ? "doctor" : appointment.Type == AppointmentType.Service ? "medical-service" : "hospital";
         return new
         {
-            type,
+            type = "hospital",
             appointment = new
             {
                 appointment.Uuid,
@@ -574,16 +460,15 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
                 hospitalUuid = appointment.HospitalUuid,
                 roomUuid = appointment.RoomUuid,
                 doctorUuid = appointment.DoctorUuid,
-                medicalServiceUuid = appointment.MedicalServiceUuid,
                 isWalkIn = false,
                 guestPhone = (string?)null,
                 appointment.CreatedAt,
                 appointment.UpdatedAt
             },
-            targetName = doctor?.Name ?? medicalService?.Name ?? hospital?.Name ?? "Cơ sở y tế",
+            targetName = doctor?.Name ?? hospital?.Name ?? "Cơ sở y tế",
             hospitalName = hospital?.Name ?? "Cơ sở y tế",
             hospitalSlug = hospital?.Slug ?? string.Empty,
-            targetSlug = doctor?.Slug ?? medicalService?.Slug ?? hospital?.Slug ?? string.Empty,
+            targetSlug = doctor?.Slug ?? hospital?.Slug ?? string.Empty,
             roomName = room?.Name ?? string.Empty
         };
     }
@@ -601,12 +486,10 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             Note = request.Note,
             AppointmentDate = request.AppointmentDate,
             TimeSlot = request.TimeSlot,
-            Type = request.Type,
             Status = AppointmentStatus.Pending,
             PatientUuid = request.PatientUuid,
             HospitalUuid = request.HospitalUuid,
             DoctorUuid = request.DoctorUuid,
-            MedicalServiceUuid = request.MedicalServiceUuid,
             RoomUuid = request.RoomUuid,
             TotalPrice = request.TotalPrice,
             IsPaid = false,
@@ -626,12 +509,10 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             Note = appointment.Note,
             AppointmentDate = appointment.AppointmentDate,
             TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
             Status = appointment.Status.ToString(),
             PatientUuid = appointment.PatientUuid,
             HospitalUuid = appointment.HospitalUuid,
             DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
             RoomUuid = appointment.RoomUuid,
             DoctorNote = appointment.DoctorNote,
             TotalPrice = appointment.TotalPrice,
@@ -662,10 +543,8 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         appointment.Note = request.Note ?? appointment.Note;
         appointment.AppointmentDate = request.AppointmentDate != default ? request.AppointmentDate : appointment.AppointmentDate;
         appointment.TimeSlot = request.TimeSlot ?? appointment.TimeSlot;
-        appointment.Type = request.Type;
         appointment.PatientUuid = request.PatientUuid ?? appointment.PatientUuid;
         appointment.DoctorUuid = request.DoctorUuid ?? appointment.DoctorUuid;
-        appointment.MedicalServiceUuid = request.MedicalServiceUuid ?? appointment.MedicalServiceUuid;
         appointment.RoomUuid = request.RoomUuid ?? appointment.RoomUuid;
         appointment.TotalPrice = request.TotalPrice.HasValue ? request.TotalPrice.Value : appointment.TotalPrice;
         appointment.UpdatedAt = DateTime.UtcNow;
@@ -681,12 +560,10 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             Note = appointment.Note,
             AppointmentDate = appointment.AppointmentDate,
             TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
             Status = appointment.Status.ToString(),
             PatientUuid = appointment.PatientUuid,
             HospitalUuid = appointment.HospitalUuid,
             DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
             RoomUuid = appointment.RoomUuid,
             DoctorNote = appointment.DoctorNote,
             TotalPrice = appointment.TotalPrice,
@@ -742,12 +619,10 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             Note = appointment.Note,
             AppointmentDate = appointment.AppointmentDate,
             TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
             Status = appointment.Status.ToString(),
             PatientUuid = appointment.PatientUuid,
             HospitalUuid = appointment.HospitalUuid,
             DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
             RoomUuid = appointment.RoomUuid,
             DoctorNote = appointment.DoctorNote,
             TotalPrice = appointment.TotalPrice,
@@ -796,12 +671,10 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             Note = appointment.Note,
             AppointmentDate = appointment.AppointmentDate,
             TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
             Status = appointment.Status.ToString(),
             PatientUuid = appointment.PatientUuid,
             HospitalUuid = appointment.HospitalUuid,
             DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
             RoomUuid = appointment.RoomUuid,
             DoctorNote = appointment.DoctorNote,
             TotalPrice = appointment.TotalPrice,
@@ -840,12 +713,10 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
             Note = appointment.Note,
             AppointmentDate = appointment.AppointmentDate,
             TimeSlot = appointment.TimeSlot,
-            Type = appointment.Type.ToString(),
             Status = appointment.Status.ToString(),
             PatientUuid = appointment.PatientUuid,
             HospitalUuid = appointment.HospitalUuid,
             DoctorUuid = appointment.DoctorUuid,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
             RoomUuid = appointment.RoomUuid,
             DoctorNote = appointment.DoctorNote,
             TotalPrice = appointment.TotalPrice,

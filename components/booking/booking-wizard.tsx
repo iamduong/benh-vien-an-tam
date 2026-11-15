@@ -132,8 +132,6 @@ export function BookingWizard({ type }: { type: BookingType }) {
     appointmentService
       .getAvailability(
         {
-          type,
-          targetUuid: selectedTargetUuid,
           hospitalUuid: selectedHospitalUuid,
           accountUuid: session.account.uuid,
           date,
@@ -278,16 +276,7 @@ export function BookingWizard({ type }: { type: BookingType }) {
       accountUuid: currentSession.account.uuid,
       hospitalUuid: selection.hospital.uuid,
     };
-    const request: CreateAppointmentRequest =
-      type === "hospital"
-        ? { ...common, type: "hospital" }
-        : type === "doctor"
-          ? { ...common, type: "doctor", doctorUuid: selection.targetUuid }
-          : {
-              ...common,
-              type: "medical-service",
-              medicalServiceUuid: selection.targetUuid,
-            };
+    const request: CreateAppointmentRequest = { ...common, type: "hospital" };
 
     let submitted = false;
     try {

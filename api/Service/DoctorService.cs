@@ -59,7 +59,6 @@ public sealed class DoctorService(DBContext dbContext) : ControllerBase
                 Avatar = x.Avatar,
                 Slug = x.Slug,
                 Name = x.Name,
-                Price = x.Price,
                 DepartmentDisplay = x.DepartmentDisplay,
                 Introduction = x.Introduction,
                 Expertise = x.Expertise,
@@ -108,7 +107,6 @@ public sealed class DoctorService(DBContext dbContext) : ControllerBase
             Avatar = doctor.Avatar,
             Slug = doctor.Slug,
             Name = doctor.Name,
-            Price = doctor.Price,
             DepartmentDisplay = doctor.DepartmentDisplay,
             Introduction = doctor.Introduction,
             Expertise = doctor.Expertise,
@@ -134,7 +132,6 @@ public sealed class DoctorService(DBContext dbContext) : ControllerBase
             Avatar = request.Avatar,
             Slug = request.Slug,
             Name = request.Name,
-            Price = request.Price,
             DepartmentDisplay = request.DepartmentDisplay,
             Introduction = request.Introduction,
             Expertise = request.Expertise,
@@ -156,7 +153,6 @@ public sealed class DoctorService(DBContext dbContext) : ControllerBase
             Avatar = doctor.Avatar,
             Slug = doctor.Slug,
             Name = doctor.Name,
-            Price = doctor.Price,
             DepartmentDisplay = doctor.DepartmentDisplay,
             Introduction = doctor.Introduction,
             Expertise = doctor.Expertise,
@@ -188,7 +184,6 @@ public sealed class DoctorService(DBContext dbContext) : ControllerBase
         doctor.Avatar = request.Avatar ?? doctor.Avatar;
         doctor.Slug = request.Slug ?? doctor.Slug;
         doctor.Name = request.Name ?? doctor.Name;
-        doctor.Price = request.Price.HasValue ? request.Price.Value : doctor.Price;
         doctor.DepartmentDisplay = request.DepartmentDisplay ?? doctor.DepartmentDisplay;
         doctor.Introduction = request.Introduction ?? doctor.Introduction;
         doctor.Expertise = request.Expertise ?? doctor.Expertise;
@@ -207,7 +202,6 @@ public sealed class DoctorService(DBContext dbContext) : ControllerBase
             Avatar = doctor.Avatar,
             Slug = doctor.Slug,
             Name = doctor.Name,
-            Price = doctor.Price,
             DepartmentDisplay = doctor.DepartmentDisplay,
             Introduction = doctor.Introduction,
             Expertise = doctor.Expertise,
@@ -329,94 +323,33 @@ public sealed class DoctorService(DBContext dbContext) : ControllerBase
         return NoContent();
     }
 
-    public async Task<IActionResult> GetDoctorWorkings(
-        Guid id,
-        int page = 1,
-        int pageSize = 20,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetMySchedule(CancellationToken cancellationToken)
     {
-        pageSize = Math.Min(pageSize, 100);
-
-        var query = from dw in dbContext.DoctorWorkingHours
-                    join tw in dbContext.TimeWorkings on dw.WorkingHourUuid equals tw.Uuid
-                    where dw.DoctorUuid == id && tw.DeletedAt == null
-                    select tw;
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(x => new api.Contract.TimeWorking.TimeWorkingResponse
-            {
-                Uuid = x.Uuid,
-                DayOfWeek = x.DayOfWeek,
-                StartTime = x.StartTime,
-                EndTime = x.EndTime,
-                Status = x.Status,
-                CreatedAt = x.CreatedAt,
-                UpdatedAt = x.UpdatedAt
-            })
-            .ToListAsync(cancellationToken);
-
-        return Ok(new
-        {
-            message = "Fetched successfully",
-            data = items,
-            pagination = new
-            {
-                page,
-                pageSize,
-                totalCount,
-                totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
-            }
-        });
-    }
-
-    public async Task<IActionResult> AddDoctorWorking(
-        Guid id,
-        AddDoctorWorkingRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var doctorWorking = new DoctorWorkingHour
-        {
-            Uuid = Guid.NewGuid(),
-            DoctorUuid = id,
-            WorkingHourUuid = request.WorkingUuid
-        };
-
-        dbContext.DoctorWorkingHours.Add(doctorWorking);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return StatusCode(StatusCodes.Status201Created,
-            new
-            {
-                message = "Created successfully",
-                data = new
-                {
-                    uuid = doctorWorking.Uuid,
-                    doctorUuid = doctorWorking.DoctorUuid,
-                    workingUuid = doctorWorking.WorkingHourUuid
-                }
-            });
-    }
-
-    public async Task<IActionResult> RemoveDoctorWorking(
-        Guid id,
-        Guid workingId,
-        CancellationToken cancellationToken = default)
-    {
-        var doctorWorking = await dbContext.DoctorWorkingHours
-            .Where(x => x.DoctorUuid == id && x.WorkingHourUuid == workingId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (doctorWorking is null)
-            return NotFound(new { message = "Doctor working not found", error = "Resource does not exist" });
-
-        dbContext.DoctorWorkingHours.Remove(doctorWorking);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
+        var accountUuid = User.GetAccountUuid();
+        if (!accountUuid.HasValue) return Forbid();
+        var doctorUuid = await dbContext.DoctorProfiles.AsNoTracking()
+            .Where(item => item.AccountUuid == accountUuid.Value && item.DeletedAt == null)
+            .Select(item => (Guid?)item.Uuid).FirstOrDefaultAsync(cancellationToken);
+        if (!doctorUuid.HasValue) return Forbid();
+        var data = await (from schedule in dbContext.DoctorSchedules.AsNoTracking()
+                          join assignment in dbContext.DoctorWorkingHours.AsNoTracking()
+                              on schedule.Uuid equals assignment.DoctorScheduleUuid
+                          join working in dbContext.TimeWorkings.AsNoTracking() on assignment.WorkingHourUuid equals working.Uuid
+                          where schedule.DoctorUuid == doctorUuid.Value && working.DeletedAt == null
+                              && working.Status == api.Model.Enum.BaseStatus.Active
+                          orderby working.DayOfWeek, working.StartTime
+                          select new api.Contract.Doctor.DoctorWorkingHourResponse
+                          {
+                              DoctorScheduleUuid = schedule.Uuid,
+                              Uuid = working.Uuid,
+                              DayOfWeek = working.DayOfWeek,
+                              StartTime = working.StartTime,
+                              EndTime = working.EndTime,
+                              RoomUuid = assignment.RoomUuid,
+                              RoomName = dbContext.Rooms.Where(room => room.Uuid == assignment.RoomUuid)
+                                  .Select(room => room.Name).FirstOrDefault(),
+                          }).ToListAsync(cancellationToken);
+        return Ok(new { message = "Lấy lịch làm việc của bác sĩ thành công.", data });
     }
 
     public async Task<IActionResult> GetDoctorAppointments(
@@ -444,12 +377,10 @@ public sealed class DoctorService(DBContext dbContext) : ControllerBase
                 Note = x.Note,
                 AppointmentDate = x.AppointmentDate,
                 TimeSlot = x.TimeSlot,
-                Type = x.Type.ToString(),
                 Status = x.Status.ToString(),
                 PatientUuid = x.PatientUuid,
                 HospitalUuid = x.HospitalUuid,
                 DoctorUuid = x.DoctorUuid,
-                MedicalServiceUuid = x.MedicalServiceUuid,
                 RoomUuid = x.RoomUuid,
                 DoctorNote = x.DoctorNote,
                 TotalPrice = x.TotalPrice,

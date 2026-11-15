@@ -84,8 +84,6 @@ export class AppointmentService {
 
   async getAvailability(
     query: {
-      type: BookingType;
-      targetUuid: string;
       hospitalUuid: string;
       accountUuid: string;
       date: string;
@@ -105,16 +103,9 @@ export class AppointmentService {
 
   async create(request: CreateAppointmentRequest) {
     try {
-      const { type, ...payload } = request;
-      const endpoint =
-        type === "hospital"
-          ? "hospitals"
-          : type === "doctor"
-            ? "doctors"
-            : "medical-services";
       const response = await httpClient.post<ApiResponse<Appointment>>(
-        `/appointments/${endpoint}`,
-        payload,
+        "/appointments/hospitals",
+        request,
       );
       return {
         ...response.data,

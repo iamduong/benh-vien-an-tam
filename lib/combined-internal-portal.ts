@@ -79,13 +79,11 @@ export const combinedPortalSections: CombinedPortalSection[] = [
       item("phong-kham-chi-nhanh", "phong-kham", "Phòng khám", "Quản lý phòng và trạng thái sử dụng trong chi nhánh.", "room"),
       item("nhan-su", "nhan-su", "Nhân sự", "Quản lý tài khoản nhân sự thuộc phạm vi chi nhánh.", "account"),
       item("lich-hen-chi-nhanh", "lich-hen", "Lịch hẹn", "Theo dõi, xác nhận, điều phối và hủy lịch thuộc chi nhánh.", "appointment"),
-      item("don-thuoc-chi-nhanh", "don-thuoc", "Đơn thuốc", "Xem đơn thuốc khi cần xử lý nghiệp vụ được phân quyền.", "prescription"),
       item("kho-thuoc", "kho-thuoc", "Kho thuốc", "Theo dõi tồn kho và duyệt phiếu nhập xuất của chi nhánh.", "inventory"),
       item("danh-gia-chi-nhanh", "danh-gia", "Đánh giá", "Kiểm duyệt đánh giá liên quan đến chi nhánh.", "review"),
       item("bao-cao-chi-nhanh", "bao-cao", "Báo cáo", "Xem báo cáo vận hành và tài chính trong phạm vi chi nhánh.", "report"),
-      item("nhat-ky-chi-nhanh", "nhat-ky", "Nhật ký hoạt động", "Theo dõi audit log của chi nhánh.", "audit"),
       item("gio-lam-viec-benh-vien", "gio-lam-viec-benh-vien", "Giờ làm việc bệnh viện", "Cập nhật lịch hoạt động của bệnh viện.", "schedule"),
-      item("duyet-don-lam-viec", "duyet-don-lam-viec", "Duyệt đơn làm việc", "Duyệt hoặc từ chối đề nghị đổi giờ làm của bác sĩ trong chi nhánh.", "audit"),
+      item("phan-ca-lam-viec-bac-si", "phan-ca-lam-viec-bac-si", "Phân ca làm việc bác sĩ", "Lập và công bố thời khóa biểu theo khoảng ngày cho bác sĩ.", "schedule"),
     ],
   },
   {
@@ -99,7 +97,6 @@ export const combinedPortalSections: CombinedPortalSection[] = [
       item("thuoc-kha-dung", "thuoc-kha-dung", "Thuốc khả dụng", "Tra cứu khả dụng của thuốc tại chi nhánh để hỗ trợ kê đơn.", "medicine"),
       item("ho-so-nghe-nghiep", "ho-so-nghe-nghiep", "Hồ sơ nghề nghiệp", "Cập nhật phần thông tin nghề nghiệp được cho phép.", "profile"),
       item("gio-lam-viec-bac-si", "gio-lam-viec-bac-si", "Giờ làm việc bác sĩ", "Xem thời khóa biểu, ca trực và phòng làm việc được phân công.", "schedule"),
-      item("thay-doi-gio-lam-viec", "thay-doi-gio-lam-viec", "Thay đổi giờ làm việc", "Tạo và theo dõi đơn đề nghị thay đổi ca làm việc.", "audit"),
     ],
   },
   {
@@ -107,11 +104,8 @@ export const combinedPortalSections: CombinedPortalSection[] = [
     label: "Tiếp nhận và điều phối",
     items: [
       item("tong-quan-tiep-nhan", "tong-quan", "Tổng quan", "Theo dõi lịch hẹn, lượt chờ và tình trạng phòng trong ngày.", "dashboard"),
-      item("lich-hen-tiep-nhan", "lich-hen", "Lịch hẹn", "Tạo lịch thay bệnh nhân, xác nhận, đổi lịch và phân phòng.", "appointment"),
       item("tiep-nhan", "tiep-nhan", "Tiếp nhận", "Check-in và cập nhật trạng thái vận hành của lượt khám.", "patient"),
-      item("phong-kham-tiep-nhan", "phong-kham", "Phòng khám", "Theo dõi và cập nhật trạng thái phòng trong chi nhánh.", "room"),
       item("thanh-toan-cap-thuoc", "thanh-toan-cap-thuoc", "Thanh toán & cấp thuốc", "Thu tiền và cấp thuốc theo đơn khi được giao nhiệm vụ.", "payment"),
-      item("danh-gia-tiep-nhan", "danh-gia", "Đánh giá", "Hỗ trợ kiểm duyệt đánh giá khi có quyền phù hợp.", "review"),
     ],
   },
   {

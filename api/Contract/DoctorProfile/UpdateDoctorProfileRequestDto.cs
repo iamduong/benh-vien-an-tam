@@ -9,6 +9,14 @@ public class UpdateDoctorProfileRequestDto
     private string _workplace = string.Empty;
     private string _introduction = string.Empty;
     private string _expertise = string.Empty;
+    private string _avatar = string.Empty;
+
+    [StringLength(2048)]
+    public string Avatar
+    {
+        get => _avatar;
+        set => _avatar = value?.Trim() ?? string.Empty;
+    }
 
     [Required(ErrorMessage = "Họ và tên không được để trống.", AllowEmptyStrings = false)]
     public string Name

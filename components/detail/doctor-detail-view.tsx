@@ -4,7 +4,6 @@ import {
   ChevronRight,
   MapPin,
   Stethoscope,
-  WalletCards,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -14,7 +13,7 @@ import { RelatedList } from "@/components/detail/related-list";
 import { ReviewList } from "@/components/detail/review-list";
 import { SafeMarkdown } from "@/components/shared/safe-markdown";
 import { buttonVariants } from "@/components/ui/button";
-import { displayText, formatPrice } from "@/lib/format";
+import { displayText } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DoctorDetail } from "@/types/details";
 
@@ -67,7 +66,7 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
               {doctor.name}
             </h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              Xem thông tin chuyên môn, nơi làm việc và lựa chọn lịch khám phù hợp với nhu cầu của bạn.
+              Xem thông tin chuyên môn và đăng ký khám tại bệnh viện nơi bác sĩ đang làm việc.
             </p>
 
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -75,11 +74,6 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
                 icon={Stethoscope}
                 label="Chuyên môn"
                 value={displayText(doctor.specialty)}
-              />
-              <SummaryFact
-                icon={WalletCards}
-                label="Chi phí dự kiến"
-                value={formatPrice(doctor.price)}
               />
               <SummaryFact
                 icon={Building2}
@@ -108,7 +102,7 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
                 className={cn(buttonVariants({ size: "lg" }), "w-full")}
               >
                 <CalendarPlus aria-hidden="true" />
-                Đặt lịch khám
+                Đăng ký tại bệnh viện
               </Link>
             </div>
           </section>
@@ -196,23 +190,17 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
 
         <aside className="hidden self-start space-y-4 lg:sticky lg:top-32 lg:block">
           <div className="rounded-xl border bg-card p-5">
-            <p className="text-sm font-semibold text-primary">Đặt lịch với bác sĩ</p>
-            <h2 className="mt-2 text-lg font-bold">Chủ động chọn thời gian</h2>
+            <p className="text-sm font-semibold text-primary">Đăng ký tại bệnh viện</p>
+            <h2 className="mt-2 text-lg font-bold">Nơi bác sĩ đang làm việc</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Chọn ngày, giờ khả dụng và gửi yêu cầu. Lịch mới sẽ ở trạng thái chờ duyệt.
-            </p>
-            <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">
-              Phí khám dự kiến
-              <strong className="mt-1 block text-base text-foreground">
-                {formatPrice(doctor.price)}
-              </strong>
+              Chọn thời gian dự kiến đến bệnh viện. Bác sĩ và phòng khám sẽ được phân công khi tiếp nhận.
             </p>
             <Link
               href={bookingHref}
               className={cn(buttonVariants({ size: "lg" }), "mt-5 w-full")}
             >
               <CalendarPlus aria-hidden="true" />
-              Đặt lịch khám
+              Đăng ký khám tại bệnh viện
             </Link>
           </div>
           <div className="rounded-xl border bg-card p-5">

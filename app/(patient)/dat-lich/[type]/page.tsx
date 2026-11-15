@@ -11,8 +11,8 @@ import {
 import type { BookingType } from "@/types/appointments";
 
 export const metadata: Metadata = {
-  title: "Đặt lịch khám",
-  description: "Gửi yêu cầu đặt lịch tại cơ sở, với bác sĩ hoặc dịch vụ y tế.",
+  title: "Đăng ký khám tại bệnh viện",
+  description: "Chọn bệnh viện và thời gian dự kiến đến khám.",
 };
 
 const typeMap: Record<string, BookingType> = {

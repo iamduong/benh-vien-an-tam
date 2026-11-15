@@ -178,18 +178,6 @@ function getAppointmentTargets(
     if (!doctor) return null;
     targets.push(buildTarget("doctor", doctor.uuid, doctor.name, patientUuid));
   }
-  if (
-    appointment.type === AppointmentType.Service &&
-    appointment.medicalServiceUuid
-  ) {
-    const service = mockMedicalServices.find(
-      (item) => item.uuid === appointment.medicalServiceUuid,
-    );
-    if (!service) return null;
-    targets.push(
-      buildTarget("medical-service", service.uuid, service.name, patientUuid),
-    );
-  }
   for (const relation of mockAppointmentMedicalServices.filter(
     (item) => item.appointmentUuid === appointment.uuid,
   )) {
@@ -252,14 +240,11 @@ function hasDoneAppointment(
     }
     if (type === "hospital") return item.hospitalUuid === targetUuid;
     if (type === "doctor") return item.doctorUuid === targetUuid;
-    return (
-      item.medicalServiceUuid === targetUuid ||
-      mockAppointmentMedicalServices.some(
+    return mockAppointmentMedicalServices.some(
         (relation) =>
           relation.appointmentUuid === item.uuid &&
           relation.medicalServiceUuid === targetUuid,
-      )
-    );
+      );
   });
 }
 

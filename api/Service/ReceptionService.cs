@@ -127,25 +127,22 @@ public sealed class ReceptionService(DBContext dbContext)
             : [];
 
         var assignments = appointment.TimeSlot.HasValue
-            ? await (from working in dbContext.DoctorSchedules.AsNoTracking()
-                     join doctor in dbContext.DoctorProfiles.AsNoTracking() on working.DoctorUuid equals doctor.Uuid
+            ? await (from working in dbContext.DoctorWorkingHours.AsNoTracking()
+                     join schedule in dbContext.DoctorSchedules.AsNoTracking()
+                         on working.DoctorScheduleUuid equals schedule.Uuid
+                     join doctor in dbContext.DoctorProfiles.AsNoTracking() on schedule.DoctorUuid equals doctor.Uuid
                      where working.WorkingHourUuid == appointment.TimeSlot.Value
-                         && working.RoomUuid.HasValue && roomIds.Contains(working.RoomUuid.Value)
+                         && roomIds.Contains(working.RoomUuid)
                          && doctor.HospitalUuid == hospitalUuid && doctor.DeletedAt == null
-                     select new { working.RoomUuid, working.DoctorUuid, doctor.Name }).ToListAsync(cancellationToken)
+                     select new { working.RoomUuid, schedule.DoctorUuid, doctor.Name }).ToListAsync(cancellationToken)
             : [];
 
-        Guid? requiredDoctorRoom = null;
-        if (appointment.Type == AppointmentType.Doctor && appointment.DoctorUuid.HasValue)
-            requiredDoctorRoom = assignments.FirstOrDefault(item => item.DoctorUuid == appointment.DoctorUuid)?.RoomUuid;
-
         var selectable = roomEntities.Where(room => room.Status != RoomStatus.Maintenance)
-            .Where(room => appointment.Type != AppointmentType.Doctor || room.Uuid == requiredDoctorRoom)
-            .Where(room => appointment.Type != AppointmentType.Hospital || assignments.Any(item => item.RoomUuid == room.Uuid))
+            .Where(room => assignments.Any(item => item.RoomUuid == room.Uuid))
             .OrderBy(room => waitingCounts.GetValueOrDefault(room.Uuid))
             .ThenBy(room => slotCounts.GetValueOrDefault(room.Uuid))
             .FirstOrDefault();
-        var recommendedRoomUuid = requiredDoctorRoom ?? selectable?.Uuid;
+        var recommendedRoomUuid = selectable?.Uuid;
 
         var patientIds = appointment.PatientUuid.HasValue ? new[] { appointment.PatientUuid.Value } : [];
         var patients = await dbContext.PatientProfiles.AsNoTracking().Where(item => patientIds.Contains(item.Uuid))
@@ -160,16 +157,10 @@ public sealed class ReceptionService(DBContext dbContext)
         var roomOptions = roomEntities.Select(room =>
         {
             var roomAssignments = assignments.Where(item => item.RoomUuid == room.Uuid).ToList();
-            var doctorMismatch = appointment.Type == AppointmentType.Doctor && room.Uuid != requiredDoctorRoom;
-            var missingSchedule = appointment.Type == AppointmentType.Doctor && !requiredDoctorRoom.HasValue;
-            var noDoctorInRoom = appointment.Type == AppointmentType.Hospital && roomAssignments.Count == 0;
+            var noDoctorInRoom = roomAssignments.Count == 0;
             var unavailableReason = room.Status == RoomStatus.Maintenance
                 ? "Phòng đang bảo trì."
-                : missingSchedule
-                    ? "Bác sĩ chưa được xếp phòng trong ca này."
-                    : doctorMismatch
-                        ? "Không phải phòng làm việc của bác sĩ đã đặt."
-                        : noDoctorInRoom ? "Chưa có bác sĩ làm tại phòng trong ca này." : null;
+                : noDoctorInRoom ? "Chưa có bác sĩ làm tại phòng trong ca này." : null;
             return new ReceptionRoomOptionResponse
             {
                 Uuid = room.Uuid,
@@ -185,13 +176,9 @@ public sealed class ReceptionService(DBContext dbContext)
             };
         }).ToList();
 
-        var recommendation = appointment.Type == AppointmentType.Doctor
-            ? requiredDoctorRoom.HasValue
-                ? "Phòng được xác định theo ca làm việc của bác sĩ đã đặt."
-                : "Chưa thể check-in: bác sĩ chưa được xếp phòng cho ca này."
-            : recommendedRoomUuid.HasValue
-                ? "Ưu tiên phòng có hàng chờ và tải trong ca thấp nhất."
-                : "Không có phòng khả dụng.";
+        var recommendation = recommendedRoomUuid.HasValue
+            ? "Ưu tiên phòng có bác sĩ làm việc, hàng chờ và tải trong ca thấp nhất."
+            : "Không có phòng khả dụng.";
 
         return (new ReceptionRoutingResponse
         {
@@ -221,23 +208,11 @@ public sealed class ReceptionService(DBContext dbContext)
         if (room is null || room.Status == RoomStatus.Maintenance)
             return (null, "Phòng khám không khả dụng.", 422);
 
-        if (appointment.Type == AppointmentType.Doctor)
-        {
-            var doctorWorksHere = appointment.DoctorUuid.HasValue && appointment.TimeSlot.HasValue
-                && await dbContext.DoctorSchedules.AsNoTracking().AnyAsync(item =>
-                    item.DoctorUuid == appointment.DoctorUuid.Value
-                    && item.WorkingHourUuid == appointment.TimeSlot.Value
-                    && item.RoomUuid == roomUuid, cancellationToken);
-            if (!doctorWorksHere)
-                return (null, "Lịch đặt bác sĩ phải được chuyển đúng phòng bác sĩ làm trong ca này.", 422);
-        }
-        else if (appointment.Type == AppointmentType.Hospital)
-        {
-            var hasDoctor = appointment.TimeSlot.HasValue && await dbContext.DoctorSchedules.AsNoTracking()
-                .AnyAsync(item => item.WorkingHourUuid == appointment.TimeSlot.Value && item.RoomUuid == roomUuid, cancellationToken);
-            if (!hasDoctor)
-                return (null, "Phòng chưa có bác sĩ làm việc trong ca của lịch hẹn.", 422);
-        }
+        var hasDoctor = appointment.TimeSlot.HasValue && await dbContext.DoctorWorkingHours.AsNoTracking()
+            .AnyAsync(working => working.WorkingHourUuid == appointment.TimeSlot.Value
+                && working.RoomUuid == roomUuid, cancellationToken);
+        if (!hasDoctor)
+            return (null, "Phòng chưa có bác sĩ làm việc trong ca của lịch hẹn.", 422);
 
         appointment.RoomUuid = roomUuid;
         appointment.Status = AppointmentStatus.CheckedIn;
@@ -252,7 +227,6 @@ public sealed class ReceptionService(DBContext dbContext)
             MedicalCode = appointment.MedicalCode,
             Gender = appointment.Gender.ToString(),
             AppointmentDate = appointment.AppointmentDate,
-            Type = appointment.Type.ToString(),
             Status = appointment.Status.ToString(),
             DoctorUuid = appointment.DoctorUuid,
             RoomUuid = room.Uuid,
@@ -279,7 +253,6 @@ public sealed class ReceptionService(DBContext dbContext)
             Phone = phone ?? string.Empty,
             Gender = item.Gender.ToString(),
             AppointmentDate = item.AppointmentDate,
-            Type = item.Type.ToString(),
             Status = item.Status.ToString(),
             DoctorUuid = item.DoctorUuid,
             DoctorName = item.DoctorUuid.HasValue ? doctors.GetValueOrDefault(item.DoctorUuid.Value) : null,

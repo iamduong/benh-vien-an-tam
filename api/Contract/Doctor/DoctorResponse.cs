@@ -7,7 +7,6 @@ public sealed class DoctorResponse
     public string Avatar { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int Price { get; set; }
     public string DepartmentDisplay { get; set; } = string.Empty;
     public string Introduction { get; set; } = string.Empty;
     public string Expertise { get; set; } = string.Empty;

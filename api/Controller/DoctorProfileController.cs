@@ -58,13 +58,13 @@ public class DoctorProfileController : ControllerBase
             return Unauthorized(new { message = "Token không hợp lệ hoặc thiếu thông tin định danh." });
         }
 
-        var success = await _doctorProfileService.UpdateProfileAsync(accountUuid, request, cancellationToken);
+        var profile = await _doctorProfileService.UpdateProfileAsync(accountUuid, request, cancellationToken);
 
-        if (!success)
+        if (profile is null)
         {
             return NotFound(new { message = "Cập nhật thất bại. Không tìm thấy hồ sơ bác sĩ." });
         }
 
-        return Ok(new { message = "Cập nhật hồ sơ thành công." });
+        return Ok(new { message = "Cập nhật hồ sơ thành công.", data = profile });
     }
 }

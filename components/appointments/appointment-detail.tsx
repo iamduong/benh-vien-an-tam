@@ -115,7 +115,6 @@ function DetailContent({
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const appointment = item.appointment;
   const canChange = canChangeAppointment(item, currentTime);
-  const targetUuid = getTargetUuid(item);
 
   useEffect(() => {
     const deadline = appointment.appointmentAt.getTime() - 86_400_000;
@@ -154,7 +153,6 @@ function DetailContent({
           {canChange ? (
             <AppointmentActions
               item={item}
-              targetUuid={targetUuid}
               accountUuid={accountUuid}
               onFeedback={onFeedback}
               onUpdate={onUpdate}
@@ -194,7 +192,6 @@ function DetailContent({
           <DetailField label="hospitalUuid" value={appointment.hospitalUuid} />
           <DetailField label="roomUuid" value={appointment.roomUuid} />
           {typeof (appointment as { doctorUuid?: unknown }).doctorUuid === "string" ? <DetailField label="doctorUuid" value={(appointment as { doctorUuid: string }).doctorUuid} /> : null}
-          {typeof (appointment as { medicalServiceUuid?: unknown }).medicalServiceUuid === "string" ? <DetailField label="medicalServiceUuid" value={(appointment as { medicalServiceUuid: string }).medicalServiceUuid} /> : null}
         </dl>
       </details>
     </>
@@ -203,13 +200,11 @@ function DetailContent({
 
 function AppointmentActions({
   item,
-  targetUuid,
   accountUuid,
   onFeedback,
   onUpdate,
 }: {
   item: AppointmentPresentation;
-  targetUuid: string;
   accountUuid: string;
   onFeedback: (value: string) => void;
   onUpdate: (item: AppointmentPresentation) => void;
@@ -232,8 +227,6 @@ function AppointmentActions({
     appointmentService
       .getAvailability(
         {
-          type: item.type,
-          targetUuid,
           hospitalUuid: item.appointment.hospitalUuid,
           accountUuid,
           date,
@@ -264,7 +257,7 @@ function AppointmentActions({
       active = false;
       controller.abort();
     };
-  }, [accountUuid, date, item.appointment.hospitalUuid, item.type, rescheduleOpen, targetUuid]);
+  }, [accountUuid, date, item.appointment.hospitalUuid, rescheduleOpen]);
 
   async function reschedule() {
     if (!date || !time || actionLock.current) return;
@@ -380,17 +373,6 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
 
 function DetailField({ label, value }: { label: string; value: string }) {
   return <div className="min-w-0"><dt className="text-xs font-medium text-muted-foreground">{label}</dt><dd className="mt-1 break-words text-sm font-semibold leading-6">{value}</dd></div>;
-}
-
-function getTargetUuid(item: AppointmentPresentation) {
-  const appointment = item.appointment;
-  if (typeof (appointment as { doctorUuid?: unknown }).doctorUuid === "string") {
-    return (appointment as { doctorUuid: string }).doctorUuid;
-  }
-  if (typeof (appointment as { medicalServiceUuid?: unknown }).medicalServiceUuid === "string") {
-    return (appointment as { medicalServiceUuid: string }).medicalServiceUuid;
-  }
-  return appointment.hospitalUuid;
 }
 
 function getGenderLabel(value: string) {

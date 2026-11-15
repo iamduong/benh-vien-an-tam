@@ -17,6 +17,4 @@ public sealed class CreateBranchAppointmentRequest
     [StringLength(1000)]
     public string Note { get; init; } = string.Empty;
 
-    [Required]
-    public AppointmentType Type { get; init; } = AppointmentType.Hospital;
 }

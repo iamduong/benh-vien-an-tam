@@ -11,7 +11,6 @@ public sealed class ReceptionAppointmentResponse
     public string Phone { get; init; } = string.Empty;
     public string Gender { get; init; } = string.Empty;
     public DateTime AppointmentDate { get; init; }
-    public string Type { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public Guid? DoctorUuid { get; init; }
     public string? DoctorName { get; init; }

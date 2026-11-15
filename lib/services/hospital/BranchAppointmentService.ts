@@ -2,7 +2,6 @@ import { httpClient } from "@/lib/http/client";
 import type { ApiResponse, PaginatedData } from "@/lib/http/response";
 import {
   AppointmentStatus,
-  AppointmentType,
   type Guid,
 } from "@/types/models";
 
@@ -15,10 +14,13 @@ export type BranchAppointment = {
   appointmentDate: Date;
   timeSlot: Guid | null;
   time: string;
-  type: AppointmentType;
   status: AppointmentStatus;
   patientUuid: Guid | null;
   hospitalUuid: Guid;
+  doctorUuid: Guid | null;
+  doctorName: string | null;
+  roomUuid: Guid | null;
+  roomName: string | null;
   isWalkIn: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -28,7 +30,6 @@ export type BranchAppointmentQuery = {
   from?: string;
   to?: string;
   status?: AppointmentStatus;
-  type?: AppointmentType;
   search?: string;
   page?: number;
   pageSize?: number;
@@ -38,7 +39,6 @@ export type CreateBranchAppointmentRequest = {
   patientName: string;
   gender: string;
   appointmentDate: string;
-  type: AppointmentType;
   note: string;
 };
 

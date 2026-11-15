@@ -27,7 +27,6 @@ public class DoctorProfileService
                 Workplace = dp.Workplace,
                 Introduction = dp.Introduction,
                 Expertise = dp.Expertise,
-                Price = dp.Price,
                 DepartmentDisplay = dp.DepartmentDisplay,
 
                 // JOIN lấy tên Bệnh viện / Cơ sở
@@ -45,17 +44,18 @@ public class DoctorProfileService
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<bool> UpdateProfileAsync(Guid accountUuid, UpdateDoctorProfileRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<DoctorProfileResponseDto?> UpdateProfileAsync(Guid accountUuid, UpdateDoctorProfileRequestDto request, CancellationToken cancellationToken = default)
     {
         var profile = await _context.DoctorProfiles
             .FirstOrDefaultAsync(dp => dp.AccountUuid == accountUuid, cancellationToken);
 
         if (profile == null)
         {
-            return false;
+            return null;
         }
 
         // Chỉ cập nhật các trường được phép ở Khối "Thông tin bác sĩ"
+        profile.Avatar = request.Avatar;
         profile.Name = request.Name;
         profile.Specialty = request.Specialty ?? string.Empty;
         profile.Workplace = request.Workplace;
@@ -63,6 +63,6 @@ public class DoctorProfileService
         profile.Expertise = request.Expertise;
 
         await _context.SaveChangesAsync(cancellationToken);
-        return true;
+        return await GetProfileByAccountIdAsync(accountUuid, cancellationToken);
     }
 }

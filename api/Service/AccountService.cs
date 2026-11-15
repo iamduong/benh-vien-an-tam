@@ -111,7 +111,6 @@ public sealed class AccountService(
                 Name = name,
                 Slug = slug!,
                 Avatar = request.Avatar?.Trim() ?? string.Empty,
-                Price = request.Price ?? 0,
                 DepartmentDisplay = request.DepartmentDisplay?.Trim() ?? string.Empty,
                 Introduction = request.Introduction?.Trim() ?? string.Empty,
                 Expertise = request.Expertise?.Trim() ?? string.Empty,
@@ -223,7 +222,6 @@ public sealed class AccountService(
             doctorProfile!.Avatar = request.Avatar?.Trim() ?? string.Empty;
             doctorProfile.Name = name;
             doctorProfile.Slug = slug!;
-            doctorProfile.Price = request.Price ?? 0;
             doctorProfile.DepartmentDisplay = request.DepartmentDisplay?.Trim() ?? string.Empty;
             doctorProfile.Introduction = request.Introduction?.Trim() ?? string.Empty;
             doctorProfile.Expertise = request.Expertise?.Trim() ?? string.Empty;
@@ -335,7 +333,6 @@ public sealed class AccountService(
                     doctorProfile.Avatar,
                     doctorProfile.Slug,
                     doctorProfile.Name,
-                    doctorProfile.Price,
                     doctorProfile.DepartmentDisplay,
                     doctorProfile.Introduction,
                     doctorProfile.Expertise,

@@ -19,6 +19,4 @@ public sealed class CreatePatientBookingRequest
     public DateTime AppointmentAt { get; init; }
     public Guid AccountUuid { get; init; }
     public Guid HospitalUuid { get; init; }
-    public Guid? DoctorUuid { get; init; }
-    public Guid? MedicalServiceUuid { get; init; }
 }

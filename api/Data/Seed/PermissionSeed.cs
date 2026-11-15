@@ -26,12 +26,11 @@ public static class PermissionSeed
         Create(Guid.Parse("c27f7f8a-1397-4c16-9649-b301ada7842f"), "room", "phong-kham-chi-nhanh", "Phòng khám", "Vận hành chi nhánh"),
         Create(Guid.Parse("869dd7d5-cc15-4651-b565-d001a813bc41"), "account", "nhan-su", "Nhân sự", "Vận hành chi nhánh"),
         Create(Guid.Parse("7fab88c2-fb9c-435c-b218-4fedbbae1a78"), "appointment", "lich-hen-chi-nhanh", "Lịch hẹn", "Vận hành chi nhánh"),
-        Create(Guid.Parse("ef48a2e3-5f42-44d5-a3b9-68853f2db70d"), "prescription", "don-thuoc-chi-nhanh", "Đơn thuốc", "Vận hành chi nhánh"),
         Create(Guid.Parse("52edd052-303c-462a-9a27-70bd3c37cbcf"), "inventory", "kho-thuoc", "Kho thuốc", "Vận hành chi nhánh"),
         Create(Guid.Parse("8549e880-ff4a-469c-8cc7-53e5cc3ab4a8"), "review", "danh-gia-chi-nhanh", "Đánh giá", "Vận hành chi nhánh"),
         Create(Guid.Parse("d906ec34-3b76-4827-b3c2-9b2dd800c718"), "report", "bao-cao-chi-nhanh", "Báo cáo", "Vận hành chi nhánh"),
-        Create(Guid.Parse("69f59a3e-4d01-44fa-817a-5ff8e1ba4208"), "audit", "nhat-ky-chi-nhanh", "Nhật ký hoạt động", "Vận hành chi nhánh"),
         Create(Guid.Parse("9a7ed0c1-53bb-4252-8dc5-d76810e583cb"), "schedule", "gio-lam-viec-benh-vien", "Giờ làm việc bệnh viện", "Vận hành chi nhánh"),
+        Create(Guid.Parse("1458ad5d-6741-426b-98ee-d19f6ab72890"), "schedule", "phan-ca-lam-viec-bac-si", "Phân ca làm việc bác sĩ", "Vận hành chi nhánh"),
 
         // Khám chữa bệnh - Cần Hospitall Uuid
         Create(Guid.Parse("0e3bf4e7-3f2c-4499-b39f-e6669e7f4298"), "dashboard", "tong-quan-bac-si", "Tổng quan bác sĩ", "Khám chữa bệnh"),
@@ -41,15 +40,11 @@ public static class PermissionSeed
         Create(Guid.Parse("2e1486a8-fa76-47a5-a36a-02df91b7c813"), "medicine", "thuoc-kha-dung", "Thuốc khả dụng", "Khám chữa bệnh"),
         Create(Guid.Parse("cb86cb65-fda2-45a7-8633-acbd8af9e3b8"), "profile", "ho-so-nghe-nghiep", "Hồ sơ nghề nghiệp", "Khám chữa bệnh"),
         Create(Guid.Parse("9e2633dc-adb9-4b2c-b01e-e1c3228cf165"), "schedule", "gio-lam-viec-bac-si", "Giờ làm việc bác sĩ", "Khám chữa bệnh"),
-        Create(Guid.Parse("2b534faa-295c-4639-8ae4-5e9aec6c1f8a"), "audit", "thay-doi-gio-lam-viec", "Thay đổi giờ làm việc", "Khám chữa bệnh"),
 
         // Tiếp nhận và điều phối - Cần Hospitall Uuid
         Create(Guid.Parse("faf0d27e-c85c-47e2-9aae-4e833372fdaf"), "dashboard", "tong-quan-tiep-nhan", "Tổng quan lễ tân", "Tiếp nhận và điều phối"),
-        Create(Guid.Parse("e8adca19-51ca-4815-809b-20eab76e1d20"), "appointment", "lich-hen-tiep-nhan", "Lịch hẹn", "Tiếp nhận và điều phối"),
         Create(Guid.Parse("e5bb398e-98f1-4bfb-8afc-efe729ed9532"), "patient", "tiep-nhan", "Tiếp nhận", "Tiếp nhận và điều phối"),
-        Create(Guid.Parse("8f39ace5-80cf-4f90-9d2d-7ac3e0e4c247"), "room", "phong-kham-tiep-nhan", "Phòng khám", "Tiếp nhận và điều phối"),
         Create(Guid.Parse("3d8e5193-cfa3-4ecd-9c69-01a3cf875ba2"), "payment", "thanh-toan-cap-thuoc", "Thanh toán & cấp thuốc", "Tiếp nhận và điều phối"),
-        Create(Guid.Parse("fb8ec9b7-1625-4eba-bb6e-14893287cda4"), "review", "danh-gia-tiep-nhan", "Đánh giá", "Tiếp nhận và điều phối"),
 
         // Kho thuốc - Cần Hospitall Uuid
         Create(Guid.Parse("e8a24ed9-62cc-4188-bd9b-66cec5c6c5d2"), "dashboard", "tong-quan-kho", "Tổng quan kho thuốc", "Kho thuốc"),

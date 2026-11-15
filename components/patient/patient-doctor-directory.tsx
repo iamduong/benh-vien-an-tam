@@ -28,7 +28,7 @@ import { DiscoveryPagination } from "@/components/discovery/discovery-pagination
 import { EmptyState, ErrorState, LoadingState } from "@/components/shared/data-state";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatAppointmentDateTime, formatPrice } from "@/lib/format";
+import { formatAppointmentDateTime } from "@/lib/format";
 import type { PaginatedData } from "@/lib/http/response";
 import { appointmentService } from "@/lib/services/appointment/AppointmentService";
 import { departmentService } from "@/lib/services/department/DepartmentService";
@@ -471,11 +471,7 @@ function DoctorDirectoryCard({ doctor }: { doctor: DoctorProfile }) {
         </div>
       </div>
       <div className="mt-auto border-t px-4 py-4 sm:px-5">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">Phí khám dự kiến</span>
-          <strong className="text-sm text-primary">{formatPrice(doctor.price)}</strong>
-        </div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           <Link
             href={`/bac-si/${doctor.slug}`}
             className={cn(buttonVariants({ variant: "outline" }), "w-full")}

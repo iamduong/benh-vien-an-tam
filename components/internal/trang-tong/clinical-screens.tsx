@@ -18,7 +18,6 @@ export function ClinicalScreens({ slug }: { slug: string }) {
     case "thuoc-kha-dung": return <AvailableMedicineScreen />;
     case "ho-so-nghe-nghiep": return <DoctorProfileScreen />;
     case "gio-lam-viec-bac-si": return <DoctorWorkingScreen view="schedule" />;
-    case "thay-doi-gio-lam-viec": return <DoctorWorkingScreen view="requests" />;
     default: return null;
   }
 }

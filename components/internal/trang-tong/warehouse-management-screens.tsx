@@ -1,16 +1,18 @@
 "use client";
 
-import { ArrowDownToLine, ArrowUpFromLine, Check, Eye, FileDown, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Eye, FileDown, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { INTERNAL_PAGE_SIZE, PortalPageHeader, PortalPagination, PortalSection, PortalTable, StatusPill } from "@/components/internal/portal-ui";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { compareTickets, FilterSelect, printTicket, SummaryCard, TicketDetail, TicketForm, ticketCode, ticketTotal, type DraftLine } from "@/components/internal/trang-tong/warehouse-ticket-ui";
 import { getMedicineUnitLabel } from "@/lib/medicine-units";
 import { warehouseService, type WarehouseInventory, type WarehouseMedicine, type WarehouseOptions, type WarehouseProvider, type WarehouseTicket } from "@/lib/services/warehouse/WarehouseService";
+import { cn } from "@/lib/utils";
 
 const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 const dateTime = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
@@ -163,18 +165,15 @@ export function StockMovementScreen({ kind }: { kind: "imports" | "exports" }) {
     }
   }
 
-  async function act(ticket: WarehouseTicket, action: "confirm" | "cancel") {
-    const prompt = action === "confirm"
-      ? `Xác nhận phiếu ${ticketCode(ticket, isImport)}? Tồn kho sẽ được cập nhật và phiếu không thể chỉnh sửa.`
-      : `Hủy phiếu ${ticketCode(ticket, isImport)}? Thao tác này không thể hoàn tác.`;
-    if (!window.confirm(prompt)) return;
+  async function cancelTicket(ticket: WarehouseTicket) {
+    if (!window.confirm(`Hủy phiếu ${ticketCode(ticket, isImport)}? Thao tác này không thể hoàn tác.`)) return;
     setBusy(true);
     setError("");
     try {
-      await (action === "confirm" ? warehouseService.confirm(kind, ticket.uuid) : warehouseService.cancel(kind, ticket.uuid));
+      await warehouseService.cancel(kind, ticket.uuid);
       await load();
       setSelectedTicket(null);
-      setMessage(action === "confirm" ? "Đã xác nhận phiếu và cập nhật tồn kho." : "Đã hủy phiếu đang chờ.");
+      setMessage("Đã hủy phiếu đang chờ.");
     } catch {
       setError("Không thể xử lý phiếu. Dữ liệu có thể đã được thay đổi, vui lòng tải lại.");
     } finally {
@@ -190,14 +189,14 @@ export function StockMovementScreen({ kind }: { kind: "imports" | "exports" }) {
     <TicketPill key={`${ticket.uuid}-status`} status={ticket.status} />,
     <div key={`${ticket.uuid}-actions`} className="flex min-w-max flex-wrap gap-1">
       <Button type="button" size="icon-sm" variant="ghost" aria-label="Xem chi tiết" title="Xem chi tiết" onClick={() => setSelectedTicket(ticket)}><Eye /></Button>
-      <Button type="button" size="icon-sm" variant="ghost" aria-label="In hoặc lưu PDF" title="In hoặc lưu PDF" onClick={() => printTicket(ticket, isImport)}><FileDown /></Button>
       {ticket.status === "Pending" ? <Button type="button" size="icon-sm" variant="ghost" aria-label="Chỉnh sửa phiếu" title="Chỉnh sửa phiếu" disabled={busy} onClick={() => startEdit(ticket)}><Pencil /></Button> : null}
-      {ticket.status === "Pending" ? <><Button type="button" size="sm" disabled={busy} onClick={() => void act(ticket, "confirm")}><Check />Xác nhận</Button><Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void act(ticket, "cancel")}>Hủy phiếu</Button></> : null}
+      <Button type="button" size="icon-sm" variant="ghost" aria-label="Xuất file PDF" title="Xuất file PDF" onClick={() => printTicket(ticket, isImport)}><FileDown /></Button>
+      {ticket.status === "Pending" ? <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void cancelTicket(ticket)}>Hủy phiếu</Button> : null}
     </div>,
   ]);
 
   return <div className="space-y-6">
-    <PortalPageHeader eyebrow="Nghiệp vụ kho" title={isImport ? "Nhập hàng" : "Xuất hàng"} description={isImport ? "Lập, kiểm tra và duyệt phiếu nhập thuốc. Tồn kho chỉ được cộng sau khi phiếu được xác nhận." : "Xuất thuốc khỏi kho; hệ thống kiểm tra tồn trước khi xác nhận."} actions={<Button onClick={startCreate}>{isImport ? <ArrowDownToLine /> : <ArrowUpFromLine />}{isImport ? "Tạo phiếu nhập" : "Tạo phiếu xuất"}</Button>} />
+    <PortalPageHeader eyebrow="Nghiệp vụ kho" title={isImport ? "Nhập hàng" : "Xuất hàng"} description={isImport ? "Tạo và quản lý phiếu nhập thuốc. Phiếu đang chờ có thể xem, chỉnh sửa, xuất PDF hoặc hủy." : "Tạo và quản lý phiếu xuất thuốc. Phiếu đang chờ có thể xem, chỉnh sửa, xuất PDF hoặc hủy."} actions={<Button onClick={startCreate}>{isImport ? <ArrowDownToLine /> : <ArrowUpFromLine />}{isImport ? "Tạo phiếu nhập" : "Tạo phiếu xuất"}</Button>} />
     {message ? <p role="status" className="border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
     {error ? <p role="alert" className="border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
     <div className="grid gap-3 sm:grid-cols-3">
@@ -279,7 +278,7 @@ export function RealInventoryScreen() {
     money.format(item.price),
     <span key={`${item.uuid}-value`} className="font-semibold">{money.format(item.quantity * item.price)}</span>,
     <InventoryPill key={`${item.uuid}-stock`} item={item} />,
-    <div key={`${item.uuid}-actions`} className="flex min-w-max gap-1"><Button type="button" size="icon-sm" variant="ghost" title="Xem chi tiết" aria-label="Xem chi tiết" onClick={() => setSelectedItem(item)}><Eye /></Button><Button type="button" size="sm" variant="outline" disabled={item.quantity <= 0} onClick={() => { setExporting(item); setSelectedItem(null); setQuantity(1); setNote(""); }}><ArrowUpFromLine />Xuất hàng</Button></div>,
+    <div key={`${item.uuid}-actions`} className="flex min-w-max gap-1"><Button type="button" size="icon-sm" variant="ghost" title="Xem chi tiết" aria-label="Xem chi tiết" onClick={() => setSelectedItem(item)}><Eye /></Button><Link href="/noi-bo/trang-tong/nhap-hang" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}><ArrowDownToLine />Nhập hàng</Link><Button type="button" size="sm" variant="outline" disabled={item.quantity <= 0} onClick={() => { setExporting(item); setSelectedItem(null); setQuantity(1); setNote(""); }}><ArrowUpFromLine />Xuất hàng</Button></div>,
   ]);
 
   return <div className="space-y-6">
