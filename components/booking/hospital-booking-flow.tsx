@@ -96,6 +96,7 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitLock = useRef(false);
+  const automaticNote = useRef("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -156,6 +157,23 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
           : null;
 
   useEffect(() => {
+    const nextNote = hospital && doctor
+      ? `Đặt lịch khám tại ${hospital.name} theo bác sĩ ${doctor.name}.`
+      : hospital && medicalService
+        ? `Đặt lịch khám tại ${hospital.name} theo dịch vụ ${medicalService.name}.`
+        : "";
+    if (!nextNote) return;
+
+    setNote((current) => {
+      if (!current || current === automaticNote.current) {
+        automaticNote.current = nextNote;
+        return nextNote;
+      }
+      return current;
+    });
+  }, [doctor, hospital, medicalService]);
+
+  useEffect(() => {
     if (
       context.status === "success" &&
       (!selectedTarget || (type === "doctor" && !hospital))
@@ -178,8 +196,6 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
     appointmentService
       .getAvailability(
         {
-          type,
-          targetUuid: selectedTarget.uuid,
           hospitalUuid: hospital.uuid,
           accountUuid: session.account.uuid,
           date,
@@ -237,8 +253,16 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
     );
   }
 
+  if (type === "medical-service" && medicalService && !hospital) {
+    return (
+      <ServiceHospitalSelection
+        service={medicalService}
+        hospitals={serviceHospitals}
+      />
+    );
+  }
+
   const currentSession = session;
-  const selectedTargetEntity = selectedTarget;
   const selectedHospital = hospital;
   const selectedDoctor = doctor;
   const selectedMedicalService = medicalService;
@@ -305,17 +329,7 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
         accountUuid: currentSession.account.uuid,
         hospitalUuid: selectedHospital.uuid,
       };
-      await appointmentService.create(
-        type === "hospital"
-          ? { ...common, type: "hospital" }
-          : type === "doctor"
-            ? { ...common, type: "doctor", doctorUuid: selectedTargetEntity.uuid }
-            : {
-                ...common,
-                type: "medical-service",
-                medicalServiceUuid: selectedTargetEntity.uuid,
-              },
-      );
+      await appointmentService.create({ ...common, type: "hospital" });
       router.replace("/tai-khoan/lich-hen");
     } catch (error) {
       if (
@@ -355,8 +369,8 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
             {type === "hospital"
               ? "Đặt lịch tại cơ sở"
               : type === "doctor"
-                ? "Đặt lịch với bác sĩ"
-                : "Đặt lịch dịch vụ y tế"}
+                ? "Đăng ký tại nơi bác sĩ làm việc"
+                : "Chọn bệnh viện cung cấp dịch vụ"}
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
             {step === "form" ? "Điền thông tin đặt lịch" : "Kiểm tra phiếu đặt lịch"}
@@ -370,13 +384,17 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
       </div>
 
       <div className="mt-7 grid min-w-0 gap-6 lg:grid-cols-[minmax(19rem,0.8fr)_minmax(0,1.2fr)] xl:grid-cols-[minmax(22rem,0.8fr)_minmax(0,1.2fr)]">
-        {selectedDoctor && selectedHospital ? (
-          <DoctorSummary doctor={selectedDoctor} hospital={selectedHospital} />
-        ) : selectedMedicalService ? (
-          <MedicalServiceSummary service={selectedMedicalService} />
-        ) : selectedHospital ? (
-          <HospitalSummary hospital={selectedHospital} />
-        ) : null}
+        <div className="self-start space-y-6 lg:sticky lg:top-32">
+          {selectedDoctor && selectedHospital ? (
+            <DoctorSummary doctor={selectedDoctor} hospital={selectedHospital} />
+          ) : null}
+          {selectedMedicalService ? (
+            <MedicalServiceSummary service={selectedMedicalService} />
+          ) : null}
+          {selectedHospital ? (
+            <HospitalSummary hospital={selectedHospital} />
+          ) : null}
+        </div>
 
         <section className="min-w-0 border border-t-4 border-t-primary bg-card p-5 sm:p-7">
           {formError ? (
@@ -434,10 +452,8 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
               onNext={continueToReview}
             />
           ) : selectedHospital ? (
-            <AppointmentReview
-              hospital={selectedHospital}
-              doctor={selectedDoctor}
-              medicalService={selectedMedicalService}
+              <AppointmentReview
+                hospital={selectedHospital}
               patientName={patientName.trim()}
               gender={getGenderLabel(gender)}
               medicalCode={medicalCode.trim()}
@@ -459,7 +475,7 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
 
 function HospitalSummary({ hospital }: { hospital: Hospital }) {
   return (
-    <aside className="self-start overflow-hidden border border-t-4 border-t-primary bg-card lg:sticky lg:top-32">
+    <aside className="overflow-hidden border border-t-4 border-t-primary bg-card">
       <div className="relative aspect-[16/9] bg-muted">
         <Image
           src={hospital.image}
@@ -499,7 +515,7 @@ function DoctorSummary({
   hospital: Hospital;
 }) {
   return (
-    <aside className="self-start overflow-hidden border border-t-4 border-t-primary bg-card lg:sticky lg:top-32">
+    <aside className="overflow-hidden border border-t-4 border-t-primary bg-card">
       <div className="relative aspect-[16/9] bg-muted">
         <Image
           src={doctor.avatar}
@@ -511,13 +527,12 @@ function DoctorSummary({
       </div>
       <div className="p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-          Bác sĩ đã chọn
+          Bác sĩ tham khảo
         </p>
         <h2 className="mt-2 text-xl font-bold leading-7">{doctor.name}</h2>
         <HospitalFact icon={Stethoscope} value={doctor.specialty || doctor.departmentDisplay} />
         <HospitalFact icon={Building2} value={hospital.name} />
         <HospitalFact icon={MapPin} value={doctor.workplace || hospital.address} />
-        <HospitalFact icon={WalletCards} value={`Phí khám: ${formatPrice(doctor.price)}`} />
         <div className="mt-5 border-t pt-5 text-sm">
           <SafeMarkdown content={doctor.introduction} showImages={false} />
         </div>
@@ -534,7 +549,7 @@ function DoctorSummary({
 
 function MedicalServiceSummary({ service }: { service: MedicalService }) {
   return (
-    <aside className="self-start overflow-hidden border border-t-4 border-t-primary bg-card lg:sticky lg:top-32">
+    <aside className="overflow-hidden border border-t-4 border-t-primary bg-card">
       <div className="relative aspect-[16/9] bg-muted">
         <Image
           src={service.image}
@@ -562,6 +577,78 @@ function MedicalServiceSummary({ service }: { service: MedicalService }) {
         </Link>
       </div>
     </aside>
+  );
+}
+
+function ServiceHospitalSelection({
+  service,
+  hospitals,
+}: {
+  service: MedicalService;
+  hospitals: Hospital[];
+}) {
+  return (
+    <div className="container-shell py-8 sm:py-12">
+      <Link
+        href={`/dich-vu/${service.slug}`}
+        className={cn(buttonVariants({ variant: "ghost" }), "-ml-2")}
+      >
+        <ArrowLeft aria-hidden="true" />
+        Quay lại chi tiết dịch vụ
+      </Link>
+
+      <div className="mt-5 max-w-3xl">
+        <p className="text-sm font-semibold text-primary">Đăng ký khám tại bệnh viện</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+          Chọn bệnh viện cung cấp dịch vụ
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
+          Các bệnh viện dưới đây đang cung cấp <strong className="text-foreground">{service.name}</strong>.
+          Sau khi chọn, bạn sẽ đăng ký thời gian dự kiến đến khám theo giờ làm việc của bệnh viện.
+        </p>
+      </div>
+
+      {hospitals.length ? (
+        <div className="mt-8 grid gap-5 lg:grid-cols-2">
+          {hospitals.map((hospital) => (
+            <article key={hospital.uuid} className="overflow-hidden border border-t-4 border-t-primary bg-card">
+              <div className="relative aspect-[16/7] bg-muted">
+                <Image
+                  src={hospital.image}
+                  alt={`Hình minh họa ${hospital.name}`}
+                  fill
+                  sizes="(min-width: 1024px) 45vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
+              <div className="p-5 sm:p-6">
+                <h2 className="text-xl font-bold">{hospital.name}</h2>
+                <HospitalFact icon={MapPin} value={hospital.address} />
+                <HospitalFact icon={Clock3} value={hospital.workingHour} />
+                <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                  <Link
+                    href={`/co-so-y-te/${hospital.slug}`}
+                    className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+                  >
+                    Xem bệnh viện
+                  </Link>
+                  <Link
+                    href={`/dat-lich/dich-vu?service=${encodeURIComponent(service.uuid)}&hospital=${encodeURIComponent(hospital.uuid)}`}
+                    className={cn(buttonVariants(), "w-full")}
+                  >
+                    Chọn bệnh viện này
+                  </Link>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-8">
+          <EmptyState message="Chưa có bệnh viện nào được cấu hình cung cấp dịch vụ này." />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -778,8 +865,6 @@ function BookingForm({
 
 function AppointmentReview({
   hospital,
-  doctor,
-  medicalService,
   patientName,
   gender,
   medicalCode,
@@ -790,8 +875,6 @@ function AppointmentReview({
   onConfirm,
 }: {
   hospital: Hospital;
-  doctor: DoctorProfile | null;
-  medicalService: MedicalService | null;
   patientName: string;
   gender: string;
   medicalCode: string;
@@ -810,16 +893,12 @@ function AppointmentReview({
         <div>
           <h2 className="text-xl font-bold">Phiếu đặt lịch khám</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Kiểm tra kỹ thông tin trước khi xác nhận. Lịch sau khi tạo sẽ ở trạng thái chờ duyệt.
+            Kiểm tra kỹ thông tin trước khi xác nhận. Bác sĩ, phòng khám và dịch vụ sẽ được điều phối sau khi bệnh viện tiếp nhận.
           </p>
         </div>
       </div>
 
       <dl className="mt-6 grid gap-x-6 gap-y-5 sm:grid-cols-2">
-        {doctor ? <ReviewField label="Bác sĩ" value={doctor.name} /> : null}
-        {medicalService ? (
-          <ReviewField label="Dịch vụ" value={medicalService.name} />
-        ) : null}
         <ReviewField label="Cơ sở y tế" value={hospital.name} />
         <ReviewField label="Thời gian khám" value={formatAppointmentDateTime(appointmentAt)} />
         <ReviewField label="Người khám" value={patientName} />

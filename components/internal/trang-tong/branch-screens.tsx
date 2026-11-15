@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { HospitalWorkingScreen } from "@/components/internal/trang-tong/working-hours-screens";
+import { DoctorShiftAssignmentScreen } from "@/components/internal/trang-tong/doctor-shift-assignment-screen";
 import { HospitalReviewsScreen as HospitalReviewsManagementScreen } from "@/components/internal/trang-tong/hospital-reviews-screen";
 import { BranchAppointmentsScreen } from "@/components/internal/trang-tong/branch-appointments-screen";
 import { markdownToPlainText } from "@/lib/format";
@@ -63,11 +64,11 @@ import {
 } from "@/types/models";
 
 const appointmentRows = [
-  ["09:30", "Nguyễn Thị Lan · BN-10248", "Khám bác sĩ", "BS. Nguyễn Hoàng Minh · P.203", <StatusPill key="1" tone="blue">Đã xác nhận</StatusPill>],
-  ["09:45", "Trần Văn Phúc · BN-08421", "Khám tổng quát", "P.101", <StatusPill key="2" tone="amber">Chờ xác nhận</StatusPill>],
-  ["10:00", "Lê Minh Châu · BN-11203", "Siêu âm tổng quát", "P.307", <StatusPill key="3" tone="green">Đã check-in</StatusPill>],
-  ["10:15", "Phạm Thị Hồng · BN-09682", "Khám bác sĩ", "BS. Phạm Ngọc Anh · P.205", <StatusPill key="4" tone="blue">Đã xác nhận</StatusPill>],
-  ["10:30", "Hoàng Nam Sơn · BN-11824", "Xét nghiệm máu", "P.108", <StatusPill key="5" tone="red">Đã hủy</StatusPill>],
+  ["09:30", "Nguyễn Thị Lan · BN-10248", "BS. Nguyễn Hoàng Minh · P.203", <StatusPill key="1" tone="blue">Đã xác nhận</StatusPill>],
+  ["09:45", "Trần Văn Phúc · BN-08421", "Chưa phân bác sĩ · P.101", <StatusPill key="2" tone="amber">Chờ xác nhận</StatusPill>],
+  ["10:00", "Lê Minh Châu · BN-11203", "Chưa phân bác sĩ · P.307", <StatusPill key="3" tone="green">Đã check-in</StatusPill>],
+  ["10:15", "Phạm Thị Hồng · BN-09682", "BS. Phạm Ngọc Anh · P.205", <StatusPill key="4" tone="blue">Đã xác nhận</StatusPill>],
+  ["10:30", "Hoàng Nam Sơn · BN-11824", "Chưa phân bác sĩ · P.108", <StatusPill key="5" tone="red">Đã hủy</StatusPill>],
 ];
 
 export function BranchScreens({ slug }: { slug: string }) {
@@ -84,7 +85,7 @@ export function BranchScreens({ slug }: { slug: string }) {
     case "bao-cao": return <HospitalReportsScreen />;
     case "nhat-ky": return <HospitalAuditScreen />;
     case "gio-lam-viec-benh-vien": return <HospitalWorkingScreen view="booking-hours" />;
-    case "duyet-don-lam-viec": return <HospitalWorkingScreen view="submissions" />;
+    case "phan-ca-lam-viec-bac-si": return <DoctorShiftAssignmentScreen />;
     default: return null;
   }
 }
@@ -123,7 +124,7 @@ function HospitalDashboard() {
         </PortalSection>
       </div>
       <PortalSection title="Lịch sắp diễn ra">
-        <PortalTable caption="Lịch khám sắp diễn ra" columns={["Giờ", "Bệnh nhân", "Loại lịch", "Bác sĩ / phòng", "Trạng thái"]} rows={appointmentRows.slice(0, 4)} />
+        <PortalTable caption="Lịch khám sắp diễn ra" columns={["Giờ", "Bệnh nhân", "Bác sĩ / phòng", "Trạng thái"]} rows={appointmentRows.slice(0, 4)} />
       </PortalSection>
     </div>
   );
@@ -1067,7 +1068,6 @@ function StaffAccountsScreen() {
   const [roleUuid, setRoleUuid] = useState("");
   const [doctorName, setDoctorName] = useState("");
   const [specialty, setSpecialty] = useState("");
-  const [doctorPrice, setDoctorPrice] = useState("");
   const [departmentUuid, setDepartmentUuid] = useState("");
   const [state, setState] = useState<
     | { status: "loading" }
@@ -1187,7 +1187,6 @@ function StaffAccountsScreen() {
     setRoleUuid(roles.find((role) => !isDoctorStaffRole(role))?.uuid ?? roles[0]?.uuid ?? "");
     setDoctorName("");
     setSpecialty("");
-    setDoctorPrice("");
     setDepartmentUuid("");
   }
 
@@ -1206,7 +1205,6 @@ function StaffAccountsScreen() {
           ? {
               name: doctorName.trim(),
               specialty: specialty.trim(),
-              price: Number(doctorPrice),
               departmentUuid: departmentUuid,
             }
           : {}),
@@ -1424,21 +1422,6 @@ function StaffAccountsScreen() {
                     required
                     disabled={isSaving}
                     placeholder="Ví dụ: Nội khoa"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="staff-doctor-price">Phí khám (VNĐ)</Label>
-                  <Input
-                    id="staff-doctor-price"
-                    type="number"
-                    min={0}
-                    step={1000}
-                    value={doctorPrice}
-                    onChange={(event) =>
-                      setDoctorPrice(event.currentTarget.value)
-                    }
-                    required
-                    disabled={isSaving}
                   />
                 </div>
                 <div className="space-y-2">

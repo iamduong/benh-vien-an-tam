@@ -75,7 +75,7 @@ builder.Services.AddScoped<PrescriptionManagementService>();
 builder.Services.AddScoped<PublicService>();
 builder.Services.AddScoped<AppointmentService>();
 builder.Services.AddScoped<DoctorService>();
-builder.Services.AddScoped<DoctorWorkSubmissionsService>();
+builder.Services.AddScoped<DoctorSchedulesService>();
 builder.Services.AddScoped<HospitalAppointmentsService>();
 builder.Services.AddScoped<ReceptionService>();
 builder.Services.AddScoped<HospitalManagementService>();

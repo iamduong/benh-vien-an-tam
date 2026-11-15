@@ -26,7 +26,7 @@ import {
   MedicalServicesManagementScreen,
   MedicinesManagementScreen,
 } from "@/components/internal/trang-tong/system-management/catalog-management-screens";
-import { ServiceWorkingScreen, TimeWorkingCatalogScreen } from "@/components/internal/trang-tong/working-hours-screens";
+import { TimeWorkingCatalogScreen } from "@/components/internal/trang-tong/working-hours-screens";
 
 export function SystemScreens({ slug }: { slug: string }) {
   switch (slug) {

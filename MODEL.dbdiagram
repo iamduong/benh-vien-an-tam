@@ -46,7 +46,6 @@ Table DoctorProfile {
   Slug string
   Name string
 
-  Price int
   DepartmentDisplay string
 
   Introduction text // markdown
@@ -425,7 +424,6 @@ Table Appointment {
   PatientUuid Guid [not null]
   HospitalUuid Guid [not null]
   DoctorUuid Guid
-  MedicalServiceUuid Guid
   RoomUuid Guid
 
   DoctorNote string
@@ -440,7 +438,6 @@ Table Appointment {
 Ref: Appointment.PatientUuid > PatientProfile.Uuid
 Ref: Appointment.HospitalUuid > Hospital.Uuid
 Ref: Appointment.DoctorUuid > DoctorProfile.Uuid
-Ref: Appointment.MedicalServiceUuid > MedicalService.Uuid
 Ref: Appointment.RoomUuid > Room.Uuid
 Ref: Appointment.TimeSlot > TimeWorking.Uuid
 
@@ -530,6 +527,7 @@ Ref: DoctorWorking.WorkingUuid > TimeWorking.Uuid
 // Thời khóa biểu vận hành thực tế; tách khỏi khung giờ khách được đặt lịch.
 Table DoctorSchedule {
   Uuid Guid
+  PeriodUuid Guid
   DoctorUuid Guid
   WorkingUuid Guid
   RoomUuid Guid [null]
@@ -537,9 +535,25 @@ Table DoctorSchedule {
   UpdatedAt Date
 }
 
+Table DoctorSchedulePeriod {
+  Uuid Guid
+  HospitalUuid Guid
+  DoctorUuid Guid
+  StartDate Date
+  EndDate Date
+  Status string
+  CreatedByAccountUuid Guid
+  CreatedAt Date
+  UpdatedAt Date
+}
+
+Ref: DoctorSchedule.PeriodUuid > DoctorSchedulePeriod.Uuid
 Ref: DoctorSchedule.DoctorUuid > DoctorProfile.Uuid
 Ref: DoctorSchedule.WorkingUuid > TimeWorking.Uuid
 Ref: DoctorSchedule.RoomUuid > Room.Uuid
+Ref: DoctorSchedulePeriod.HospitalUuid > Hospital.Uuid
+Ref: DoctorSchedulePeriod.DoctorUuid > DoctorProfile.Uuid
+Ref: DoctorSchedulePeriod.CreatedByAccountUuid > Account.Uuid
 
 Table HospitalWorking {
   Uuid Guid
@@ -549,12 +563,3 @@ Table HospitalWorking {
 
 Ref: HospitalWorking.HospitalUuid > Hospital.Uuid
 Ref: HospitalWorking.WorkingUuid > TimeWorking.Uuid
-
-Table ServiceWorking {
-  Uuid Guid
-  ServiceUuid Guid
-  WorkingUuid Guid
-}
-
-Ref: ServiceWorking.ServiceUuid > MedicalService.Uuid
-Ref: ServiceWorking.WorkingUuid > TimeWorking.Uuid

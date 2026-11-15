@@ -29,7 +29,6 @@ export type AdminAccountItem = {
     avatar: string;
     slug: string;
     name: string;
-    price: number;
     departmentDisplay: string;
     introduction: string;
     expertise: string;
@@ -58,7 +57,6 @@ export type CreateAccountRequest = {
   slug?: string;
   avatar?: string;
   medicalCode?: string;
-  price?: number;
   departmentDisplay?: string;
   introduction?: string;
   expertise?: string;

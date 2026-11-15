@@ -13,13 +13,11 @@ public class DBContext : DbContext
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AppointmentMedicalService> AppointmentMedicalServices => Set<AppointmentMedicalService>();
-    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<DoctorDepartment> DoctorDepartments => Set<DoctorDepartment>();
     public DbSet<DoctorProfile> DoctorProfiles => Set<DoctorProfile>();
     public DbSet<DoctorWorkingHour> DoctorWorkingHours => Set<DoctorWorkingHour>();
     public DbSet<DoctorSchedule> DoctorSchedules => Set<DoctorSchedule>();
-    public DbSet<DoctorWorkSubmission> DoctorWorkSubmissions => Set<DoctorWorkSubmission>();
     public DbSet<ExportTicket> ExportTickets => Set<ExportTicket>();
     public DbSet<ExportTicketDetail> ExportTicketDetails => Set<ExportTicketDetail>();
     public DbSet<Hospital> Hospitals => Set<Hospital>();
@@ -31,7 +29,6 @@ public class DBContext : DbContext
     public DbSet<MedicalService> MedicalServices => Set<MedicalService>();
     public DbSet<Medicine> Medicines => Set<Medicine>();
     public DbSet<MedicineInventory> MedicineInventories => Set<MedicineInventory>();
-    public DbSet<MomoLog> MomoLogs => Set<MomoLog>();
     public DbSet<PatientProfile> PatientProfiles => Set<PatientProfile>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
@@ -43,7 +40,6 @@ public class DBContext : DbContext
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<Room> Rooms => Set<Room>();
-    public DbSet<ServiceWorking> ServiceWorkings => Set<ServiceWorking>();
     public DbSet<TimeWorking> TimeWorkings => Set<TimeWorking>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -74,18 +70,15 @@ public class DBContext : DbContext
             .HasIndex(profile => profile.AccountUuid)
             .IsUnique();
 
-        modelBuilder.Entity<DoctorWorkingHour>().ToTable("DoctorWorking");
         modelBuilder.Entity<DoctorWorkingHour>(entity =>
         {
-            entity.HasIndex(item => new { item.DoctorUuid, item.WorkingHourUuid }).IsUnique();
+            entity.HasIndex(item => new { item.DoctorScheduleUuid, item.WorkingHourUuid }).IsUnique();
+            entity.HasIndex(item => new { item.RoomUuid, item.WorkingHourUuid }).IsUnique();
         });
-        modelBuilder.Entity<DoctorSchedule>(entity =>
-        {
-            entity.HasIndex(item => new { item.DoctorUuid, item.WorkingHourUuid }).IsUnique();
-            entity.HasIndex(item => new { item.RoomUuid, item.WorkingHourUuid })
-                .IsUnique()
-                .HasFilter("\"RoomUuid\" IS NOT NULL");
-        });
+
+        modelBuilder.Entity<DoctorSchedule>()
+            .HasIndex(item => item.DoctorUuid)
+            .IsUnique();
 
         modelBuilder.Entity<Role>()
             .HasIndex(role => role.Name)
@@ -138,41 +131,18 @@ public class DBContext : DbContext
         ConfigureOneToMany<Appointment, PatientProfile>(modelBuilder, nameof(Appointment.PatientUuid));
         ConfigureOneToMany<Appointment, Hospital>(modelBuilder, nameof(Appointment.HospitalUuid));
         ConfigureOneToMany<Appointment, DoctorProfile>(modelBuilder, nameof(Appointment.DoctorUuid));
-        ConfigureOneToMany<Appointment, MedicalService>(modelBuilder, nameof(Appointment.MedicalServiceUuid));
         ConfigureOneToMany<Appointment, Room>(modelBuilder, nameof(Appointment.RoomUuid));
         ConfigureOneToMany<Appointment, TimeWorking>(modelBuilder, nameof(Appointment.TimeSlot));
         ConfigureOneToMany<AppointmentMedicalService, Appointment>(modelBuilder, nameof(AppointmentMedicalService.AppointmentUuid));
         ConfigureOneToMany<AppointmentMedicalService, MedicalService>(modelBuilder, nameof(AppointmentMedicalService.MedicalServiceUuid));
         ConfigureOneToMany<RolePermission, Role>(modelBuilder, nameof(RolePermission.RoleUuid));
         ConfigureOneToMany<RolePermission, Permission>(modelBuilder, nameof(RolePermission.PermissionUuid));
-        ConfigureOneToMany<DoctorWorkingHour, DoctorProfile>(modelBuilder, nameof(DoctorWorkingHour.DoctorUuid));
+        ConfigureOneToMany<DoctorWorkingHour, DoctorSchedule>(modelBuilder, nameof(DoctorWorkingHour.DoctorScheduleUuid));
         ConfigureOneToMany<DoctorWorkingHour, TimeWorking>(modelBuilder, nameof(DoctorWorkingHour.WorkingHourUuid));
+        ConfigureOneToMany<DoctorWorkingHour, Room>(modelBuilder, nameof(DoctorWorkingHour.RoomUuid));
         ConfigureOneToMany<DoctorSchedule, DoctorProfile>(modelBuilder, nameof(DoctorSchedule.DoctorUuid));
-        ConfigureOneToMany<DoctorSchedule, TimeWorking>(modelBuilder, nameof(DoctorSchedule.WorkingHourUuid));
-        modelBuilder.Entity<DoctorSchedule>()
-            .HasOne<Room>()
-            .WithMany()
-            .HasForeignKey(item => item.RoomUuid)
-            .OnDelete(DeleteBehavior.SetNull);
-        ConfigureOneToMany<DoctorWorkSubmission, DoctorProfile>(modelBuilder, nameof(DoctorWorkSubmission.DoctorUuid));
-        ConfigureOneToMany<DoctorWorkSubmission, TimeWorking>(modelBuilder, nameof(DoctorWorkSubmission.PreviousWorkingHourUuid));
-        ConfigureOneToMany<DoctorWorkSubmission, TimeWorking>(modelBuilder, nameof(DoctorWorkSubmission.RequestedWorkingHourUuid));
-        ConfigureOneToMany<DoctorWorkSubmission, Account>(modelBuilder, nameof(DoctorWorkSubmission.ReviewedByAccountUuid));
-
-        modelBuilder.Entity<DoctorWorkSubmission>(entity =>
-        {
-            entity.Property(item => item.Reason).HasMaxLength(1000);
-            entity.Property(item => item.ReviewNote).HasMaxLength(1000);
-            entity.HasIndex(item => new { item.DoctorUuid, item.Status });
-            entity.HasOne<DoctorSchedule>()
-                .WithMany()
-                .HasForeignKey(item => item.DoctorScheduleUuid)
-                .OnDelete(DeleteBehavior.SetNull);
-        });
         ConfigureOneToMany<HospitalWorking, Hospital>(modelBuilder, nameof(HospitalWorking.HospitalUuid));
         ConfigureOneToMany<HospitalWorking, TimeWorking>(modelBuilder, nameof(HospitalWorking.WorkingUuid));
-        ConfigureOneToMany<ServiceWorking, MedicalService>(modelBuilder, nameof(ServiceWorking.ServiceUuid));
-        ConfigureOneToMany<ServiceWorking, TimeWorking>(modelBuilder, nameof(ServiceWorking.WorkingUuid));
         
         // Running seed
         modelBuilder.Entity<Permission>().HasData(PermissionSeed.Permissions);

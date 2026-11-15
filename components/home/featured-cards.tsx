@@ -55,7 +55,7 @@ export function HospitalCard({
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="object-cover"
         /> */}
-        <img src={hospital.image} alt={`Hình minh họa ${hospital.name}`} className="object-cover w-full h-full" />
+        <img src={hospital.image} alt={`Hình minh họa ${hospital.name}`} className="object-cover w-full h-50" />
       </div>
       <div className="flex flex-1 flex-col p-5">
         <h3 className="text-lg font-semibold leading-7">{hospital.name}</h3>
@@ -119,9 +119,6 @@ export function DoctorCard({
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
           {doctor.workplace}
         </p>
-        <span className="mt-4 text-sm font-semibold">
-          {formatPrice(doctor.price)}
-        </span>
         <div className="mt-auto flex flex-col gap-2 pt-5 sm:flex-row">
           <Link
             href={`/bac-si/${doctor.slug}`}
@@ -160,7 +157,7 @@ export function MedicalServiceCard({
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="object-cover"
         /> */}
-        <img src={service.image} alt={`Hình minh họa ${service.name}`} className="object-cover w-full h-full" />
+        <img src={service.image} alt={`Hình minh họa ${service.name}`} className="object-cover w-full h-50" />
       </div>
       <div className="flex flex-1 flex-col p-5">
         <h3 className="text-lg font-semibold leading-7">{service.name}</h3>

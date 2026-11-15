@@ -25,28 +25,12 @@ import { Input } from "@/components/ui/input";
 
 const bookingPaths = [
   {
-    title: "Đặt tại cơ sở",
-    description: "Chọn nơi khám thuận tiện và thời gian phù hợp.",
+    title: "Đăng ký tại bệnh viện",
+    description: "Chọn bệnh viện, ngày và thời gian dự kiến đến khám.",
     href: "/dat-lich/co-so-y-te",
     icon: Building2,
     border: "border-t-[#10a8e5]",
     tone: "bg-[#effaff] text-[#087fb8]",
-  },
-  {
-    title: "Đặt theo bác sĩ",
-    description: "Tìm theo chuyên môn, nơi làm việc và chi phí.",
-    href: "/dat-lich/bac-si",
-    icon: UserRoundSearch,
-    border: "border-t-[#34a889]",
-    tone: "bg-[#ecfaf6] text-[#23866e]",
-  },
-  {
-    title: "Đặt theo dịch vụ",
-    description: "Chọn dịch vụ cần thực hiện và cơ sở cung cấp.",
-    href: "/dat-lich/dich-vu",
-    icon: ClipboardPlus,
-    border: "border-t-[#f5a623]",
-    tone: "bg-[#fff8e7] text-[#a56800]",
   },
 ];
 
@@ -199,7 +183,7 @@ export default function Home() {
           <div className="max-w-2xl">
             <p className="text-sm font-semibold text-primary">Đặt lịch theo nhu cầu</p>
             <h2 id="booking-paths-title" className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-              Chọn cách bắt đầu phù hợp với bạn
+              Đăng ký khám tại bệnh viện
             </h2>
           </div>
           <Link
@@ -211,7 +195,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="mt-7 grid gap-4 md:grid-cols-3">
+        <div className="mt-7 grid max-w-2xl gap-4">
           {bookingPaths.map(({ title, description, href, icon: Icon, border, tone }, index) => (
             <Link
               key={href}

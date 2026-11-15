@@ -72,7 +72,7 @@ export function TicketForm({ isImport, editing, busy, options, inventory, provid
         </div>
         <div className="flex flex-wrap gap-2 border-t pt-5">
           <Button type="button" variant="outline" disabled={busy} onClick={onCancel}>Đóng</Button>
-          <Button type="submit" disabled={busy || !lines.length || (isImport && !(providerUuid || options.providers[0]?.uuid))}>{editing ? <Pencil /> : <Check />}{busy ? "Đang lưu..." : editing ? "Lưu thay đổi" : "Lưu phiếu chờ duyệt"}</Button>
+          <Button type="submit" disabled={busy || !lines.length || (isImport && !(providerUuid || options.providers[0]?.uuid))}>{editing ? <Pencil /> : <Check />}{busy ? "Đang lưu..." : editing ? "Lưu thay đổi" : isImport ? "Tạo phiếu nhập" : "Lưu phiếu chờ duyệt"}</Button>
         </div>
       </form>
     </PortalSection>
@@ -105,7 +105,7 @@ function TicketLine({ line, index, lines, medicines, inventory, isImport, busy, 
 
 export function TicketDetail({ ticket, isImport, onClose, onPrint, onEdit }: { ticket: WarehouseTicket; isImport: boolean; onClose: () => void; onPrint: () => void; onEdit?: () => void }) {
   return (
-    <PortalSection title={`Chi tiết ${ticketCode(ticket, isImport)}`} description="Thông tin đối chiếu phiếu và các mặt hàng" action={<div className="flex flex-wrap gap-2">{onEdit ? <Button type="button" size="sm" variant="outline" onClick={onEdit}><Pencil />Chỉnh sửa</Button> : null}<Button type="button" size="sm" variant="outline" onClick={onPrint}><FileDown />In / lưu PDF</Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Đóng chi tiết" onClick={onClose}><X /></Button></div>}>
+    <PortalSection title={`Chi tiết ${ticketCode(ticket, isImport)}`} description="Thông tin đối chiếu phiếu và các mặt hàng" action={<div className="flex flex-wrap gap-2">{onEdit ? <Button type="button" size="sm" variant="outline" onClick={onEdit}><Pencil />Chỉnh sửa</Button> : null}<Button type="button" size="sm" variant="outline" onClick={onPrint}><FileDown />Xuất PDF</Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Đóng chi tiết" onClick={onClose}><X /></Button></div>}>
       <div className="grid gap-4 border-b p-5 sm:grid-cols-2 lg:grid-cols-4">
         <Detail label="Mã phiếu" value={ticketCode(ticket, isImport)} mono />
         <Detail label={isImport ? "Nhà cung cấp" : "Xuất từ"} value={isImport ? ticket.providerName || "—" : "Kho thuốc bệnh viện"} />

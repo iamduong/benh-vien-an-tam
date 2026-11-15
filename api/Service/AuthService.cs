@@ -179,7 +179,6 @@ public sealed class AuthService(
                 doctorProfile.Avatar,
                 doctorProfile.Slug,
                 doctorProfile.Name,
-                doctorProfile.Price,
                 doctorProfile.DepartmentDisplay,
                 doctorProfile.Introduction,
                 doctorProfile.Expertise,

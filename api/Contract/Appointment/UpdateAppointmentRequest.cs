@@ -16,13 +16,9 @@ public sealed class UpdateAppointmentRequest
 
     public Guid? TimeSlot { get; init; }
 
-    public AppointmentType Type { get; init; }
-
     public Guid? PatientUuid { get; init; }
 
     public Guid? DoctorUuid { get; init; }
-
-    public Guid? MedicalServiceUuid { get; init; }
 
     public Guid? RoomUuid { get; init; }
 

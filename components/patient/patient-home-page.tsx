@@ -648,9 +648,6 @@ function DoctorHighlightList({ doctors }: { doctors: DoctorProfile[] }) {
               <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
                 {doctor.specialty}
               </p>
-              <p className="mt-3 text-sm font-semibold">
-                {formatPrice(doctor.price)}
-              </p>
               <div className="mt-auto flex gap-2 pt-4">
                 <Link
                   href={`/bac-si/${doctor.slug}`}

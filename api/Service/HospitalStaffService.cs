@@ -56,12 +56,10 @@ public sealed class HospitalStaffService(
             .ToListAsync(cancellationToken);
         var doctorIds = doctors.Select(doctor => doctor.Uuid).ToArray();
         var doctorDepartments = await dbContext.DoctorDepartments
-            .Where(relation => relation.DoctorUuid.HasValue &&
-                doctorIds.Contains(relation.DoctorUuid.Value))
+            .Where(relation => doctorIds.Contains(relation.DoctorUuid))
             .ToListAsync(cancellationToken);
         var departmentIds = doctorDepartments
-            .Where(relation => relation.DepartmentUuid.HasValue)
-            .Select(relation => relation.DepartmentUuid!.Value)
+            .Select(relation => relation.DepartmentUuid)
             .Distinct()
             .ToArray();
         var departments = await dbContext.Departments
@@ -150,10 +148,8 @@ public sealed class HospitalStaffService(
                 request.Name.Trim().Length < 2 ||
                 string.IsNullOrWhiteSpace(request.Specialty) ||
                 request.Specialty.Trim().Length < 2 ||
-                !request.DepartmentUuid.HasValue ||
-                !request.Price.HasValue ||
-                request.Price < 0)
-                return BadRequest(new { message = "Doctor name, specialty, department, and a valid consultation price are required", error = "DOCTOR_PROFILE_REQUIRED" });
+                !request.DepartmentUuid.HasValue)
+                return BadRequest(new { message = "Doctor name, specialty, and department are required", error = "DOCTOR_PROFILE_REQUIRED" });
 
             department = await dbContext.Departments
                 .Where(item =>
@@ -190,7 +186,6 @@ public sealed class HospitalStaffService(
                 Avatar = "/images/doctor-placeholder.svg",
                 Slug = $"{ToSlug(request.Name!)}-{account.Uuid.ToString("N")[..8]}",
                 Name = request.Name!.Trim(),
-                Price = request.Price!.Value,
                 Specialty = request.Specialty!.Trim(),
                 DepartmentDisplay = department!.Name,
                 Introduction = "Hồ sơ bác sĩ mới.",

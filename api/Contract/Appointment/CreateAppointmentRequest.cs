@@ -21,17 +21,12 @@ public sealed class CreateAppointmentRequest
 
     public Guid? TimeSlot { get; init; }
 
-    [Required(ErrorMessage = "Type la bat buoc.")]
-    public AppointmentType Type { get; init; }
-
     public Guid? PatientUuid { get; init; }
 
     [Required(ErrorMessage = "HospitalUuid la bat buoc.")]
     public Guid HospitalUuid { get; init; }
 
     public Guid? DoctorUuid { get; init; }
-
-    public Guid? MedicalServiceUuid { get; init; }
 
     public Guid? RoomUuid { get; init; }
 

@@ -127,13 +127,11 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
   });
 
   mock.onGet("/appointments/availability").reply((config): [number, unknown] => {
-    const type = getStringParam(config.params, "type") as BookingType;
-    const targetUuid = getStringParam(config.params, "targetUuid");
     const hospitalUuid = getStringParam(config.params, "hospitalUuid");
     const accountUuid = getStringParam(config.params, "accountUuid");
     const authenticatedAccountUuid = getAuthenticatedAccountUuid(config.headers);
     const date = getStringParam(config.params, "date");
-    const resolved = resolveBooking(type, targetUuid, hospitalUuid);
+    const resolved = resolveBooking("hospital", hospitalUuid, hospitalUuid);
     const patient = getPatientByAccountUuid(accountUuid);
 
     if (!resolved) return invalidBranchResponse();
@@ -173,18 +171,11 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
   });
 
   mock
-    .onPost(/^\/appointments\/(hospitals|doctors|medical-services)$/)
+    .onPost("/appointments/hospitals")
     .reply((config): [number, unknown] => {
-      const path = config.url?.split("/").pop();
-      const type: BookingType =
-        path === "hospitals"
-          ? "hospital"
-          : path === "doctors"
-            ? "doctor"
-            : "medical-service";
       const request = {
         ...parseBody<Omit<CreateAppointmentRequest, "type">>(config.data),
-        type: type,
+        type: "hospital" as const,
       } as CreateAppointmentRequest;
       const authenticatedAccountUuid = getAuthenticatedAccountUuid(config.headers);
       if (
@@ -193,15 +184,9 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
       ) {
         return unauthorizedResponse();
       }
-      const targetUuid =
-        request.type === "hospital"
-          ? request.hospitalUuid
-          : request.type === "doctor"
-            ? request.doctorUuid
-            : request.medicalServiceUuid;
       const resolved = resolveBooking(
-        request.type,
-        targetUuid,
+        "hospital",
+        request.hospitalUuid,
         request.hospitalUuid,
       );
       if (!resolved) return invalidBranchResponse();
@@ -258,7 +243,7 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
         hospitalUuid: resolved.hospital.uuid,
         roomUuid: null,
         doctorNote: "",
-        totalPrice: resolved.doctor?.price ?? resolved.medicalService?.price ?? 0,
+        totalPrice: 0,
         isPaid: false,
         isWalkIn: false,
         guestPhone: null,
@@ -266,27 +251,11 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
         updatedAt: now,
         deletedAt: new Date(0),
       };
-      const appointment: Appointment =
-        request.type === "doctor"
-          ? {
-              ...common,
-              type: AppointmentType.Doctor,
-              doctorUuid: request.doctorUuid,
-              medicalServiceUuid: null,
-            }
-          : request.type === "medical-service"
-            ? {
-                ...common,
-                type: AppointmentType.Service,
-                doctorUuid: null,
-                medicalServiceUuid: request.medicalServiceUuid,
-              }
-            : {
-                ...common,
-                type: AppointmentType.Hospital,
-                doctorUuid: null,
-                medicalServiceUuid: null,
-              };
+      const appointment: Appointment = {
+        ...common,
+        type: AppointmentType.Hospital,
+        doctorUuid: null,
+      };
       mockAppointments.push(appointment);
       const appointmentView = toAppointmentView(appointment);
       return appointmentView
@@ -512,7 +481,7 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
       hospitalUuid: resolved.hospital.uuid,
       roomUuid: null,
       doctorNote: "",
-      totalPrice: resolved.doctor?.price ?? resolved.medicalService?.price ?? 0,
+      totalPrice: resolved.medicalService?.price ?? 0,
       isPaid: false,
       isWalkIn: true,
       guestPhone: request.phone.replace(/[\s.-]/g, ""),
@@ -525,21 +494,18 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
         ? {
             ...common,
             type: AppointmentType.Doctor,
-            doctorUuid: request.doctorUuid,
-            medicalServiceUuid: null,
+              doctorUuid: request.doctorUuid,
           }
         : request.type === "medical-service"
           ? {
               ...common,
               type: AppointmentType.Service,
               doctorUuid: null,
-              medicalServiceUuid: request.medicalServiceUuid,
             }
           : {
               ...common,
               type: AppointmentType.Hospital,
               doctorUuid: null,
-              medicalServiceUuid: null,
             };
     mockAppointments.push(appointment);
     const appointmentView = toAppointmentView(appointment);
@@ -621,21 +587,6 @@ function buildAppointmentPresentation(
       roomName: room?.name ?? "",
     };
   }
-  if (type === "medical-service" && appointment.medicalServiceUuid) {
-    const service = mockMedicalServices.find(
-      (item) => item.uuid === appointment.medicalServiceUuid,
-    );
-    if (!service) return null;
-    return {
-      type: type,
-      appointment: appointmentView,
-      targetName: service.name,
-      hospitalName: hospital.name,
-      hospitalSlug: hospital.slug,
-      targetSlug: service.slug,
-      roomName: room?.name ?? "",
-    };
-  }
   return {
     type: "hospital",
     appointment: appointmentView,
@@ -661,14 +612,8 @@ function validateEditable(appointment: Appointment): [number, unknown] | null {
 }
 
 function resolveExistingBooking(owned: OwnedAppointment) {
-  const { appointment: appointment, type: type } = owned;
-  const targetUuid =
-    type === "doctor" && appointment.doctorUuid
-      ? appointment.doctorUuid
-      : type === "medical-service" && appointment.medicalServiceUuid
-        ? appointment.medicalServiceUuid
-        : appointment.hospitalUuid;
-  return resolveBooking(type, targetUuid, appointment.hospitalUuid);
+  const { appointment } = owned;
+  return resolveBooking("hospital", appointment.hospitalUuid, appointment.hospitalUuid);
 }
 
 function getBookingContext() {
@@ -961,16 +906,7 @@ function toAppointmentView(appointment: Appointment): AppointmentView | null {
     createdAt: appointment.createdAt,
     updatedAt: appointment.updatedAt,
   };
-  if (appointment.type === AppointmentType.Doctor && appointment.doctorUuid) {
-    return { ...common, doctorUuid: appointment.doctorUuid };
-  }
-  if (
-    appointment.type === AppointmentType.Service &&
-    appointment.medicalServiceUuid
-  ) {
-    return { ...common, medicalServiceUuid: appointment.medicalServiceUuid };
-  }
-  return common;
+  return { ...common, doctorUuid: appointment.doctorUuid };
 }
 
 function toBookingType(type: AppointmentType): BookingType {

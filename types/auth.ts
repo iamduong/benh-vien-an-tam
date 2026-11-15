@@ -43,7 +43,6 @@ export type AuthApiDoctorProfile = {
   avatar: string;
   slug: string;
   name: string;
-  price: number;
   departmentDisplay: string;
   introduction: string;
   expertise: string;

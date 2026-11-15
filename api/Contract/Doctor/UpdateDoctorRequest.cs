@@ -10,8 +10,6 @@ public sealed class UpdateDoctorRequest
 
     public string Name { get; init; } = string.Empty;
 
-    public int? Price { get; init; }
-
     public string DepartmentDisplay { get; init; } = string.Empty;
 
     public string Introduction { get; init; } = string.Empty;

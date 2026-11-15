@@ -71,7 +71,7 @@ export function MedicalServiceDetailView({
               {service.name}
             </h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              Xem nội dung thực hiện, thời gian, chi phí dự kiến và lựa chọn cơ sở phù hợp trước khi đặt lịch.
+              Xem nội dung thực hiện, chi phí tham khảo và các bệnh viện đang cung cấp dịch vụ.
             </p>
 
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -93,7 +93,7 @@ export function MedicalServiceDetailView({
               <SummaryFact
                 icon={ClipboardCheck}
                 label="Trạng thái"
-                value="Đang tiếp nhận đặt lịch"
+                value="Đang được cung cấp"
               />
             </div>
 
@@ -112,7 +112,7 @@ export function MedicalServiceDetailView({
                 className={cn(buttonVariants({ size: "lg" }), "w-full")}
               >
                 <CalendarPlus aria-hidden="true" />
-                Đặt lịch dịch vụ
+                Chọn bệnh viện đăng ký khám
               </Link>
             </div>
           </section>
@@ -151,7 +151,7 @@ export function MedicalServiceDetailView({
           <DetailSection
             id="co-so"
             title="Cơ sở đang cung cấp"
-            description="Chọn cơ sở phù hợp ở bước đặt lịch. Danh sách được xác định từ quan hệ cung cấp dịch vụ."
+            description="Danh sách bệnh viện được xác định từ quan hệ cung cấp dịch vụ."
           >
             <RelatedList
               items={hospitals.map((hospital) => ({
@@ -175,10 +175,10 @@ export function MedicalServiceDetailView({
 
         <aside className="hidden self-start space-y-4 lg:sticky lg:top-32 lg:block">
           <div className="rounded-xl border bg-card p-5">
-            <p className="text-sm font-semibold text-primary">Đặt lịch dịch vụ</p>
-            <h2 className="mt-2 text-lg font-bold">Chọn cơ sở và thời gian</h2>
+            <p className="text-sm font-semibold text-primary">Đăng ký khám tại bệnh viện</p>
+            <h2 className="mt-2 text-lg font-bold">Chọn bệnh viện cung cấp dịch vụ</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Chọn cơ sở đang cung cấp, ngày và giờ khả dụng để gửi yêu cầu đặt lịch.
+              Sau khi chọn bệnh viện, lịch đăng ký sẽ sử dụng giờ làm việc của bệnh viện. Dịch vụ sẽ được chỉ định trong quá trình khám.
             </p>
             <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">
               Chi phí dự kiến
@@ -191,7 +191,7 @@ export function MedicalServiceDetailView({
               className={cn(buttonVariants({ size: "lg" }), "mt-5 w-full")}
             >
               <CalendarPlus aria-hidden="true" />
-              Đặt lịch dịch vụ
+              Chọn bệnh viện
             </Link>
           </div>
           <div className="rounded-xl border bg-card p-5">
@@ -219,7 +219,7 @@ export function MedicalServiceDetailView({
           )}
         >
           <CalendarPlus aria-hidden="true" />
-          Đặt lịch dịch vụ
+          Chọn bệnh viện
         </Link>
       </div>
     </article>

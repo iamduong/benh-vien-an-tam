@@ -27,11 +27,10 @@ public sealed class HospitalAppointmentsController(HospitalAppointmentsService s
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
         [FromQuery] AppointmentStatus? status = null,
-        [FromQuery] AppointmentType? type = null,
         [FromQuery] string? search = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 100,
-        CancellationToken cancellationToken = default) => await Service.GetAppointments(hospitalUuid, from, to, status, type, search, page, pageSize, cancellationToken);
+        CancellationToken cancellationToken = default) => await Service.GetAppointments(hospitalUuid, from, to, status, search, page, pageSize, cancellationToken);
     [HttpPost]
     public async Task<IActionResult> CreateAppointment(
         Guid hospitalUuid,

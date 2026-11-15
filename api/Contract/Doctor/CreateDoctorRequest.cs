@@ -15,9 +15,6 @@ public sealed class CreateDoctorRequest
     [Required(ErrorMessage = "Name la bat buoc.")]
     public string Name { get; init; } = string.Empty;
 
-    [Required(ErrorMessage = "Price la bat buoc.")]
-    public int Price { get; init; }
-
     public string DepartmentDisplay { get; init; } = string.Empty;
 
     public string Introduction { get; init; } = string.Empty;

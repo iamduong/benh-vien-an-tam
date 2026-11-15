@@ -25,8 +25,8 @@ export class DoctorProfileInternalService {
     async updateMyProfile(
         data: UpdateDoctorProfilePayload,
         signal?: AbortSignal
-    ): Promise<ApiResponse<{ message: string }>> {
-        const response = await httpClient.put<ApiResponse<{ message: string }>>(
+    ): Promise<ApiResponse<DoctorProfileResponse>> {
+        const response = await httpClient.put<ApiResponse<DoctorProfileResponse>>(
             "/doctor-profile/me",
             data,
             { signal }

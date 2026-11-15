@@ -11,23 +11,22 @@ public class DoctorAppointmentService(DBContext dbContext)
     public async Task<List<ClinicalAppointmentResponse>> GetAppointmentsAsync(
         Guid doctorUuid, string? date, CancellationToken cancellationToken)
     {
+        var selectedDate = !string.IsNullOrWhiteSpace(date) && DateOnly.TryParseExact(
+            date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate)
+            ? parsedDate
+            : DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var query = dbContext.Appointments
             .Where(x => x.DeletedAt == null &&
                 (x.DoctorUuid == doctorUuid ||
                  (x.DoctorUuid == null && x.Status == AppointmentStatus.CheckedIn
                     && x.RoomUuid.HasValue && x.TimeSlot.HasValue
-                    && dbContext.DoctorSchedules.Any(working =>
-                        working.DoctorUuid == doctorUuid
-                        && working.RoomUuid == x.RoomUuid
-                        && working.WorkingHourUuid == x.TimeSlot))));
+                      && dbContext.DoctorWorkingHours.Any(working =>
+                         working.RoomUuid == x.RoomUuid
+                         && working.WorkingHourUuid == x.TimeSlot
+                         && dbContext.DoctorSchedules.Any(schedule =>
+                             schedule.Uuid == working.DoctorScheduleUuid
+                             && schedule.DoctorUuid == doctorUuid)))));
 
-        if (!string.IsNullOrWhiteSpace(date) &&
-    DateOnly.TryParseExact(
-        date,
-        "yyyy-MM-dd",
-        CultureInfo.InvariantCulture,
-        DateTimeStyles.None,
-        out var selectedDate))
         {
             // Ngày bắt đầu theo giờ Việt Nam (UTC+7)
             var startOfDayLocal = new DateTimeOffset(
@@ -54,7 +53,6 @@ public class DoctorAppointmentService(DBContext dbContext)
                 MedicalCode = x.MedicalCode,
                 Note = x.Note,
                 AppointmentAt = x.AppointmentDate,
-                TypeLabel = x.Type.ToString(),
                 RoomName = dbContext.Rooms
                     .Where(r => r.Uuid == x.RoomUuid && r.DeletedAt == null)
                     .Select(r => r.Name)
@@ -71,17 +69,12 @@ public class DoctorAppointmentService(DBContext dbContext)
         Guid doctorUuid, Guid appointmentUuid, CancellationToken cancellationToken)
     {
         var appointment = await dbContext.Appointments
-            .Where(x => x.Uuid == appointmentUuid && x.DeletedAt == null &&
-                (x.DoctorUuid == doctorUuid ||
-                 (x.DoctorUuid == null && x.Status == AppointmentStatus.CheckedIn
-                    && x.RoomUuid.HasValue && x.TimeSlot.HasValue
-                    && dbContext.DoctorSchedules.Any(working =>
-                        working.DoctorUuid == doctorUuid
-                        && working.RoomUuid == x.RoomUuid
-                        && working.WorkingHourUuid == x.TimeSlot))))
+            .Where(x => x.Uuid == appointmentUuid && x.DeletedAt == null)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (appointment is null) return null;
+        if (appointment is null || (appointment.DoctorUuid != doctorUuid
+            && !(appointment.DoctorUuid is null && appointment.Status == AppointmentStatus.CheckedIn
+                && await IsDoctorScheduledForAppointmentAsync(doctorUuid, appointment, cancellationToken)))) return null;
 
         var medicalServices = await dbContext.AppointmentMedicalServices
             .Where(x => x.AppointmentUuid == appointmentUuid)
@@ -166,7 +159,6 @@ public class DoctorAppointmentService(DBContext dbContext)
             MedicalCode = appointment.MedicalCode,
             Note = appointment.Note,
             AppointmentAt = appointment.AppointmentDate,
-            TypeLabel = appointment.Type.ToString(),
             RoomName = roomName ?? string.Empty,
             Status = appointment.Status.ToString(),
             DoctorNote = appointment.DoctorNote,
@@ -207,11 +199,7 @@ public class DoctorAppointmentService(DBContext dbContext)
             if (!appointment.DoctorUuid.HasValue)
             {
                 var worksInRoom = appointment.RoomUuid.HasValue && appointment.TimeSlot.HasValue
-                    && await dbContext.DoctorSchedules.AnyAsync(working =>
-                        working.DoctorUuid == doctorUuid
-                        && working.RoomUuid == appointment.RoomUuid
-                        && working.WorkingHourUuid == appointment.TimeSlot,
-                        cancellationToken);
+                    && await IsDoctorScheduledForAppointmentAsync(doctorUuid, appointment, cancellationToken);
                 if (!worksInRoom)
                     return "Bạn không được xếp làm tại phòng và ca của lượt khám này.";
                 appointment.DoctorUuid = doctorUuid;
@@ -249,5 +237,26 @@ public class DoctorAppointmentService(DBContext dbContext)
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return null; // Thành công không có lỗi
+    }
+
+    private async Task<bool> IsDoctorScheduledForAppointmentAsync(
+        Guid doctorUuid, api.Model.Appointment appointment, CancellationToken cancellationToken)
+    {
+        if (!appointment.RoomUuid.HasValue || !appointment.TimeSlot.HasValue) return false;
+        var localDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(appointment.AppointmentDate, DateTimeKind.Utc), GetVietnamTimeZone()));
+        return await (from working in dbContext.DoctorWorkingHours.AsNoTracking()
+                      join schedule in dbContext.DoctorSchedules.AsNoTracking()
+                          on working.DoctorScheduleUuid equals schedule.Uuid
+                      where schedule.DoctorUuid == doctorUuid
+                          && working.RoomUuid == appointment.RoomUuid
+                          && working.WorkingHourUuid == appointment.TimeSlot
+                      select working).AnyAsync(cancellationToken);
+    }
+
+    private static TimeZoneInfo GetVietnamTimeZone()
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"); }
+        catch (TimeZoneNotFoundException) { return TimeZoneInfo.CreateCustomTimeZone("UTC+7", TimeSpan.FromHours(7), "UTC+7", "UTC+7"); }
     }
 }

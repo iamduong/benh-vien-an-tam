@@ -44,7 +44,6 @@ function buildDoctorProfileResponse(
     expertise: updatedData.expertise ?? doctor.expertise,
     hospitalName: hospital?.name ?? "Chưa phân công",
     departmentDisplay: updatedData.departmentDisplay ?? doctor.departmentDisplay ?? "Chưa phân công",
-    price: doctor.price,
     accountStatus: account?.status ?? "Active",
   };
 }

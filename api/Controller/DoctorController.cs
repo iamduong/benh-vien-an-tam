@@ -61,24 +61,10 @@ public sealed class DoctorController(DoctorService service) : ControllerBase
         Guid id,
         Guid departmentId,
         CancellationToken cancellationToken = default) => await Service.RemoveDoctorDepartment(id, departmentId, cancellationToken);
-    [HttpGet("{id}/workings")]
-    public async Task<IActionResult> GetDoctorWorkings(
-        Guid id,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
-        CancellationToken cancellationToken = default) => await Service.GetDoctorWorkings(id, page, pageSize, cancellationToken);
-    [HttpPost("{id}/workings")]
+    [HttpGet("me/schedule")]
     [Authorize]
-    public async Task<IActionResult> AddDoctorWorking(
-        Guid id,
-        AddDoctorWorkingRequest request,
-        CancellationToken cancellationToken = default) => await Service.AddDoctorWorking(id, request, cancellationToken);
-    [HttpDelete("{id}/workings/{workingId}")]
-    [Authorize]
-    public async Task<IActionResult> RemoveDoctorWorking(
-        Guid id,
-        Guid workingId,
-        CancellationToken cancellationToken = default) => await Service.RemoveDoctorWorking(id, workingId, cancellationToken);
+    public async Task<IActionResult> GetMySchedule(CancellationToken cancellationToken = default) =>
+        await Service.GetMySchedule(cancellationToken);
     [HttpGet("{id}/appointments")]
     public async Task<IActionResult> GetDoctorAppointments(
         Guid id,

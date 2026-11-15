@@ -16,7 +16,6 @@ public sealed class HospitalAppointmentsService(DBContext dbContext) : Controlle
         DateTime? from = null,
         DateTime? to = null,
         AppointmentStatus? status = null,
-        AppointmentType? type = null,
         string? search = null,
         int page = 1,
         int pageSize = 100,
@@ -32,8 +31,6 @@ public sealed class HospitalAppointmentsService(DBContext dbContext) : Controlle
             query = query.Where(item => item.AppointmentDate < to.Value.Date.AddDays(1));
         if (status.HasValue)
             query = query.Where(item => item.Status == status.Value);
-        if (type.HasValue)
-            query = query.Where(item => item.Type == type.Value);
 
         var appointments = await query
             .OrderBy(item => item.AppointmentDate)
@@ -71,7 +68,7 @@ public sealed class HospitalAppointmentsService(DBContext dbContext) : Controlle
         CreateBranchAppointmentRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!Enum.IsDefined(request.Gender) || !Enum.IsDefined(request.Type))
+        if (!Enum.IsDefined(request.Gender))
             return BadRequest(new { message = "Appointment details are invalid", error = "INVALID_APPOINTMENT_REQUEST" });
         if (request.AppointmentDate == default)
             return BadRequest(new { message = "Appointment date is required", error = "INVALID_APPOINTMENT_REQUEST" });
@@ -96,12 +93,10 @@ public sealed class HospitalAppointmentsService(DBContext dbContext) : Controlle
             MedicalCode = $"APT-{request.AppointmentDate:yyyyMMdd}-{uuid.ToString("N")[..8].ToUpperInvariant()}",
             Note = request.Note.Trim(),
             AppointmentDate = request.AppointmentDate,
-            Type = request.Type,
             Status = AppointmentStatus.Pending,
             PatientUuid = null,
             HospitalUuid = hospitalUuid,
             DoctorUuid = null,
-            MedicalServiceUuid = null,
             RoomUuid = null,
             TotalPrice = 0,
             IsPaid = false,
@@ -280,10 +275,6 @@ public sealed class HospitalAppointmentsService(DBContext dbContext) : Controlle
             ? await dbContext.Rooms.FirstOrDefaultAsync(item =>
                 item.Uuid == appointment.RoomUuid.Value, cancellationToken)
             : null;
-        var service = appointment.MedicalServiceUuid.HasValue
-            ? await dbContext.MedicalServices.FirstOrDefaultAsync(item =>
-                item.Uuid == appointment.MedicalServiceUuid.Value, cancellationToken)
-            : null;
         var serviceDetails = await (
             from detail in dbContext.AppointmentMedicalServices
             join medicalService in dbContext.MedicalServices
@@ -310,14 +301,11 @@ public sealed class HospitalAppointmentsService(DBContext dbContext) : Controlle
             AppointmentDate = appointment.AppointmentDate,
             TimeSlot = appointment.TimeSlot,
             Time = working is null ? string.Empty : $"{working.StartTime:HH\\:mm} - {working.EndTime:HH\\:mm}",
-            Type = appointment.Type.ToString(),
             Status = appointment.Status.ToString(),
             PatientUuid = appointment.PatientUuid,
             HospitalUuid = appointment.HospitalUuid,
             DoctorUuid = appointment.DoctorUuid,
             DoctorName = doctor?.Name,
-            MedicalServiceUuid = appointment.MedicalServiceUuid,
-            MedicalServiceName = service?.Name,
             RoomUuid = appointment.RoomUuid,
             RoomName = room?.Name,
             DoctorNote = appointment.DoctorNote,

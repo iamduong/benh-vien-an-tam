@@ -61,7 +61,6 @@ type AccountDraft = {
   slug: string;
   avatar: string;
   medicalCode: string;
-  price: string;
   departmentDisplay: string;
   introduction: string;
   expertise: string;
@@ -167,7 +166,6 @@ export function AccountsManagementScreen() {
       slug: "",
       avatar: "",
       medicalCode: "",
-      price: "",
       departmentDisplay: "",
       introduction: "",
       expertise: "",
@@ -195,7 +193,6 @@ export function AccountsManagementScreen() {
       slug: doctorProfile?.slug ?? "",
       avatar: doctorProfile?.avatar ?? patientProfile?.avatar ?? "",
       medicalCode: patientProfile?.medicalCode ?? "",
-      price: doctorProfile ? String(doctorProfile.price) : "",
       departmentDisplay: doctorProfile?.departmentDisplay ?? "",
       introduction: doctorProfile?.introduction ?? "",
       expertise: doctorProfile?.expertise ?? "",
@@ -224,7 +221,6 @@ export function AccountsManagementScreen() {
             name: draft.name.trim(),
             avatar: draft.avatar.trim(),
             slug: draft.slug.trim(),
-            price: draft.price ? Number(draft.price) : undefined,
             departmentDisplay: draft.departmentDisplay.trim(),
             introduction: draft.introduction.trim(),
             expertise: draft.expertise.trim(),

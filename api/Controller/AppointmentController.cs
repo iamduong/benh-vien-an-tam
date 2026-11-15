@@ -26,21 +26,13 @@ public sealed class AppointmentController(AppointmentService service) : Controll
     [HttpGet("availability")]
     [Authorize]
     public async Task<IActionResult> GetAvailability(
-        [FromQuery] string type,
-        [FromQuery] Guid targetUuid,
         [FromQuery] Guid hospitalUuid,
         [FromQuery] Guid accountUuid,
         [FromQuery] DateOnly date,
-        CancellationToken cancellationToken) => await Service.GetAvailability(type, targetUuid, hospitalUuid, accountUuid, date, cancellationToken);
+        CancellationToken cancellationToken) => await Service.GetAvailability(hospitalUuid, accountUuid, date, cancellationToken);
     [HttpPost("hospitals")]
     [Authorize]
     public Task<IActionResult> CreateHospitalBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) => Service.CreateHospitalBooking(request, cancellationToken);
-    [HttpPost("doctors")]
-    [Authorize]
-    public Task<IActionResult> CreateDoctorBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) => Service.CreateDoctorBooking(request, cancellationToken);
-    [HttpPost("medical-services")]
-    [Authorize]
-    public Task<IActionResult> CreateMedicalServiceBooking(CreatePatientBookingRequest request, CancellationToken cancellationToken) => Service.CreateMedicalServiceBooking(request, cancellationToken);
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> GetAppointments(
@@ -48,10 +40,9 @@ public sealed class AppointmentController(AppointmentService service) : Controll
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] AppointmentStatus? status = null,
-        [FromQuery] string? type = null,
         [FromQuery] DateOnly? from = null,
         [FromQuery] DateOnly? to = null,
-        CancellationToken cancellationToken = default) => await Service.GetAppointments(accountUuid, page, pageSize, status, type, from, to, cancellationToken);
+        CancellationToken cancellationToken = default) => await Service.GetAppointments(accountUuid, page, pageSize, status, from, to, cancellationToken);
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetAppointment(Guid id, CancellationToken cancellationToken = default) => await Service.GetAppointment(id, cancellationToken);
     [HttpGet("{uuid:guid}/detail")]

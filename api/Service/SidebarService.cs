@@ -25,13 +25,13 @@ public sealed class SidebarService(DBContext dbContext, Jwt jwt) : ControllerBas
         "tong-quan-he-thong", "co-so-y-te", "chuyen-khoa", "dich-vu", "thuoc",
         "tai-khoan", "bao-cao-he-thong", "nhat-ky-he-thong", "khung-gio-lam-viec", "phan-quyen",
         "tong-quan-chi-nhanh", "thong-tin-chi-nhanh", "chuyen-khoa-dich-vu",
-        "phong-kham-chi-nhanh", "nhan-su", "lich-hen-chi-nhanh", "don-thuoc-chi-nhanh",
-        "kho-thuoc", "danh-gia-chi-nhanh", "bao-cao-chi-nhanh", "nhat-ky-chi-nhanh",
-        "gio-lam-viec-benh-vien", "duyet-don-lam-viec",
+        "phong-kham-chi-nhanh", "nhan-su", "lich-hen-chi-nhanh", "kho-thuoc",
+        "danh-gia-chi-nhanh", "bao-cao-chi-nhanh",
+        "gio-lam-viec-benh-vien", "phan-ca-lam-viec-bac-si",
         "tong-quan-bac-si", "lich-kham", "ca-kham", "don-thuoc-bac-si",
-        "thuoc-kha-dung", "ho-so-nghe-nghiep", "gio-lam-viec-bac-si", "thay-doi-gio-lam-viec",
-        "tong-quan-tiep-nhan", "lich-hen-tiep-nhan", "tiep-nhan",
-        "phong-kham-tiep-nhan", "thanh-toan-cap-thuoc", "danh-gia-tiep-nhan",
+        "thuoc-kha-dung", "ho-so-nghe-nghiep", "gio-lam-viec-bac-si",
+        "tong-quan-tiep-nhan", "tiep-nhan",
+        "thanh-toan-cap-thuoc",
         "tong-quan-kho", "ton-kho", "nha-cung-cap", "nhap-hang", "xuat-hang",
         "bao-cao-kho",
     ];
@@ -89,7 +89,8 @@ public sealed class SidebarService(DBContext dbContext, Jwt jwt) : ControllerBas
             join permission in dbContext.Permissions.AsNoTracking()
                 on rolePermission.PermissionUuid equals permission.Uuid
             where rolePermission.RoleUuid == role.Uuid &&
-                  rolePermission.Action == PermissionAction.Read
+                  rolePermission.Action == PermissionAction.Read &&
+                  OrderedSlugs.Contains(permission.Slug)
             select permission)
             .Distinct()
             .ToListAsync(cancellationToken);

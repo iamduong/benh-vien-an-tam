@@ -13,7 +13,6 @@ export type DoctorProfileResponse = {
     expertise: string;
     hospitalName: string;
     departmentDisplay: string;
-    price: number;
     accountStatus: BaseStatus | string;
 };
 
@@ -21,6 +20,7 @@ export type DoctorProfileResponse = {
  * Payload gửi lên khi Cập nhật Hồ sơ nghề nghiệp (Internal)
  */
 export type UpdateDoctorProfilePayload = {
+    avatar: string;
     name: string;
     specialty: string;
     workplace: string;
