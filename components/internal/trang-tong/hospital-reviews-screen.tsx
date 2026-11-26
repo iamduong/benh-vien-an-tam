@@ -51,8 +51,6 @@ export function HospitalReviewsScreen() {
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setLoadError(null);
     hospitalReviewService.getBranchReviews(filters, controller.signal)
       .then((response) => {
         if (controller.signal.aborted) return;
@@ -78,13 +76,26 @@ export function HospitalReviewsScreen() {
     safePage * INTERNAL_PAGE_SIZE,
   );
 
+  function updateFilters(update: (current: BranchReviewQuery) => BranchReviewQuery) {
+    setLoading(true);
+    setLoadError(null);
+    setPage(1);
+    setFilters(update);
+  }
+
+  function reloadReviews() {
+    setLoading(true);
+    setLoadError(null);
+    setReload((current) => current + 1);
+  }
+
   async function moderate(review: BranchReview, status: Exclude<BranchReviewStatus, "pending">) {
     setBusyUuid(review.uuid);
     setMessage(null);
     try {
       const response = await hospitalReviewService.moderate(review.type, review.uuid, status);
       setMessage({ text: response.message, error: false });
-      setReload((current) => current + 1);
+      reloadReviews();
     } catch (error) {
       console.error("Không thể duyệt đánh giá:", error);
       setMessage({ text: "Không thể cập nhật trạng thái đánh giá.", error: true });
@@ -117,12 +128,12 @@ export function HospitalReviewsScreen() {
             aria-label="Tìm đánh giá"
             placeholder="Tìm nội dung, người đánh giá, đối tượng"
             value={filters.search ?? ""}
-            onChange={(event) => { setFilters((current) => ({ ...current, search: event.target.value })); setPage(1); }}
+            onChange={(event) => updateFilters((current) => ({ ...current, search: event.target.value }))}
           />
           <select
             aria-label="Lọc loại đánh giá"
             value={filters.type}
-            onChange={(event) => { setFilters((current) => ({ ...current, type: event.target.value as BranchReviewType | "all" })); setPage(1); }}
+            onChange={(event) => updateFilters((current) => ({ ...current, type: event.target.value as BranchReviewType | "all" }))}
             className="h-10 rounded-md border px-3 text-sm"
           >
             <option value="all">Tất cả đối tượng</option>
@@ -133,7 +144,7 @@ export function HospitalReviewsScreen() {
           <select
             aria-label="Lọc số sao"
             value={filters.stars}
-            onChange={(event) => { setFilters((current) => ({ ...current, stars: event.target.value === "all" ? "all" : Number(event.target.value) })); setPage(1); }}
+            onChange={(event) => updateFilters((current) => ({ ...current, stars: event.target.value === "all" ? "all" : Number(event.target.value) }))}
             className="h-10 rounded-md border px-3 text-sm"
           >
             <option value="all">Tất cả số sao</option>
@@ -142,7 +153,7 @@ export function HospitalReviewsScreen() {
           <select
             aria-label="Lọc trạng thái duyệt"
             value={filters.status}
-            onChange={(event) => { setFilters((current) => ({ ...current, status: event.target.value as BranchReviewStatus | "all" })); setPage(1); }}
+            onChange={(event) => updateFilters((current) => ({ ...current, status: event.target.value as BranchReviewStatus | "all" }))}
             className="h-10 rounded-md border px-3 text-sm"
           >
             <option value="all">Tất cả trạng thái</option>
@@ -155,7 +166,7 @@ export function HospitalReviewsScreen() {
         {loadError ? (
           <div role="alert" className="flex items-center justify-between gap-3 p-5 text-sm text-red-700">
             <span>{loadError}</span>
-            <Button type="button" size="sm" variant="outline" onClick={() => setReload((current) => current + 1)}>Thử lại</Button>
+            <Button type="button" size="sm" variant="outline" onClick={reloadReviews}>Thử lại</Button>
           </div>
         ) : loading ? (
           <p className="p-5 text-sm text-muted-foreground">Đang tải đánh giá...</p>
