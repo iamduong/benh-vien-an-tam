@@ -51,6 +51,8 @@ export function HospitalReviewsScreen() {
 
   useEffect(() => {
     const controller = new AbortController();
+    setLoading(true);
+    setLoadError(null);
     hospitalReviewService.getBranchReviews(filters, controller.signal)
       .then((response) => {
         if (controller.signal.aborted) return;
@@ -104,10 +106,10 @@ export function HospitalReviewsScreen() {
         </p>
       ) : null}
       <MetricGrid>
-        <MetricCard label="Đánh giá bệnh viện" value={formatRating(summary.hospital)} detail={`${summary.total} đánh giá trong chi nhánh`} icon={<span aria-hidden="true">★</span>} tone="amber" />
-        <MetricCard label="Đánh giá bác sĩ" value={formatRating(summary.doctors)} detail={`${summary.accepted} đánh giá đã duyệt`} icon={<span aria-hidden="true">★</span>} tone="blue" />
-        <MetricCard label="Đánh giá dịch vụ" value={formatRating(summary.medicalServices)} detail={`${summary.pending} đánh giá chờ duyệt`} icon={<span aria-hidden="true">★</span>} tone="cyan" />
-        <MetricCard label="Đã ẩn / từ chối" value={String(summary.hidden + summary.rejected)} detail={`${summary.hidden} ẩn · ${summary.rejected} từ chối`} icon={<span aria-hidden="true">!</span>} tone="red" />
+        <MetricCard label="Đánh giá bệnh viện" value={formatRating(summary.hospital)} detail="Điểm trung bình các đánh giá đã duyệt" icon={<span aria-hidden="true">★</span>} tone="amber" />
+        <MetricCard label="Đánh giá bác sĩ" value={formatRating(summary.doctors)} detail="Điểm trung bình các đánh giá đã duyệt" icon={<span aria-hidden="true">★</span>} tone="blue" />
+        <MetricCard label="Đánh giá dịch vụ" value={formatRating(summary.medicalServices)} detail="Điểm trung bình các đánh giá đã duyệt" icon={<span aria-hidden="true">★</span>} tone="cyan" />
+        <MetricCard label="Chưa hiển thị" value={String(summary.pending + summary.rejected + summary.hidden)} detail={`${summary.pending} chờ duyệt · ${summary.rejected} từ chối · ${summary.hidden} đã ẩn`} icon={<span aria-hidden="true">!</span>} tone="red" />
       </MetricGrid>
       <PortalSection title="Danh sách đánh giá" description="Chỉ dữ liệu thuộc chi nhánh của tài khoản đang đăng nhập.">
         <div className="grid gap-3 border-b bg-[#fbfdfe] p-4 sm:grid-cols-2 lg:grid-cols-4">
