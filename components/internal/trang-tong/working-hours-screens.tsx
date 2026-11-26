@@ -383,13 +383,13 @@ export function HospitalWorkingScreen({ view = "booking-hours" }: { view?: "book
       {error ? <p role="alert" className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
       <PortalSection title="Thêm khung giờ" description="Chọn từ danh mục khung giờ đang hoạt động.">
         <div className="flex flex-col gap-3 p-5 sm:flex-row">
-          <select value={selectedWorkingUuid} onChange={(event) => setSelectedWorkingUuid(event.target.value)} className="h-10 flex-1 rounded-md border bg-white px-3 text-sm">
-            <option value="">Chọn khung giờ</option>
+          <select value={selectedWorkingUuid} onChange={(event) => setSelectedWorkingUuid(event.target.value)} disabled={!data?.availableWorkings.length || saving} className="h-10 flex-1 rounded-md border bg-white px-3 text-sm disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-muted-foreground">
+            <option value="">{data?.availableWorkings.length ? "Chọn khung giờ" : "Không còn khung giờ để thêm"}</option>
             {(data?.availableWorkings ?? []).map((item) => (
               <option key={item.uuid} value={item.uuid}>{dayNames[item.dayOfWeek]} · {item.startTime.slice(0, 5)} - {item.endTime.slice(0, 5)}</option>
             ))}
           </select>
-          <Button type="button" disabled={!selectedWorkingUuid || saving} onClick={() => void addWorking()}><Plus />Thêm khung giờ</Button>
+          <Button type="button" disabled={!selectedWorkingUuid || !data?.availableWorkings.length || saving} onClick={() => void addWorking()}><Plus />Thêm khung giờ</Button>
         </div>
       </PortalSection>
       <PortalSection title="Lịch đang áp dụng" description={`${rows.length} khung giờ đã gán`}>

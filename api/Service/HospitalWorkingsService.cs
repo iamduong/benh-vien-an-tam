@@ -18,9 +18,17 @@ public sealed class HospitalWorkingsService(DBContext dbContext) : ControllerBas
         if (hospitalUuid is null)
             return Unauthorized(new { message = "Tài khoản chưa được gán chi nhánh." });
 
+        var assignedWorkingUuids = await dbContext.HospitalWorkings
+            .AsNoTracking()
+            .Where(item => item.HospitalUuid == hospitalUuid.Value && item.WorkingUuid.HasValue)
+            .Select(item => item.WorkingUuid!.Value)
+            .ToArrayAsync(cancellationToken);
+
         var availableWorkings = await dbContext.TimeWorkings
             .AsNoTracking()
-            .Where(item => item.DeletedAt == null && item.Status == BaseStatus.Active)
+            .Where(item => item.DeletedAt == null &&
+                           item.Status == BaseStatus.Active &&
+                           !assignedWorkingUuids.Contains(item.Uuid))
             .OrderBy(item => item.DayOfWeek)
             .ThenBy(item => item.StartTime)
             .Select(item => new TimeWorkingResponse
