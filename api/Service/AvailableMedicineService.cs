@@ -128,7 +128,8 @@ public class AvailableMedicineService
                     StockStatus = mi.Quantity <= 0 ? "Hết hàng"
                                 : (mi.Quantity <= mi.MinimumQuantity ? "Sắp hết" : "Còn hàng"),
                     IsInsured = m.IsInsured,
-                    InsuranceCap = m.InsuranceCap
+                    InsuranceCap = m.InsuranceCap,
+                    Description = m.Description
                 }
             )
             .FirstOrDefaultAsync();

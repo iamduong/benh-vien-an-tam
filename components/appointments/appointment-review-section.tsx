@@ -4,6 +4,7 @@ import { LoaderCircle, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { ErrorState, LoadingState } from "@/components/shared/data-state";
+import { useToast } from "@/components/toast/toast-context";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -90,6 +91,7 @@ export function AppointmentReviewSection({
 }
 
 function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
+  const { success, error: showError } = useToast();
   const [review, setReview] = useState(target.review);
   const [stars, setStars] = useState(target.review?.numberOfStar ?? 0);
   const [content, setContent] = useState(target.review?.content ?? "");
@@ -97,7 +99,6 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
     numberOfStar?: string;
     content?: string;
   }>({});
-  const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitLock = useRef(false);
   const prefix = `${target.type}-${target.targetUuid}`;
@@ -116,8 +117,13 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
             : undefined,
     };
     setErrors(nextErrors);
-    setFeedback("");
-    if (nextErrors.numberOfStar || nextErrors.content) return;
+    if (nextErrors.numberOfStar || nextErrors.content) {
+      showError(
+        "Thông tin đánh giá chưa hợp lệ",
+        nextErrors.numberOfStar ?? nextErrors.content,
+      );
+      return;
+    }
 
     submitLock.current = true;
     setIsSubmitting(true);
@@ -129,13 +135,13 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
       setReview(response.data);
       setContent(response.data.content);
       setErrors({});
-      setFeedback(response.message);
+      success("Lưu đánh giá thành công", response.message);
     } catch (error) {
       if (error instanceof ReviewServiceError) {
         setErrors(error.fieldErrors ?? {});
-        setFeedback(error.message);
+        showError("Không thể lưu đánh giá", error.message);
       } else {
-        setFeedback("Không thể lưu đánh giá. Vui lòng thử lại.");
+        showError("Không thể lưu đánh giá", "Vui lòng thử lại.");
       }
     } finally {
       submitLock.current = false;
@@ -168,7 +174,6 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
                 onClick={() => {
                   setStars(value);
                   setErrors((current) => ({ ...current, numberOfStar: undefined }));
-                  setFeedback("");
                 }}
               >
                 <Star
@@ -197,7 +202,6 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
           onChange={(event) => {
             setContent(event.target.value);
             setErrors((current) => ({ ...current, content: undefined }));
-            setFeedback("");
           }}
         />
         <div className="flex justify-between gap-3 text-xs text-muted-foreground">
@@ -205,19 +209,6 @@ function ReviewEditor({ target }: { target: ReviewEligibilityTarget }) {
           <span>{content.length}/1000</span>
         </div>
       </div>
-      {feedback ? (
-        <p
-          role={feedback.includes("thành công") ? "status" : "alert"}
-          className={cn(
-            "mt-4 rounded-lg border px-3 py-2 text-sm",
-            feedback.includes("thành công")
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-destructive/30 bg-destructive/5 text-destructive",
-          )}
-        >
-          {feedback}
-        </p>
-      ) : null}
       <Button type="submit" className="mt-4 w-full sm:w-auto" disabled={isSubmitting}>
         {isSubmitting ? (
           <>

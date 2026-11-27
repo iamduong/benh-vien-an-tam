@@ -16,4 +16,5 @@ public class AvailableMedicineDetailDto
     public string StockStatus { get; set; } = string.Empty;
     public bool IsInsured { get; set; }
     public float InsuranceCap { get; set; }
+    public string Description { get; set; } = string.Empty;
 }

@@ -114,8 +114,8 @@ export type AppointmentPresentation = AppointmentConfirmation & {
 
 export type AppointmentListQuery = {
   accountUuid: string;
+  q?: string;
   status?: AppointmentStatus;
-  type?: BookingType;
   from?: string;
   to?: string;
   page?: number;

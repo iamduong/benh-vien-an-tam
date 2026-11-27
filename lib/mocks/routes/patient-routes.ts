@@ -12,6 +12,7 @@ const allowedUpdateFields = new Set([
   "gender",
   "birthdate",
   "email",
+  "medicalCode",
 ]);
 
 export function registerPatientRoutes(mock: AxiosMockAdapter) {
@@ -48,6 +49,7 @@ export function registerPatientRoutes(mock: AxiosMockAdapter) {
     current.profile.name = body.name.trim();
     current.profile.gender = body.gender;
     current.profile.birthdate = new Date(body.birthdate);
+    current.profile.medicalCode = body.medicalCode.trim();
     current.profile.email = body.email.trim().toLowerCase();
 
     return [
@@ -84,7 +86,8 @@ function isUpdateRequest(value: unknown): value is UpdatePatientProfileRequest {
     typeof body.name === "string" &&
     Object.values(Gender).includes(body.gender as Gender) &&
     (typeof body.birthdate === "string" || body.birthdate instanceof Date) &&
-    typeof body.email === "string"
+    typeof body.email === "string" &&
+    typeof body.medicalCode === "string"
   );
 }
 

@@ -27,8 +27,11 @@ public sealed class PatientService(DBContext dbContext)
 
         var errors = new Dictionary<string, string>();
         var email = request.Email.Trim().ToLowerInvariant();
+        var medicalCode = request.MedicalCode.Trim();
         if (request.Birthdate.Date >= DateTime.UtcNow.Date)
             errors["birthdate"] = "Ngày sinh phải trước ngày hiện tại.";
+        if (medicalCode.Length > 50)
+            errors["medicalCode"] = "Mã y tế tối đa 50 ký tự.";
         if (await dbContext.PatientProfiles.AsNoTracking().AnyAsync(item =>
             item.Uuid != profile.Uuid && item.Email.ToLower() == email, cancellationToken))
             errors["email"] = "Email đã được sử dụng.";
@@ -38,6 +41,7 @@ public sealed class PatientService(DBContext dbContext)
         profile.Name = request.Name.Trim();
         profile.Gender = request.Gender;
         profile.Birthdate = request.Birthdate.ToUniversalTime();
+        profile.MedicalCode = medicalCode;
         profile.Email = email;
         account.Email = email;
         account.UpdatedAt = DateTime.UtcNow;

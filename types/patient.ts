@@ -7,7 +7,7 @@ export type PatientProfileView = {
 
 export type UpdatePatientProfileRequest = Pick<
   PatientProfile,
-  "avatar" | "name" | "gender" | "birthdate" | "email"
+  "avatar" | "name" | "gender" | "birthdate" | "email" | "medicalCode"
 >;
 
 export type PatientProfileField = keyof UpdatePatientProfileRequest;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CalendarDays, Clock3, Stethoscope } from "lucide-react";
+import { Building2, CalendarDays, Clock3, Search, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import {
 } from "@/components/appointments/appointment-ui";
 import { DiscoveryPagination } from "@/components/discovery/discovery-pagination";
 import { EmptyState, ErrorState, LoadingState } from "@/components/shared/data-state";
+import { useToast } from "@/components/toast/toast-context";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,15 +29,16 @@ type ListState =
 
 export function AppointmentsPage() {
   const { session } = useAuth();
+  const { error: showError } = useToast();
   const searchParams = useSearchParams();
   const currentParams = searchParams.toString();
+  const q = searchParams.get("q")?.trim() || "";
   const status = parseStatus(searchParams.get("status"));
-  const type = parseType(searchParams.get("type"));
   const from = searchParams.get("from") || "";
   const to = searchParams.get("to") || "";
   const page = parsePage(searchParams.get("page"));
   const [attempt, setAttempt] = useState(0);
-  const requestKey = `${status || ""}:${type || ""}:${from}:${to}:${page}:${attempt}`;
+  const requestKey = `${q}:${status || ""}:${from}:${to}:${page}:${attempt}`;
   const [state, setState] = useState<ListState>({ status: "idle" });
 
   useEffect(() => {
@@ -48,8 +50,8 @@ export function AppointmentsPage() {
       .getAll(
         {
           accountUuid: session.account.uuid,
+          q: q || undefined,
           status,
-          type,
           from: from || undefined,
           to: to || undefined,
           page,
@@ -61,13 +63,17 @@ export function AppointmentsPage() {
         if (active) setState({ status: "success", key, data: response.data });
       })
       .catch(() => {
-        if (active) setState({ status: "error", key, message: "Không thể tải lịch hẹn. Vui lòng thử lại." });
+        if (active) {
+          const message = "Không thể tải lịch hẹn. Vui lòng thử lại.";
+          setState({ status: "error", key, message });
+          showError("Tải lịch hẹn thất bại", message);
+        }
       });
     return () => {
       active = false;
       controller.abort();
     };
-  }, [attempt, from, page, requestKey, session, status, to, type]);
+  }, [attempt, from, page, q, requestKey, session, showError, status, to]);
 
   if (!session) return null;
 
@@ -78,7 +84,7 @@ export function AppointmentsPage() {
           <p className="text-sm font-semibold text-primary">Khu vực Patient</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Lịch hẹn của tôi</h1>
           <p className="mt-3 leading-7 text-muted-foreground">
-            Theo dõi yêu cầu, thời gian khám và trạng thái của tất cả loại lịch hẹn.
+            Theo dõi yêu cầu, thời gian khám và trạng thái của tất cả lịch hẹn.
           </p>
         </div>
         <Link href="/co-so-y-te" className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto")}>
@@ -88,21 +94,31 @@ export function AppointmentsPage() {
 
       <form key={currentParams} action="/tai-khoan/lich-hen" method="get" className="mt-8 rounded-xl border bg-card p-4 sm:p-5">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-2">
+            <Label htmlFor="appointment-search">Tìm kiếm</Label>
+            <div className="relative">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                id="appointment-search"
+                name="q"
+                defaultValue={q}
+                placeholder="Người khám, cơ sở, mã y tế..."
+                className="pl-8"
+              />
+            </div>
+          </div>
           <FilterSelect label="Trạng thái" name="status" defaultValue={status || ""}>
             <option value="">Tất cả trạng thái</option>
             <option value={AppointmentStatus.Pending}>Chờ duyệt</option>
             <option value={AppointmentStatus.Approved}>Đã duyệt</option>
             <option value={AppointmentStatus.Unconfirmed}>Không xác nhận</option>
-            <option value={AppointmentStatus.CheckedIn}>Đang khám</option>
+            <option value={AppointmentStatus.CheckedIn}>Đã check-in</option>
             <option value={AppointmentStatus.InProgress}>Đang khám bệnh</option>
             <option value={AppointmentStatus.Done}>Đã hoàn thành</option>
             <option value={AppointmentStatus.Cancelled}>Đã hủy</option>
-          </FilterSelect>
-          <FilterSelect label="Loại lịch" name="type" defaultValue={type || ""}>
-            <option value="">Tất cả loại lịch</option>
-            <option value="hospital">Khám tại cơ sở</option>
-            <option value="doctor">Khám với bác sĩ</option>
-            <option value="medical-service">Dịch vụ y tế</option>
           </FilterSelect>
           <div className="space-y-2">
             <Label htmlFor="appointment-from">Từ ngày</Label>
@@ -194,8 +210,4 @@ function parseStatus(value: string | null) {
   return Object.values(AppointmentStatus).includes(value as AppointmentStatus)
     ? (value as AppointmentStatus)
     : undefined;
-}
-
-function parseType(value: string | null) {
-  return value === "hospital" || value === "doctor" || value === "medical-service" ? value : undefined;
 }

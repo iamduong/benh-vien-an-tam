@@ -37,6 +37,7 @@ export type PrescriptionView = PrescriptionSummary & {
 };
 
 export type PrescriptionListQuery = {
+  q?: string;
   status?: PrescriptionStatus;
   from?: string;
   to?: string;

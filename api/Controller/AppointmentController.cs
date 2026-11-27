@@ -42,7 +42,8 @@ public sealed class AppointmentController(AppointmentService service) : Controll
         [FromQuery] AppointmentStatus? status = null,
         [FromQuery] DateOnly? from = null,
         [FromQuery] DateOnly? to = null,
-        CancellationToken cancellationToken = default) => await Service.GetAppointments(accountUuid, page, pageSize, status, from, to, cancellationToken);
+        [FromQuery] string? q = null,
+        CancellationToken cancellationToken = default) => await Service.GetAppointments(accountUuid, page, pageSize, status, from, to, q, cancellationToken);
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetAppointment(Guid id, CancellationToken cancellationToken = default) => await Service.GetAppointment(id, cancellationToken);
     [HttpGet("{uuid:guid}/detail")]
