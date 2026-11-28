@@ -20,8 +20,6 @@ public class ExceptionHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception");
-
             await HandleExceptionAsync(context, ex);
         }
     }

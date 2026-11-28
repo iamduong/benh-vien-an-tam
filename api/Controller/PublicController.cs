@@ -1,5 +1,7 @@
 using api.Contract;
 using api.Contract.Public;
+using api.Lib;
+using api.Lib.Type;
 using api.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,8 +9,17 @@ namespace api.Controller;
 
 [ApiController]
 [Route("/api/public")]
-public class PublicController(PublicService service) : ControllerBase
+public class PublicController(PublicService service, Insurance insurance) : ControllerBase
 {
+    [HttpPost("valid-insurance-code")]
+    public IActionResult ValidInsuranceCode([FromBody] ValidInsuranceCodeRequest request)
+    {
+        var result = insurance.ValidateIdentity(request.Code);
+        return ApiResponse<IdentityInsurance>.RequestSuccess(
+            result,
+            "Mã bảo hiểm y tế hợp lệ.");
+    }
+
     [HttpGet("departments")]
     public async Task<IActionResult> GetDepartmentsAsync()
     {

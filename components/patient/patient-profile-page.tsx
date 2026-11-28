@@ -3,17 +3,14 @@
 import jsQR from "jsqr";
 import {
   Camera,
-  ImagePlus,
-  Keyboard,
   LoaderCircle,
   QrCode,
-  Trash2,
   Upload,
-  UserRound,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { useAccountAvatarEditor } from "@/components/patient/account-shell";
 import { ErrorState, LoadingState } from "@/components/shared/data-state";
 import { useToast } from "@/components/toast/toast-context";
 import { Button } from "@/components/ui/button";
@@ -43,11 +40,16 @@ import {
   validatePatientProfile,
 } from "@/lib/patient/validation";
 import {
+  InsuranceServiceError,
+  insuranceService,
+} from "@/lib/services/insurance/InsuranceService";
+import {
   PatientServiceError,
   patientService,
 } from "@/lib/services/patient/PatientService";
 import { uploadService } from "@/lib/services/upload/UploadService";
 import { cn } from "@/lib/utils";
+import type { InsuranceIdentity } from "@/types/insurance";
 import { Gender } from "@/types/models";
 import type {
   PatientProfileView,
@@ -139,6 +141,7 @@ function ProfileEditor({
   onSaved: (view: PatientProfileView) => void;
 }) {
   const { success, error: showError } = useToast();
+  const { setAvatarEditor } = useAccountAvatarEditor();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [avatar, setAvatar] = useState(view.profile.avatar);
@@ -149,7 +152,12 @@ function ProfileEditor({
   const [birthdate, setBirthdate] = useState(toDateInput(view.profile.birthdate));
   const [email, setEmail] = useState(view.profile.email);
   const [medicalCode, setMedicalCode] = useState(view.profile.medicalCode);
-  const [medicalCodeMode, setMedicalCodeMode] = useState<"manual" | "qr">("manual");
+  const [insuranceInfo, setInsuranceInfo] = useState<InsuranceIdentity | null>(null);
+  const [savedInsuranceInfo, setSavedInsuranceInfo] = useState<InsuranceIdentity | null>(null);
+  const [insuranceError, setInsuranceError] = useState<string | null>(null);
+  const [isValidatingInsurance, setIsValidatingInsurance] = useState(
+    Boolean(view.profile.medicalCode.trim()),
+  );
   const [qrOpen, setQrOpen] = useState(false);
 
   const [errors, setErrors] = useState<PatientProfileFieldErrors>({});
@@ -167,6 +175,49 @@ function ProfileEditor({
       }
     };
   }, [imagePreview]);
+
+  useEffect(() => {
+    setAvatarEditor({
+      preview: imagePreview,
+      disabled: isSubmitting,
+      onChoose: () => fileInputRef.current?.click(),
+    });
+    return () => setAvatarEditor(null);
+  }, [imagePreview, isSubmitting, setAvatarEditor]);
+
+  useEffect(() => {
+    const code = view.profile.medicalCode.trim();
+    if (!code) return;
+
+    const controller = new AbortController();
+    let active = true;
+
+    insuranceService
+      .validate(code, controller.signal)
+      .then((result) => {
+        if (!active) return;
+        setInsuranceInfo(result);
+        setSavedInsuranceInfo(result);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setInsuranceInfo(null);
+        setSavedInsuranceInfo(null);
+        setInsuranceError(
+          error instanceof InsuranceServiceError
+            ? error.message
+            : "Không thể kiểm tra thông tin bảo hiểm y tế đã lưu.",
+        );
+      })
+      .finally(() => {
+        if (active) setIsValidatingInsurance(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [view.profile.medicalCode]);
 
   const originalBirthdate = toDateInput(view.profile.birthdate);
   const isDirty =
@@ -220,11 +271,54 @@ function ProfileEditor({
     setBirthdate(originalBirthdate);
     setEmail(view.profile.email);
     setMedicalCode(view.profile.medicalCode);
+    setInsuranceInfo(savedInsuranceInfo);
+    setInsuranceError(null);
     setErrors({});
+  }
+
+  async function handleInsuranceDetected(decodedValue: string) {
+    const normalized = decodedValue.trim();
+    setQrOpen(false);
+
+    if (!normalized || normalized.length > 4096) {
+      const message = "Dữ liệu QR bảo hiểm y tế không hợp lệ.";
+      setInsuranceError(message);
+      showError("Không thể xác thực BHYT", message);
+      return;
+    }
+
+    setIsValidatingInsurance(true);
+    setInsuranceError(null);
+    try {
+      const result = await insuranceService.validate(normalized);
+      setMedicalCode(normalized);
+      setInsuranceInfo(result);
+      setErrors((previous) => ({ ...previous, medicalCode: undefined }));
+      success(
+        "Xác thực BHYT thành công",
+        `Đã nhận thông tin thẻ ${result.medical.insuranceCardCode}.`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof InsuranceServiceError
+          ? error.message
+          : "Không thể kiểm tra mã bảo hiểm y tế.";
+      setInsuranceError(message);
+      showError("Mã BHYT không hợp lệ", message);
+    } finally {
+      setIsValidatingInsurance(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (medicalCode.trim() && !insuranceInfo) {
+      const message = "Vui lòng quét lại mã QR bảo hiểm y tế hợp lệ trước khi lưu.";
+      setInsuranceError(message);
+      showError("Thông tin BHYT chưa hợp lệ", message);
+      return;
+    }
 
     const preValidationRequest: UpdatePatientProfileRequest = {
       avatar: imageFile ? "" : avatar,
@@ -293,79 +387,20 @@ function ProfileEditor({
         noValidate
         className="mt-8 min-w-0 rounded-xl border bg-card p-5 sm:p-7"
       >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <UserRound aria-hidden="true" className="size-5 text-primary" />
-              <h2 className="text-xl font-bold">Thông tin cá nhân</h2>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Số điện thoại đăng nhập không thể thay đổi. Mã y tế có thể nhập trực tiếp hoặc quét từ mã QR.
-            </p>
-          </div>
-          {isDirty ? (
-            <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-              Có thay đổi chưa lưu
-            </span>
-          ) : null}
-        </div>
+        <input
+          ref={fileInputRef}
+          id="profile-avatar-file"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          disabled={isSubmitting}
+          className="hidden"
+          onChange={handleAvatarSelected}
+        />
+        {errors.avatar ? (
+          <p className="mt-4 text-sm text-destructive">{errors.avatar}</p>
+        ) : null}
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          <div className="min-w-0 space-y-3 sm:col-span-2">
-            <Label>Ảnh đại diện</Label>
-            <div className="flex flex-col gap-4 rounded-xl border bg-muted/30 p-4 sm:flex-row sm:items-center">
-              <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-card">
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt={`Ảnh đại diện ${name || "người bệnh"}`}
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <UserRound aria-hidden="true" className="size-8 text-muted-foreground" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1 space-y-2">
-                <input
-                  ref={fileInputRef}
-                  id="profile-avatar-file"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  disabled={isSubmitting}
-                  className="hidden"
-                  onChange={handleAvatarSelected}
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isSubmitting}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <ImagePlus aria-hidden="true" />
-                    Chọn ảnh từ máy
-                  </Button>
-                  {imagePreview ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={isSubmitting}
-                      onClick={() => clearSelectedImage("")}
-                    >
-                      <Trash2 aria-hidden="true" />
-                      Xóa ảnh
-                    </Button>
-                  ) : null}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Hỗ trợ JPG, PNG, WebP tối đa 5 MB. Ảnh sẽ được tải lên khi bạn lưu thay đổi.
-                </p>
-                {errors.avatar ? (
-                  <p className="text-sm text-destructive">{errors.avatar}</p>
-                ) : null}
-              </div>
-            </div>
-          </div>
 
           <ProfileField
             htmlFor="profile-name"
@@ -431,7 +466,6 @@ function ProfileEditor({
             htmlFor="profile-email"
             label="Email"
             error={errors.email}
-            className="sm:col-span-2"
           >
             <Input
               id="profile-email"
@@ -445,83 +479,48 @@ function ProfileEditor({
             />
           </ProfileField>
 
-          <div className="min-w-0 space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Label htmlFor="profile-medical-code">Mã y tế</Label>
-              <div className="inline-flex rounded-md border bg-muted p-0.5 text-xs">
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => setMedicalCodeMode("manual")}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors",
-                    medicalCodeMode === "manual"
-                      ? "bg-card text-primary shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Keyboard aria-hidden="true" className="size-3.5" />
-                  Điền trực tiếp
-                </button>
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => {
-                    setMedicalCodeMode("qr");
-                    setQrOpen(true);
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors",
-                    medicalCodeMode === "qr"
-                      ? "bg-card text-primary shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <QrCode aria-hidden="true" className="size-3.5" />
-                  Quét QR
-                </button>
-              </div>
-            </div>
+          <ReadOnlyField id="profile-phone" label="Số điện thoại" value={view.phone} />
 
-            <div className="flex gap-2">
+          <div className="min-w-0 space-y-2 sm:col-span-2">
+            <Label htmlFor="profile-medical-code">Mã bảo hiểm y tế</Label>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 id="profile-medical-code"
-                value={medicalCode}
-                maxLength={50}
-                disabled={isSubmitting}
-                readOnly={medicalCodeMode === "qr"}
-                placeholder={
-                  medicalCodeMode === "qr"
-                    ? "Bấm Quét QR để lấy mã y tế"
-                    : "Nhập mã y tế / số BHYT"
-                }
-                aria-invalid={Boolean(errors.medicalCode)}
+                value={getMedicalCodeDisplay(medicalCode, insuranceInfo)}
+                readOnly
+                placeholder="Quét QR để lấy mã bảo hiểm y tế"
+                aria-invalid={Boolean(errors.medicalCode || insuranceError)}
                 aria-describedby={
-                  errors.medicalCode ? "profile-medical-code-error" : undefined
+                  errors.medicalCode || insuranceError
+                    ? "profile-medical-code-error"
+                    : undefined
                 }
-                onChange={(event) => setMedicalCode(event.target.value)}
+                className="min-w-0 flex-1 bg-muted/60 text-muted-foreground"
               />
-              {medicalCodeMode === "qr" ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isSubmitting}
-                  onClick={() => setQrOpen(true)}
-                >
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting || isValidatingInsurance}
+                onClick={() => setQrOpen(true)}
+              >
+                {isValidatingInsurance ? (
+                  <LoaderCircle aria-hidden="true" className="animate-spin" />
+                ) : (
                   <QrCode aria-hidden="true" />
-                  Mở quét QR
-                </Button>
-              ) : null}
+                )}
+                {isValidatingInsurance ? "Đang kiểm tra..." : "Quét QR"}
+              </Button>
             </div>
-            {errors.medicalCode ? (
+            {errors.medicalCode || insuranceError ? (
               <p id="profile-medical-code-error" className="text-sm text-destructive">
-                {errors.medicalCode}
+                {errors.medicalCode || insuranceError}
               </p>
             ) : null}
           </div>
-
-          <ReadOnlyField id="profile-phone" label="Số điện thoại" value={view.phone} />
         </div>
+
+        {insuranceInfo ? <InsuranceInformation info={insuranceInfo} /> : null}
 
         <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button
@@ -533,7 +532,11 @@ function ProfileEditor({
           >
             Hủy thay đổi
           </Button>
-          <Button type="submit" size="lg" disabled={!isDirty || isSubmitting}>
+          <Button
+            type="submit"
+            size="lg"
+            disabled={!isDirty || isSubmitting || isValidatingInsurance}
+          >
             {isSubmitting ? (
               <>
                 <LoaderCircle aria-hidden="true" className="animate-spin" />
@@ -549,15 +552,61 @@ function ProfileEditor({
       <QrScannerDialog
         open={qrOpen}
         onOpenChange={setQrOpen}
-        onDetected={(decodedValue) => {
-          const normalized = decodedValue.trim().slice(0, 50);
-          setMedicalCode(normalized);
-          setErrors((prev) => ({ ...prev, medicalCode: undefined }));
-          setQrOpen(false);
-          success("Quét mã QR thành công", `Đã điền mã y tế: ${normalized}`);
-        }}
+        onDetected={handleInsuranceDetected}
       />
     </>
+  );
+}
+
+function InsuranceInformation({ info }: { info: InsuranceIdentity }) {
+  const identityCode = info.patient.identityCardCode;
+  const personalIdentifier = identityCode.slice(0, 4);
+  const citizenIdentityCard = identityCode.slice(4);
+
+  return (
+    <section className="mt-7 border-t pt-6">
+      <div className="flex items-center gap-2">
+        <QrCode aria-hidden="true" className="size-5 text-primary" />
+        <h3 className="text-lg font-bold">Thông tin BHYT</h3>
+      </div>
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <InsuranceFact label="Mã BHYT" value={info.medical.insuranceCardCode} />
+        <InsuranceFact label="Họ tên" value={info.patient.name} />
+        <InsuranceFact label="Giới tính" value={getGenderLabel(info.patient.gender)} />
+        <InsuranceFact label="Ngày sinh" value={info.patient.birthDate} />
+        <InsuranceFact
+          label="Địa chỉ"
+          value={info.patient.address}
+          className="sm:col-span-2"
+        />
+        <InsuranceFact label="Ngày bắt đầu hiệu lực" value={info.medical.validFrom} />
+        <InsuranceFact label="Ngày kết thúc hiệu lực" value={info.medical.validTo} />
+        <InsuranceFact label="Định danh" value={personalIdentifier} />
+        <InsuranceFact label="CCCD" value={citizenIdentityCard} />
+      </div>
+    </section>
+  );
+}
+
+function InsuranceFact({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0 space-y-2", className)}>
+      <Label>{label}</Label>
+      <Input
+        value={value || "-"}
+        readOnly
+        aria-readonly="true"
+        className="bg-muted/60 text-muted-foreground"
+      />
+    </div>
   );
 }
 
@@ -699,7 +748,7 @@ function QrScannerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Quét mã QR lấy mã y tế</DialogTitle>
+          <DialogTitle>Quét mã QR lấy mã bảo hiểm y tế</DialogTitle>
           <DialogDescription>{cameraStatus}</DialogDescription>
         </DialogHeader>
 
@@ -803,4 +852,16 @@ function ReadOnlyField({ id, label, value }: { id: string; label: string; value:
 
 function toDateInput(value: Date) {
   return value.toISOString().slice(0, 10);
+}
+
+function getMedicalCodeDisplay(
+  rawCode: string,
+  insuranceInfo: InsuranceIdentity | null,
+) {
+  const cardCode = insuranceInfo?.medical.insuranceCardCode ?? rawCode.trim().split("|")[0] ?? "";
+  return /^[A-Z]{2}[1-5]\d{12}$/.test(cardCode) ? cardCode.slice(2) : cardCode;
+}
+
+function getGenderLabel(gender: Gender) {
+  return genderOptions.find((option) => option.value === gender)?.label ?? "Khác";
 }

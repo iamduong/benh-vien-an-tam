@@ -17,6 +17,6 @@ public sealed class UpdateCurrentPatientRequest
     [Required, EmailAddress, StringLength(254)]
     public string Email { get; init; } = string.Empty;
 
-    [StringLength(50)]
+    [StringLength(4096)]
     public string MedicalCode { get; init; } = string.Empty;
 }
