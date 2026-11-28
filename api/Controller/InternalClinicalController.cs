@@ -5,6 +5,7 @@ using api.Contract;
 using api.Contract.Clinical;
 using api.Service;
 using api.Lib;
+using api.Model.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Controller;
@@ -30,9 +31,19 @@ public class InternalClinicalController(
 
     [HttpGet("appointments")]
     public async Task<IActionResult> GetAppointments(
-    [FromQuery] string? date,
-    CancellationToken cancellationToken)
+        [FromQuery] string? q,
+        [FromQuery] DateOnly? from,
+        [FromQuery] DateOnly? to,
+        [FromQuery] AppointmentStatus? status,
+        CancellationToken cancellationToken)
     {
+        if (from.HasValue && to.HasValue && from.Value > to.Value)
+        {
+            return ApiResponse<object>.BadRequest(
+                null,
+                "Ngày bắt đầu không được sau ngày kết thúc.");
+        }
+
         var doctorUuid = await GetCurrentDoctorUuidAsync(cancellationToken);
         if (!doctorUuid.HasValue)
         {
@@ -44,7 +55,10 @@ public class InternalClinicalController(
 
         var result = await appointmentService.GetAppointmentsAsync(
             doctorUuid.Value,
-            date,
+            q,
+            from,
+            to,
+            status,
             cancellationToken
         );
 

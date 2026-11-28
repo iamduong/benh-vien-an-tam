@@ -2,14 +2,16 @@
 
 import { CalendarDays, Eye, Search, Stethoscope } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
+    INTERNAL_PAGE_SIZE,
     PortalPageHeader,
+    PortalPagination,
     PortalSection,
     PortalTable,
     StatusPill,
 } from "@/components/internal/portal-ui";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
     getVietnamDateTimeParts,
@@ -26,6 +28,13 @@ type LoadState =
     | { status: "loading" }
     | { status: "success"; items: ClinicalAppointment[] }
     | { status: "error"; message: string };
+
+type ScheduleFilters = {
+    q: string;
+    from: string;
+    to: string;
+    status: string;
+};
 
 const statusLabels: Record<string, string> = {
     Approved: "Đã xác nhận",
@@ -47,26 +56,29 @@ const statusTones: Record<string, "amber" | "blue" | "green" | "red"> = {
     Cancelled: "red",
 };
 
-export function DoctorScheduleScreen() {
-    const [date, setDate] = useState(getVietnamToday);
-    const [search, setSearch] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [status, setStatus] = useState("");
-    const [state, setState] = useState<LoadState>({ status: "loading" });
+const genderLabels: Record<string, string> = {
+    Male: "Nam",
+    Female: "Nữ",
+    Other: "Khác",
+};
 
-    // Debounce tìm kiếm từ 1 - 1.5s
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-        }, 1200);
-        return () => clearTimeout(timer);
-    }, [search]);
+export function DoctorScheduleScreen() {
+    const [filters, setFilters] = useState<ScheduleFilters>(() => {
+        const today = getVietnamToday();
+        return { q: "", from: today, to: today, status: "" };
+    });
+    const [appliedFilters, setAppliedFilters] = useState<ScheduleFilters>(() => {
+        const today = getVietnamToday();
+        return { q: "", from: today, to: today, status: "" };
+    });
+    const [page, setPage] = useState(1);
+    const [state, setState] = useState<LoadState>({ status: "loading" });
 
     useEffect(() => {
         const controller = new AbortController();
         queueMicrotask(() => setState({ status: "loading" }));
         doctorAppointmentService
-            .getAppointments(date, controller.signal)
+            .getAppointments(appliedFilters, controller.signal)
             .then((items) => setState({ status: "success", items }))
             .catch((error: unknown) => {
                 if (!controller.signal.aborted) {
@@ -77,21 +89,23 @@ export function DoctorScheduleScreen() {
                 }
             });
         return () => controller.abort();
-    }, [date]);
+    }, [appliedFilters]);
 
-    const filteredItems = useMemo(() => {
-        if (state.status !== "success") return [];
-        const keyword = debouncedSearch.trim().toLocaleLowerCase("vi-VN");
-        return state.items.filter(
-            (item) =>
-                (!status || item.status === status) &&
-                (!keyword ||
-                    item.patientName.toLocaleLowerCase("vi-VN").includes(keyword) ||
-                    item.medicalCode.toLocaleLowerCase("vi-VN").includes(keyword))
-        );
-    }, [debouncedSearch, state, status]);
+    function handleFilter(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setPage(1);
+        setAppliedFilters({ ...filters, q: filters.q.trim() });
+    }
 
-    const rows = filteredItems.map((item) => {
+    const items = state.status === "success" ? state.items : [];
+    const totalPages = Math.max(1, Math.ceil(items.length / INTERNAL_PAGE_SIZE));
+    const safePage = Math.min(page, totalPages);
+    const paginatedItems = items.slice(
+        (safePage - 1) * INTERNAL_PAGE_SIZE,
+        safePage * INTERNAL_PAGE_SIZE,
+    );
+
+    const rows = paginatedItems.map((item) => {
         const isReadOnly =
             item.status === "Done" ||
             item.status === "Pending" ||
@@ -100,9 +114,15 @@ export function DoctorScheduleScreen() {
 
         return [
             formatTime(item.appointmentAt),
-            `${item.patientName} · ${item.medicalCode}`,
-            item.typeLabel,
-            item.roomName,
+            item.patientName,
+            genderLabels[item.gender] ?? item.gender,
+            <span
+                key={`note-${item.uuid}`}
+                title={item.note || undefined}
+                className="block max-w-xs truncate"
+            >
+                {item.note || "—"}
+            </span>,
             <AppointmentStatus key={`status-${item.uuid}`} status={item.status} />,
             isReadOnly ? (
                 <Link
@@ -135,34 +155,60 @@ export function DoctorScheduleScreen() {
             />
 
             <PortalSection
-                title={formatSelectedDate(date)}
+                title={formatSelectedRange(appliedFilters.from, appliedFilters.to)}
                 description={
                     state.status === "success"
                         ? `${state.items.length} ca khám được phân công`
                         : "Lịch khám được phân công"
                 }
             >
-                <div className="flex flex-col gap-3 border-b bg-[#fbfdfe] p-4 lg:flex-row lg:items-end">
-                    <label className="relative min-w-0 flex-1 lg:max-w-sm">
+                <form
+                    onSubmit={handleFilter}
+                    className="grid gap-3 border-b bg-[#fbfdfe] p-4 md:grid-cols-2 xl:grid-cols-[minmax(15rem,1fr)_11rem_11rem_12rem_auto] xl:items-end"
+                >
+                    <label className="relative min-w-0">
                         <span className="sr-only">Tìm bệnh nhân hoặc mã y tế</span>
                         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
+                            value={filters.q}
+                            onChange={(event) =>
+                                setFilters((current) => ({ ...current, q: event.target.value }))
+                            }
                             placeholder="Tìm bệnh nhân hoặc mã y tế"
                             className="h-9 pl-9"
                         />
                     </label>
 
-                    <label className="min-w-48">
+                    <label>
                         <span className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                             <CalendarDays className="size-3.5" aria-hidden="true" />
-                            Ngày khám
+                            Ngày bắt đầu
                         </span>
                         <Input
                             type="date"
-                            value={date}
-                            onChange={(event) => setDate(event.target.value)}
+                            value={filters.from}
+                            max={filters.to || undefined}
+                            required
+                            onChange={(event) =>
+                                setFilters((current) => ({ ...current, from: event.target.value }))
+                            }
+                            className="h-9 bg-white"
+                        />
+                    </label>
+
+                    <label>
+                        <span className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                            <CalendarDays className="size-3.5" aria-hidden="true" />
+                            Ngày kết thúc
+                        </span>
+                        <Input
+                            type="date"
+                            value={filters.to}
+                            min={filters.from || undefined}
+                            required
+                            onChange={(event) =>
+                                setFilters((current) => ({ ...current, to: event.target.value }))
+                            }
                             className="h-9 bg-white"
                         />
                     </label>
@@ -172,9 +218,11 @@ export function DoctorScheduleScreen() {
                             Trạng thái
                         </span>
                         <select
-                            value={status}
-                            onChange={(event) => setStatus(event.target.value)}
-                            className="h-9 rounded-md border bg-white px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                            value={filters.status}
+                            onChange={(event) =>
+                                setFilters((current) => ({ ...current, status: event.target.value }))
+                            }
+                            className="h-9 w-full rounded-md border bg-white px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                         >
                             <option value="">Tất cả trạng thái</option>
                             {Object.entries(statusLabels).map(([value, label]) => (
@@ -184,7 +232,11 @@ export function DoctorScheduleScreen() {
                             ))}
                         </select>
                     </label>
-                </div>
+
+                    <Button type="submit" className="h-9">
+                        Lọc
+                    </Button>
+                </form>
 
                 {state.status === "loading" ? (
                     <p className="p-8 text-center text-sm text-muted-foreground">
@@ -195,11 +247,19 @@ export function DoctorScheduleScreen() {
                         {state.message}
                     </p>
                 ) : rows.length ? (
-                    <PortalTable
-                        caption="Lịch khám của bác sĩ"
-                        columns={["Giờ", "Bệnh nhân", "Loại", "Phòng", "Trạng thái", "Thao tác"]}
-                        rows={rows}
-                    />
+                    <>
+                        <PortalTable
+                            caption="Lịch khám của bác sĩ"
+                            columns={["Giờ", "Tên", "Giới tính", "Ghi chú", "Trạng thái", "Thao tác"]}
+                            rows={rows}
+                        />
+                        <PortalPagination
+                            page={safePage}
+                            totalItems={items.length}
+                            onPageChange={setPage}
+                            alwaysVisible
+                        />
+                    </>
                 ) : (
                     <p className="p-8 text-center text-sm text-muted-foreground">
                         Không có ca khám phù hợp trong ngày đã chọn.
@@ -220,15 +280,24 @@ function formatTime(value: Date) {
     return getVietnamDateTimeParts(value).time;
 }
 
-function formatSelectedDate(date: string) {
-    const value = new Date(`${date}T12:00:00+07:00`);
+function formatSelectedRange(from: string, to: string) {
+    if (from !== to) {
+        return `Lịch khám từ ${formatDate(from)} đến ${formatDate(to)}`;
+    }
+
+    const value = new Date(`${from}T12:00:00+07:00`);
     if (Number.isNaN(value.getTime())) return "Lịch khám";
     const weekday = new Intl.DateTimeFormat("vi-VN", {
         weekday: "long",
         timeZone: "Asia/Ho_Chi_Minh",
     }).format(value);
-    const [, month, day] = date.split("-");
+    const [, month, day] = from.split("-");
     return `${weekday.charAt(0).toLocaleUpperCase("vi-VN")}${weekday.slice(
         1
-    )}, ${day}/${month}/${date.slice(0, 4)}`;
+    )}, ${day}/${month}/${from.slice(0, 4)}`;
+}
+
+function formatDate(value: string) {
+    const [year, month, day] = value.split("-");
+    return year && month && day ? `${day}/${month}/${year}` : value;
 }

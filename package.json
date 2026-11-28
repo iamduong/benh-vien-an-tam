@@ -12,7 +12,6 @@
     "@base-ui/react": "^1.8.0",
     "@radix-ui/react-dialog": "^1.1.23",
     "axios": "^1.20.0",
-    "axios-mock-adapter": "^2.1.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
     "jsqr": "^1.4.0",
