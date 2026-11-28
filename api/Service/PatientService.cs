@@ -30,8 +30,8 @@ public sealed class PatientService(DBContext dbContext)
         var medicalCode = request.MedicalCode.Trim();
         if (request.Birthdate.Date >= DateTime.UtcNow.Date)
             errors["birthdate"] = "Ngày sinh phải trước ngày hiện tại.";
-        if (medicalCode.Length > 50)
-            errors["medicalCode"] = "Mã y tế tối đa 50 ký tự.";
+        if (medicalCode.Length > 4096)
+            errors["medicalCode"] = "Dữ liệu mã bảo hiểm y tế tối đa 4096 ký tự.";
         if (await dbContext.PatientProfiles.AsNoTracking().AnyAsync(item =>
             item.Uuid != profile.Uuid && item.Email.ToLower() == email, cancellationToken))
             errors["email"] = "Email đã được sử dụng.";

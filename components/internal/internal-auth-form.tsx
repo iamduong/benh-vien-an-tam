@@ -69,7 +69,7 @@ export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }
         {mode === "login" ? (
           <>
             <Label htmlFor="internal-phone">Số điện thoại</Label>
-            <Input id="internal-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required pattern="(?:\+84|0)(?:3|5|7|8|9)[0-9]{8}" placeholder="0900000000" className="h-11" />
+            <Input id="internal-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required pattern="(?:\+84|0)(?:3|5|7|8|9)[0-9]{8}" placeholder="Nhập số điện thoại" className="h-11" />
           </>
         ) : (
           <>
@@ -88,7 +88,7 @@ export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }
             </Link>
           </div>
           <div className="relative">
-            <Input id="internal-password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required className="h-11 pr-11" />
+            <Input id="internal-password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required placeholder="Nhập mật khẩu" className="h-11 pr-11" />
             <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
               {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
             </button>

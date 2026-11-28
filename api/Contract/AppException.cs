@@ -18,3 +18,10 @@ public class DuplicateException: AppException
         
     }
 }
+
+public class InvalidException: AppException
+{
+    public InvalidException(object Errors): base(400, "Invalid request", Errors)
+    {
+    }
+}

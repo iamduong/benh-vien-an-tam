@@ -53,6 +53,7 @@ builder.Services.AddScoped<PasswordHasher>();
 builder.Services.AddScoped<Jwt>();
 builder.Services.AddScoped<Sepay>();
 builder.Services.AddScoped<Cloud>();
+builder.Services.AddScoped<Insurance>();
 
 // Application services
 builder.Services.AddScoped<AuthService>();
@@ -165,6 +166,7 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+app.UseMiddleware<ExceptionHandler>();
 
 // API documentation
 if (app.Environment.IsDevelopment())

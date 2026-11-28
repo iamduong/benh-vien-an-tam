@@ -3,9 +3,17 @@ import type { ApiResponse } from "@/lib/http/response";
 import type { ClinicalAppointment, ClinicalCaseDetail } from "@/types/internal-clinical";
 
 export const doctorAppointmentService = {
-    async getAppointments(date: string, signal?: AbortSignal): Promise<ClinicalAppointment[]> {
+    async getAppointments(
+        filters: {
+            q: string;
+            from: string;
+            to: string;
+            status: string;
+        },
+        signal?: AbortSignal,
+    ): Promise<ClinicalAppointment[]> {
         const res = await httpClient.get<ApiResponse<ClinicalAppointment[]>>("/internal/clinical/appointments", {
-            params: { date },
+            params: filters,
             signal,
         });
         return res.data.data.map(item => ({ ...item, appointmentAt: new Date(item.appointmentAt) }));

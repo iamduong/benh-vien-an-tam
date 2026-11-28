@@ -1,15 +1,9 @@
 "use client";
 
 import {
-  BedDouble,
-  CalendarCheck2,
-  CircleDollarSign,
-  ClipboardCheck,
-  PackageCheck,
   Pencil,
   Plus,
   RotateCcw,
-  ShieldAlert,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
@@ -17,18 +11,14 @@ import { isAxiosError } from "axios";
 
 import { ErrorState, LoadingState } from "@/components/shared/data-state";
 import {
+  ApiImplementationRequired,
   DetailGrid,
   DetailItem,
   INTERNAL_PAGE_SIZE,
-  MetricCard,
-  MetricGrid,
-  PortalAction,
   PortalPageHeader,
   PortalPagination,
   PortalSection,
   PortalTable,
-  PortalToolbar,
-  ProgressList,
   StatusPill,
 } from "@/components/internal/portal-ui";
 import { Input } from "@/components/ui/input";
@@ -39,6 +29,7 @@ import { HospitalWorkingScreen } from "@/components/internal/trang-tong/working-
 import { DoctorShiftAssignmentScreen } from "@/components/internal/trang-tong/doctor-shift-assignment-screen";
 import { HospitalReviewsScreen as HospitalReviewsManagementScreen } from "@/components/internal/trang-tong/hospital-reviews-screen";
 import { BranchAppointmentsScreen } from "@/components/internal/trang-tong/branch-appointments-screen";
+import { RealInventoryScreen } from "@/components/internal/trang-tong/warehouse-management-screens";
 import { markdownToPlainText } from "@/lib/format";
 import {
   hospitalService,
@@ -63,25 +54,17 @@ import {
   type Room,
 } from "@/types/models";
 
-const appointmentRows = [
-  ["09:30", "Nguyễn Thị Lan · BN-10248", "BS. Nguyễn Hoàng Minh · P.203", <StatusPill key="1" tone="blue">Đã xác nhận</StatusPill>],
-  ["09:45", "Trần Văn Phúc · BN-08421", "Chưa phân bác sĩ · P.101", <StatusPill key="2" tone="amber">Chờ xác nhận</StatusPill>],
-  ["10:00", "Lê Minh Châu · BN-11203", "Chưa phân bác sĩ · P.307", <StatusPill key="3" tone="green">Đã check-in</StatusPill>],
-  ["10:15", "Phạm Thị Hồng · BN-09682", "BS. Phạm Ngọc Anh · P.205", <StatusPill key="4" tone="blue">Đã xác nhận</StatusPill>],
-  ["10:30", "Hoàng Nam Sơn · BN-11824", "Chưa phân bác sĩ · P.108", <StatusPill key="5" tone="red">Đã hủy</StatusPill>],
-];
-
 export function BranchScreens({ slug }: { slug: string }) {
   switch (slug) {
     case "tong-quan": return <HospitalDashboard />;
     case "thong-tin-chi-nhanh": return <HospitalProfileScreen />;
     case "chuyen-khoa-dich-vu": return <AssignmentsScreen />;
-    case "phong-kham": return <RoomsScreen />;
+    case "phong-kham": return <BranchRoomsScreen />;
     case "nhan-su": return <StaffAccountsScreen />;
     case "lich-hen": return <HospitalAppointmentsScreen />;
     case "don-thuoc": return <HospitalPrescriptionsScreen />;
-    case "kho-thuoc": return <HospitalInventoryScreen />;
-    case "danh-gia": return <HospitalReviewsScreen />;
+    case "kho-thuoc": return <RealInventoryScreen />;
+    case "danh-gia": return <HospitalReviewsManagementScreen />;
     case "bao-cao": return <HospitalReportsScreen />;
     case "nhat-ky": return <HospitalAuditScreen />;
     case "gio-lam-viec-benh-vien": return <HospitalWorkingScreen view="booking-hours" />;
@@ -92,41 +75,10 @@ export function BranchScreens({ slug }: { slug: string }) {
 
 function HospitalDashboard() {
   return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="BV Đa khoa Thành Phố" title="Trung tâm điều hành chi nhánh" description="Tình hình tiếp nhận, phòng khám và công việc cần phê duyệt trong hôm nay." actions={<><PortalAction>Xem lịch trực</PortalAction><PortalAction variant="default">Tạo lịch hẹn</PortalAction></>} />
-      <MetricGrid>
-        <MetricCard label="Lịch hôm nay" value="148" detail="18 lịch đang chờ xác nhận" icon={<CalendarCheck2 className="size-5" />} />
-        <MetricCard label="Đã check-in" value="92" detail="62,2% tổng lịch hôm nay" trend="up" icon={<ClipboardCheck className="size-5" />} tone="green" />
-        <MetricCard label="Phòng đang sử dụng" value="16/24" detail="4 phòng đang bảo trì" icon={<BedDouble className="size-5" />} tone="cyan" />
-        <MetricCard label="Phiếu chờ duyệt" value="7" detail="5 nhập kho, 2 xuất kho" icon={<PackageCheck className="size-5" />} tone="amber" />
-      </MetricGrid>
-      <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <PortalSection title="Nhịp tiếp nhận hôm nay" description="Số lượt theo khung giờ"><ProgressList items={[
-          { label: "07:00 - 09:00", value: 88, display: "42 lượt" },
-          { label: "09:00 - 11:00", value: 72, display: "35 lượt", color: "bg-cyan-500" },
-          { label: "13:00 - 15:00", value: 58, display: "28 lượt", color: "bg-emerald-500" },
-          { label: "15:00 - 17:00", value: 41, display: "20 lượt", color: "bg-amber-500" },
-        ]} /></PortalSection>
-        <PortalSection title="Việc cần xử lý">
-          <div className="divide-y p-5 pt-2">
-            {[
-              ["18 lịch chờ xác nhận", "Lịch hẹn", "amber"],
-              ["7 phiếu kho chờ duyệt", "Kho thuốc", "blue"],
-              ["12 đánh giá chưa xem", "Đánh giá", "purple"],
-              ["4 phòng đang bảo trì", "Phòng khám", "red"],
-            ].map(([label, category, tone]) => (
-              <div key={label} className="flex items-center justify-between gap-3 py-3 text-sm">
-                <span className="font-medium">{label}</span>
-                <StatusPill tone={tone as "amber" | "blue" | "purple" | "red"}>{category}</StatusPill>
-              </div>
-            ))}
-          </div>
-        </PortalSection>
-      </div>
-      <PortalSection title="Lịch sắp diễn ra">
-        <PortalTable caption="Lịch khám sắp diễn ra" columns={["Giờ", "Bệnh nhân", "Bác sĩ / phòng", "Trạng thái"]} rows={appointmentRows.slice(0, 4)} />
-      </PortalSection>
-    </div>
+    <ApiImplementationRequired
+      title="Tổng quan chi nhánh"
+      description="Chưa có API tổng hợp dashboard vận hành chi nhánh."
+    />
   );
 }
 
@@ -708,7 +660,7 @@ function sameUuidSelection(left: string[], right: string[]) {
   );
 }
 
-function RoomsScreen() {
+export function BranchRoomsScreen() {
   const [attempt, setAttempt] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -1544,91 +1496,29 @@ function HospitalAppointmentsScreen() {
 }
 
 function HospitalPrescriptionsScreen() {
-  return <OperationalTable eyebrow="Điều phối đơn thuốc" title="Đơn thuốc chi nhánh" description="Theo dõi đơn khi có mục đích nghiệp vụ; không thay đổi nội dung chuyên môn của bác sĩ." metrics={[
-    ["Đơn hôm nay", "74", "62 đơn đã hoàn tất", <ClipboardCheck key="1" className="size-5" />],
-    ["Chưa thanh toán", "12", "Tổng tạm tính 3,8 triệu", <CircleDollarSign key="2" className="size-5" />],
-    ["Đã thanh toán", "58", "78,4% tổng đơn", <PackageCheck key="3" className="size-5" />],
-    ["Đã hủy", "4", "Đều có ghi nhận lý do", <ShieldAlert key="4" className="size-5" />],
-  ]} columns={["Mã đơn", "Bệnh nhân", "Bác sĩ", "Tổng tiền", "Trạng thái"]} rows={[
-    ["RX-260923-074", "Nguyễn Thị Lan", "BS. Nguyễn Hoàng Minh", "486.000 đ", <StatusPill key="1" tone="amber">Chưa thanh toán</StatusPill>],
-    ["RX-260923-073", "Lê Minh Châu", "BS. Trần Thanh Vũ", "328.000 đ", <StatusPill key="2" tone="green">Đã thanh toán</StatusPill>],
-    ["RX-260923-072", "Trần Văn Phúc", "BS. Nguyễn Hoàng Minh", "215.000 đ", <StatusPill key="3" tone="green">Đã thanh toán</StatusPill>],
-    ["RX-260923-069", "Đỗ Hải Yến", "BS. Phạm Ngọc Anh", "0 đ", <StatusPill key="4" tone="red">Đã hủy</StatusPill>],
-  ]} />;
-}
-
-function HospitalInventoryScreen() {
-  return <OperationalTable eyebrow="Giám sát dược" title="Kho thuốc chi nhánh" description="Theo dõi tồn kho và duyệt phiếu nhập xuất theo nguyên tắc bốn mắt." action="Duyệt phiếu chờ" metrics={[
-    ["Mặt hàng", "428", "392 thuốc đang hoạt động", <PackageCheck key="1" className="size-5" />],
-    ["Dưới ngưỡng", "16", "5 mặt hàng mức nghiêm trọng", <ShieldAlert key="2" className="size-5" />],
-    ["Phiếu chờ duyệt", "7", "5 nhập, 2 xuất", <ClipboardCheck key="3" className="size-5" />],
-    ["Giá trị tồn", "1,84 tỷ", "Cập nhật lúc 09:35", <CircleDollarSign key="4" className="size-5" />],
-  ]} columns={["Mã phiếu", "Loại", "Người tạo", "Số mặt hàng", "Tạo lúc", "Trạng thái"]} rows={[
-    ["NK-260923-005", <StatusPill key="1" tone="green">Nhập kho</StatusPill>, "Lê Văn Tuấn", "12", "23/09 08:44", <StatusPill key="2" tone="amber">Chờ duyệt</StatusPill>],
-    ["XK-260923-002", <StatusPill key="3" tone="blue">Xuất kho</StatusPill>, "Ngô Thanh Hà", "5", "23/09 08:12", <StatusPill key="4" tone="amber">Chờ duyệt</StatusPill>],
-    ["NK-260922-018", <StatusPill key="5" tone="green">Nhập kho</StatusPill>, "Lê Văn Tuấn", "24", "22/09 16:32", <StatusPill key="6" tone="green">Đã duyệt</StatusPill>],
-    ["XK-260922-011", <StatusPill key="7" tone="blue">Xuất kho</StatusPill>, "Ngô Thanh Hà", "8", "22/09 14:08", <StatusPill key="8" tone="red">Đã hủy</StatusPill>],
-  ]} />;
-}
-
-function HospitalReviewsScreen() {
-  return <HospitalReviewsManagementScreen />;
+  return (
+    <ApiImplementationRequired
+      title="Đơn thuốc chi nhánh"
+      description="Chưa có API danh sách đơn thuốc theo phạm vi chi nhánh."
+    />
+  );
 }
 
 function HospitalReportsScreen() {
   return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Phân tích chi nhánh" title="Báo cáo vận hành" description="Theo dõi hiệu quả lịch khám, công suất phòng và doanh thu dự kiến tại chi nhánh." actions={<PortalAction variant="default">Tải báo cáo</PortalAction>} />
-      <MetricGrid>
-        <MetricCard label="Lịch tháng này" value="2.845" detail="Tăng 9,6% so với tháng trước" trend="up" icon={<CalendarCheck2 className="size-5" />} />
-        <MetricCard label="Hoàn thành" value="88,2%" detail="Mục tiêu tháng là 85%" trend="up" icon={<ClipboardCheck className="size-5" />} tone="green" />
-        <MetricCard label="Công suất phòng" value="76%" detail="Cao điểm 09:00 - 11:00" icon={<BedDouble className="size-5" />} tone="cyan" />
-        <MetricCard label="Doanh thu dự kiến" value="3,24 tỷ" detail="Khám, dịch vụ và đơn thuốc" icon={<CircleDollarSign className="size-5" />} tone="amber" />
-      </MetricGrid>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <PortalSection title="Hiệu suất chuyên khoa"><ProgressList items={[
-          { label: "Tim mạch", value: 92, display: "92%" },
-          { label: "Nội tổng quát", value: 84, display: "84%", color: "bg-cyan-500" },
-          { label: "Nhi khoa", value: 78, display: "78%", color: "bg-emerald-500" },
-          { label: "Cơ xương khớp", value: 65, display: "65%", color: "bg-amber-500" },
-        ]} /></PortalSection>
-        <PortalSection title="Cơ cấu doanh thu"><ProgressList items={[
-          { label: "Dịch vụ y tế", value: 74, display: "1,42 tỷ" },
-          { label: "Khám bác sĩ", value: 58, display: "1,08 tỷ", color: "bg-cyan-500" },
-          { label: "Đơn thuốc", value: 41, display: "740 triệu", color: "bg-emerald-500" },
-        ]} /></PortalSection>
-      </div>
-    </div>
+    <ApiImplementationRequired
+      title="Báo cáo vận hành chi nhánh"
+      description="Chưa có API báo cáo và thống kê theo kỳ của chi nhánh."
+    />
   );
 }
 
 function HospitalAuditScreen() {
   return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow="Kiểm toán chi nhánh" title="Nhật ký hoạt động" description="Theo dõi thay đổi trạng thái, phê duyệt và truy cập nghiệp vụ trong chi nhánh." actions={<PortalAction>Xuất nhật ký</PortalAction>} />
-      <PortalSection title="Hoạt động gần đây">
-        <PortalToolbar placeholder="Tìm nhân sự hoặc hành động" filters={[{ label: "Tất cả phân hệ", options: ["Lịch hẹn", "Kho thuốc", "Nhân sự", "Phòng"] }]} />
-        <PortalTable caption="Nhật ký chi nhánh" columns={["Thời gian", "Nhân sự", "Hành động", "Đối tượng", "Kết quả"]} rows={[
-          ["23/09 09:38", "Trần Thu Hà", "appointment.check_in", "APT-10248", <StatusPill key="1" tone="green">Thành công</StatusPill>],
-          ["23/09 09:22", "Nguyễn Minh Anh", "stock_ticket.confirm", "NK-260923-004", <StatusPill key="2" tone="green">Thành công</StatusPill>],
-          ["23/09 08:56", "Lê Văn Tuấn", "inventory.adjust", "MED-0182", <StatusPill key="3" tone="amber">Đã ghi lý do</StatusPill>],
-          ["23/09 08:31", "Trần Thu Hà", "appointment.assign_room", "APT-10244", <StatusPill key="4" tone="green">Thành công</StatusPill>],
-        ]} />
-      </PortalSection>
-    </div>
-  );
-}
-
-function OperationalTable({ eyebrow, title, description, action, metrics, columns, rows }: { eyebrow: string; title: string; description: string; action?: string; metrics: [string, string, string, React.ReactNode][]; columns: string[]; rows: React.ReactNode[][] }) {
-  return (
-    <div className="space-y-6">
-      <PortalPageHeader eyebrow={eyebrow} title={title} description={description} actions={action ? <PortalAction variant="default"><Plus />{action}</PortalAction> : undefined} />
-      <MetricGrid>{metrics.map(([label, value, detail, icon], index) => <MetricCard key={label} label={label} value={value} detail={detail} icon={icon} tone={(["blue", "cyan", "green", "amber"] as const)[index]} />)}</MetricGrid>
-      <PortalSection title={`Danh sách ${title.toLowerCase()}`}>
-        <PortalToolbar placeholder={`Tìm trong ${title.toLowerCase()}`} filters={[{ label: "Tất cả trạng thái", options: ["Hoạt động", "Chờ xử lý", "Đã hoàn tất", "Đã hủy"] }]} />
-        <PortalTable caption={`Danh sách ${title.toLowerCase()}`} columns={columns} rows={rows} />
-      </PortalSection>
-    </div>
+    <ApiImplementationRequired
+      title="Nhật ký hoạt động chi nhánh"
+      description="Chưa có API audit log theo phạm vi chi nhánh."
+    />
   );
 }
 

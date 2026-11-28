@@ -41,11 +41,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { mockMedicalServices } from "@/data/mocks/medical-services";
 import {
   BaseStatus,
   type Department,
   Hospital,
+  type MedicalService,
   type Medicine,
   MedicineUnit,
 } from "@/types/models";
@@ -63,6 +63,11 @@ import {
   type AdminMedicineItem,
   type MedicineRequest,
 } from "@/lib/services/medicine/AdminMedicineService";
+import {
+  adminMedicalService,
+  type AdminMedicalServiceItem,
+  type MedicalServiceRequest,
+} from "@/lib/services/medical-service/AdminMedicalService";
 
 type ManagedRecord = {
   uuid: string;
@@ -692,19 +697,111 @@ export function DepartmentsManagementScreen() {
 }
 
 export function MedicalServicesManagementScreen() {
+  const [services, setServices] = useState<MedicalService[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    adminMedicalService.getAll(controller.signal)
+      .then((items) => {
+        if (active) setServices(items.map(mapToMedicalService));
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        console.error("Lỗi khi tải danh mục dịch vụ y tế:", requestError);
+        setError("Không tải được danh mục dịch vụ y tế");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
+
+  async function saveService(item: MedicalService) {
+    return mapToMedicalService(
+      await adminMedicalService.update(item.uuid, mapToMedicalServiceRequest(item)),
+    );
+  }
+
+  async function createService(item: MedicalService) {
+    return mapToMedicalService(
+      await adminMedicalService.create(mapToMedicalServiceRequest(item)),
+    );
+  }
+
+  if (loading) return <div className="p-8 text-center text-muted-foreground">Đang tải...</div>;
+  if (error) return <div className="p-8 text-center text-destructive">{error}</div>;
+
   return <CatalogManagementScreen config={{
     eyebrow: "Danh mục chuyên môn",
     title: "Dịch vụ y tế",
     singular: "dịch vụ y tế",
     description: "Quản lý giá, quyền lợi bảo hiểm, lịch thực hiện và nội dung dịch vụ dùng chung.",
     icon: <Activity className="size-5" />,
-    initialItems: mockMedicalServices,
+    initialItems: services,
     columns: ["Dịch vụ", "Giá", "Giờ thực hiện", "Bảo hiểm", "Nổi bật", "Cập nhật"],
     searchText: (item) => `${item.name} ${item.slug} ${item.description} ${item.workingHour}`,
     renderCells: (item) => [<div key="name"><div className="font-semibold">{item.name}</div><div className="mt-1 text-xs text-muted-foreground">/{item.slug}</div></div>, moneyFormatter.format(item.price), item.workingHour, item.isInsured ? `${Math.round(item.insuranceCap * 100)}%` : "Không", item.isFeatured ? "Có" : "Không", dateFormatter.format(item.updatedAt)],
     renderDetail: (item) => <><CommonDetail item={item}><DetailItem label="slug" value={item.slug} /><DetailItem label="Giá tham chiếu" value={moneyFormatter.format(item.price)} /><DetailItem label="Giờ thực hiện" value={item.workingHour} /><DetailItem label="Bảo hiểm" value={item.isInsured ? `Có, tối đa ${Math.round(item.insuranceCap * 100)}%` : "Không"} /><DetailItem label="Dịch vụ nổi bật" value={item.isFeatured ? "Có" : "Không"} /><DetailItem label="Hình ảnh" value={item.image} /></CommonDetail><MarkdownDetail title="Mô tả" content={item.description} /><MarkdownDetail title="Chi tiết dịch vụ" content={item.detailService} /></>,
     renderForm: (item, update) => <><Field label="Tên dịch vụ"><Input required value={item.name} onChange={(event) => update("name", event.target.value)} /></Field><Field label="slug"><Input required value={item.slug} onChange={(event) => update("slug", event.target.value)} /></Field><Field label="Giá tham chiếu"><Input required min={0} type="number" value={item.price} onChange={(event) => update("price", Number(event.target.value))} /></Field><Field label="Giờ thực hiện"><Input value={item.workingHour} onChange={(event) => update("workingHour", event.target.value)} /></Field><Field label="Trạng thái"><StatusField value={item.status} onChange={(value) => update("status", value)} /></Field><Field label="Mức chi trả bảo hiểm (0-1)"><Input min={0} max={1} step={0.1} type="number" disabled={!item.isInsured} value={item.insuranceCap} onChange={(event) => update("insuranceCap", Number(event.target.value))} /></Field><Field label="Tùy chọn" wide><div className="flex flex-wrap gap-6 rounded-md border p-3 text-sm"><label className="flex items-center gap-2"><input type="checkbox" checked={item.isInsured} onChange={(event) => update("isInsured", event.target.checked)} />Áp dụng bảo hiểm</label><label className="flex items-center gap-2"><input type="checkbox" checked={item.isFeatured} onChange={(event) => update("isFeatured", event.target.checked)} />Dịch vụ nổi bật</label></div></Field><MarkdownField label="Mô tả (Markdown)" value={item.description} onChange={(value) => update("description", value)} /><MarkdownField label="Chi tiết dịch vụ (Markdown)" value={item.detailService} onChange={(value) => update("detailService", value)} /></>,
+    createDraft: createEmptyMedicalService,
+    onCreate: createService,
+    onSave: saveService,
+    onDelete: (item) => adminMedicalService.delete(item.uuid),
   }} />;
+}
+
+function mapToMedicalService(item: AdminMedicalServiceItem): MedicalService {
+  return {
+    ...item,
+    status: item.status,
+    createdAt: new Date(item.createdAt),
+    updatedAt: new Date(item.updatedAt),
+    deletedAt: new Date(0),
+  };
+}
+
+function mapToMedicalServiceRequest(item: MedicalService): MedicalServiceRequest {
+  return {
+    image: item.image,
+    slug: item.slug.trim(),
+    name: item.name.trim(),
+    price: item.price,
+    description: item.description,
+    detailService: item.detailService,
+    workingHour: item.workingHour,
+    isInsured: item.isInsured,
+    insuranceCap: item.isInsured ? item.insuranceCap : 0,
+    isFeatured: item.isFeatured,
+  };
+}
+
+function createEmptyMedicalService(): MedicalService {
+  const now = new Date();
+  return {
+    uuid: "",
+    image: "",
+    slug: "",
+    name: "",
+    price: 0,
+    description: "",
+    detailService: "",
+    workingHour: "",
+    status: BaseStatus.Active,
+    isInsured: false,
+    insuranceCap: 0,
+    isFeatured: false,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: new Date(0),
+  };
 }
 
 const medicineUnitLabels: Record<MedicineUnit, string> = {

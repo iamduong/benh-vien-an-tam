@@ -52,7 +52,7 @@ export function BookingConfirmation() {
             status: "error",
             key: requestKey,
             message:
-              "Không thể tải xác nhận lịch. Dữ liệu Mock API có thể đã được làm mới.",
+              "Không thể tải xác nhận lịch. Vui lòng kiểm tra lại mã lịch hẹn.",
           });
         }
       });

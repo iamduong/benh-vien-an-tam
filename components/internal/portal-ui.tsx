@@ -28,6 +28,25 @@ export function PortalPageHeader({
   );
 }
 
+export function ApiImplementationRequired({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="space-y-6">
+      <PortalPageHeader
+        eyebrow="Chức năng đang phát triển"
+        title={title}
+        description={description}
+        actions={<StatusPill tone="amber">Cần implment API</StatusPill>}
+      />
+    </div>
+  );
+}
+
 export function MetricGrid({ children }: { children: ReactNode }) {
   return <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{children}</div>;
 }
@@ -171,16 +190,18 @@ export function PortalPagination({
   pageSize = INTERNAL_PAGE_SIZE,
   totalItems,
   onPageChange,
+  alwaysVisible = false,
 }: {
   page: number;
   pageSize?: number;
   totalItems: number;
   onPageChange: (page: number) => void;
+  alwaysVisible?: boolean;
 }) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(Math.max(page, 1), totalPages);
 
-  if (totalItems <= pageSize) return null;
+  if (!alwaysVisible && totalItems <= pageSize) return null;
 
   const firstItem = (safePage - 1) * pageSize + 1;
   const lastItem = Math.min(safePage * pageSize, totalItems);

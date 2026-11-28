@@ -2,19 +2,22 @@ using Microsoft.EntityFrameworkCore;
 using api.Contract.Clinical;
 using api.Lib;
 using api.Model.Enum;
-using System.Globalization;
 
 namespace api.Service;
 
 public class DoctorAppointmentService(DBContext dbContext)
 {
     public async Task<List<ClinicalAppointmentResponse>> GetAppointmentsAsync(
-        Guid doctorUuid, string? date, CancellationToken cancellationToken)
+        Guid doctorUuid,
+        string? keyword,
+        DateOnly? from,
+        DateOnly? to,
+        AppointmentStatus? status,
+        CancellationToken cancellationToken)
     {
-        var selectedDate = !string.IsNullOrWhiteSpace(date) && DateOnly.TryParseExact(
-            date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate)
-            ? parsedDate
-            : DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var vietnamToday = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var selectedFrom = from ?? vietnamToday;
+        var selectedTo = to ?? selectedFrom;
         var query = dbContext.Appointments
             .Where(x => x.DeletedAt == null &&
                 (x.DoctorUuid == doctorUuid ||
@@ -27,20 +30,28 @@ public class DoctorAppointmentService(DBContext dbContext)
                              schedule.Uuid == working.DoctorScheduleUuid
                              && schedule.DoctorUuid == doctorUuid)))));
 
+        var startOfDayUtc = new DateTimeOffset(
+            selectedFrom.ToDateTime(TimeOnly.MinValue),
+            TimeSpan.FromHours(7)).UtcDateTime;
+        var endOfDayUtc = new DateTimeOffset(
+            selectedTo.AddDays(1).ToDateTime(TimeOnly.MinValue),
+            TimeSpan.FromHours(7)).UtcDateTime;
+
+        query = query.Where(x =>
+            x.AppointmentDate >= startOfDayUtc &&
+            x.AppointmentDate < endOfDayUtc);
+
+        if (!string.IsNullOrWhiteSpace(keyword))
         {
-            // Ngày bắt đầu theo giờ Việt Nam (UTC+7)
-            var startOfDayLocal = new DateTimeOffset(
-                selectedDate.ToDateTime(TimeOnly.MinValue),
-                TimeSpan.FromHours(7)
-            );
-
-            // Chuyển sang UTC
-            var startOfDayUtc = startOfDayLocal.UtcDateTime;
-            var endOfDayUtc = startOfDayLocal.AddDays(1).UtcDateTime;
-
+            var normalizedKeyword = keyword.Trim().ToLower();
             query = query.Where(x =>
-                x.AppointmentDate >= startOfDayUtc &&
-                x.AppointmentDate < endOfDayUtc);
+                x.PatientName.ToLower().Contains(normalizedKeyword) ||
+                x.MedicalCode.ToLower().Contains(normalizedKeyword));
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(x => x.Status == status.Value);
         }
 
         var items = await query
