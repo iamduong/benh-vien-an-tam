@@ -8,6 +8,7 @@ import {
     PortalAction,
     StatusPill,
 } from "@/components/internal/portal-ui";
+import { useToast } from "@/components/toast/toast-context";
 import { MedicineDetailScreen } from "./medicine-detail-screen";
 import { MedicineService } from "@/lib/services/medicine/medicine-service";
 import {
@@ -18,6 +19,7 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 
 export function AvailableMedicineScreen() {
+    const { error: showError } = useToast();
 
     const [medicines, setMedicines] = useState<MedicineDto[]>([]);
     const [totalCount, setTotalCount] = useState(0);
@@ -47,11 +49,11 @@ export function AvailableMedicineScreen() {
             .then((res) => {
                 setDbUnits(Array.isArray(res) ? res : []);
             })
-            .catch((err) => {
-                console.error("Lỗi tải đơn vị thuốc", err);
+            .catch(() => {
+                showError("Không thể tải danh sách đơn vị thuốc.");
                 setDbUnits([]);
             });
-    }, []);
+    }, [showError]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -71,15 +73,15 @@ export function AvailableMedicineScreen() {
                 setTotalCount(data?.totalCount || 0);
 
                 setSelectedId(null);
-            } catch (error) {
-                console.error("Lỗi tải danh sách thuốc", error);
+            } catch {
+                showError("Không thể tải danh sách thuốc khả dụng", "Vui lòng thử lại sau.");
                 setMedicines([]);
             } finally {
                 setIsLoading(false);
             }
         };
         fetchData();
-    }, [currentPage, debouncedSearch, selectedUnit, selectedStockStatus]);
+    }, [currentPage, debouncedSearch, selectedUnit, selectedStockStatus, showError]);
 
     const renderStatus = (status: StockStatusFilter) => {
         switch (status) {
@@ -96,7 +98,7 @@ export function AvailableMedicineScreen() {
 
     const rows = (medicines || []).map((med) => {
         const isSelected = selectedId === med.uuid;
-        const cellStyle = `cursor-pointer transition-colors ${isSelected ? "bg-blue-50/80 text-primary font-medium" : "hover:bg-muted/50"
+        const cellStyle = `cursor-pointer transition-colors ${isSelected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
             }`;
 
         const renderCell = (content: ReactNode, isFirst = false) => (
@@ -198,20 +200,20 @@ export function AvailableMedicineScreen() {
 
                 {/* Phân trang UI: Tự động ẩn nút/thanh điều hướng khi không cần thiết */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-end gap-2 border-b bg-slate-50/50 px-4 py-2 select-none">
+                    <div className="flex select-none items-center justify-end gap-2 border-b bg-muted/30 px-4 py-2">
                         {currentPage > 1 && (
                             <button
                                 type="button"
                                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                                 disabled={isLoading}
-                                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-blue-600 active:scale-95 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted hover:text-primary active:scale-95 disabled:opacity-50"
                             >
                                 <span>←</span>
                                 <span>Trang trước</span>
                             </button>
                         )}
 
-                        <span className="px-2 text-xs font-medium text-slate-600">
+                        <span className="px-2 text-xs font-medium text-muted-foreground">
                             Trang {currentPage} / {totalPages}
                         </span>
 
@@ -222,7 +224,7 @@ export function AvailableMedicineScreen() {
                                     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                                 }
                                 disabled={isLoading}
-                                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-blue-600 active:scale-95 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted hover:text-primary active:scale-95 disabled:opacity-50"
                             >
                                 <span>Trang sau</span>
                                 <span>→</span>

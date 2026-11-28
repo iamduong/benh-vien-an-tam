@@ -68,6 +68,7 @@ builder.Services.AddScoped<PatientService>();
 builder.Services.AddScoped<AvailableMedicineService>();
 builder.Services.AddScoped<DoctorProfileService>();
 builder.Services.AddScoped<PrescriptionService>();
+builder.Services.AddScoped<PatientPrescriptionService>();
 builder.Services.AddScoped<DoctorAppointmentService>();
 builder.Services.AddScoped<ClinicalExaminationService>();
 builder.Services.AddScoped<PrescriptionManagementService>();

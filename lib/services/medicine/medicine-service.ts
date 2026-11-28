@@ -36,6 +36,22 @@ const mapMedicine = (item: AvailableMedicineApiDto): MedicineDto => ({
     status: mapStockStatus(item.stockStatus),
 });
 
+interface AvailableMedicineDetailApiDto {
+    medicineUuid: string;
+    code: string;
+    name: string;
+    image: string;
+    price: number;
+    unit: number;
+    unitName: string;
+    quantity: number;
+    minimumQuantity: number;
+    stockStatus: string;
+    isInsured: boolean;
+    insuranceCap: number;
+    description?: string;
+}
+
 export const MedicineService = {
     getAvailableMedicines: async (
         query: MedicineQueryDto
@@ -64,10 +80,27 @@ export const MedicineService = {
     },
 
     getMedicineDetail: async (uuid: string): Promise<MedicineDetailDto> => {
-        const response = await httpClient.get<ApiResponse<MedicineDetailDto>>(
-            `/AvailableMedicine/${uuid}`
-        );
+        const response = await httpClient.get<
+            AvailableMedicineDetailApiDto | ApiResponse<AvailableMedicineDetailApiDto>
+        >(`/AvailableMedicine/${uuid}`);
 
-        return response.data.data;
+        const raw =
+            "data" in response.data && response.data.data
+                ? response.data.data
+                : (response.data as AvailableMedicineDetailApiDto);
+
+        return {
+            uuid: raw.medicineUuid,
+            name: raw.name,
+            unit: raw.unitName,
+            price: raw.price,
+            stock: raw.quantity,
+            minStock: raw.minimumQuantity,
+            status: mapStockStatus(raw.stockStatus),
+            isInsured: raw.isInsured,
+            insuranceCap: raw.insuranceCap,
+            description: raw.description?.trim() ? raw.description : null,
+            imageUrl: raw.image?.trim() ? raw.image : null,
+        };
     },
 };

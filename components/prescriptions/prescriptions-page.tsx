@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CalendarDays, CircleDollarSign, Stethoscope } from "lucide-react";
+import { Building2, CalendarDays, CircleDollarSign, Search, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import {
   PrescriptionStatusBadge,
 } from "@/components/prescriptions/prescription-ui";
 import { EmptyState, ErrorState, LoadingState } from "@/components/shared/data-state";
+import { useToast } from "@/components/toast/toast-context";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,15 +29,17 @@ type ListState =
 
 export function PrescriptionsPage() {
   const { session } = useAuth();
+  const { error: showError } = useToast();
   const accountUuid = session?.account.uuid;
   const searchParams = useSearchParams();
   const currentParams = searchParams.toString();
+  const q = searchParams.get("q")?.trim() || "";
   const status = parseStatus(searchParams.get("status"));
   const from = searchParams.get("from") || "";
   const to = searchParams.get("to") || "";
   const page = parsePage(searchParams.get("page"));
   const [attempt, setAttempt] = useState(0);
-  const requestKey = `${status || ""}:${from}:${to}:${page}:${attempt}`;
+  const requestKey = `${q}:${status || ""}:${from}:${to}:${page}:${attempt}`;
   const [state, setState] = useState<ListState>({ status: "idle" });
 
   useEffect(() => {
@@ -47,6 +50,7 @@ export function PrescriptionsPage() {
     prescriptionService
       .getAll(
         {
+          q: q || undefined,
           status,
           from: from || undefined,
           to: to || undefined,
@@ -60,18 +64,20 @@ export function PrescriptionsPage() {
       })
       .catch(() => {
         if (active) {
+          const message = "Không thể tải danh sách đơn thuốc. Vui lòng thử lại.";
           setState({
             status: "error",
             key,
-            message: "Không thể tải danh sách đơn thuốc. Vui lòng thử lại.",
+            message,
           });
+          showError("Tải đơn thuốc thất bại", message);
         }
       });
     return () => {
       active = false;
       controller.abort();
     };
-  }, [accountUuid, from, page, requestKey, status, to]);
+  }, [accountUuid, from, page, q, requestKey, showError, status, to]);
 
   if (!session) return null;
 
@@ -97,7 +103,23 @@ export function PrescriptionsPage() {
         method="get"
         className="mt-6 rounded-xl border bg-card p-4 sm:p-5"
       >
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-2">
+            <Label htmlFor="prescription-search">Tìm kiếm</Label>
+            <div className="relative">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                id="prescription-search"
+                name="q"
+                defaultValue={q}
+                placeholder="Bác sĩ, cơ sở, thuốc, mã đơn..."
+                className="pl-8"
+              />
+            </div>
+          </div>
           <FilterSelect
             label="Trạng thái đơn"
             name="status"

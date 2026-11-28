@@ -221,6 +221,7 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         AppointmentStatus? status = null,
         DateOnly? from = null,
         DateOnly? to = null,
+        string? q = null,
         CancellationToken cancellationToken = default)
     {
         if (User.GetAccountUuid() != accountUuid)
@@ -245,6 +246,24 @@ public sealed class AppointmentService(DBContext dbContext) : ControllerBase
         {
             var toUtc = new DateTimeOffset(to.Value.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(7)).UtcDateTime;
             query = query.Where(item => item.AppointmentDate < toUtc);
+        }
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var keyword = q.Trim().ToLower();
+            var matchingHospitalUuids = dbContext.Hospitals.AsNoTracking()
+                .Where(hospital => hospital.Name.ToLower().Contains(keyword))
+                .Select(hospital => hospital.Uuid);
+            var matchingDoctorUuids = dbContext.DoctorProfiles.AsNoTracking()
+                .Where(doctor => doctor.Name.ToLower().Contains(keyword))
+                .Select(doctor => doctor.Uuid);
+
+            query = query.Where(item =>
+                item.PatientName.ToLower().Contains(keyword) ||
+                item.MedicalCode.ToLower().Contains(keyword) ||
+                item.Note.ToLower().Contains(keyword) ||
+                item.Uuid.ToString().ToLower().Contains(keyword) ||
+                (item.HospitalUuid.HasValue && matchingHospitalUuids.Contains(item.HospitalUuid.Value)) ||
+                (item.DoctorUuid.HasValue && matchingDoctorUuids.Contains(item.DoctorUuid.Value)));
         }
 
         var totalItems = await query.CountAsync(cancellationToken);

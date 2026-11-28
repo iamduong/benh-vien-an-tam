@@ -117,7 +117,6 @@ export function PatientServiceDirectory() {
       .getAll(
         {
           accountUuid: session.account.uuid,
-          type: "medical-service",
           status: AppointmentStatus.Approved,
           pageSize: 3,
         },

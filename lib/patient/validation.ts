@@ -38,6 +38,10 @@ export function validatePatientProfile(
     errors.email = "Nhập địa chỉ email hợp lệ.";
   }
 
+  if (values.medicalCode.trim().length > 50) {
+    errors.medicalCode = "Mã y tế tối đa 50 ký tự.";
+  }
+
   const avatar = values.avatar.trim();
   if (avatar.length > 500) {
     errors.avatar = "URL ảnh đại diện tối đa 500 ký tự.";

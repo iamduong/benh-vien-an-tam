@@ -16,7 +16,7 @@ const statusConfig = {
   },
   [AppointmentStatus.CheckedIn]: {
     label: "Đã check-in",
-    className: "border-blue-200 bg-blue-50 text-blue-800",
+    className: "border-primary/30 bg-secondary text-secondary-foreground",
   },
   [AppointmentStatus.InProgress]: {
     label: "Đang khám bệnh",
@@ -24,7 +24,7 @@ const statusConfig = {
   },
   [AppointmentStatus.Done]: {
     label: "Đã hoàn thành",
-    className: "border-slate-200 bg-slate-100 text-slate-700",
+    className: "border-border bg-muted text-muted-foreground",
   },
   [AppointmentStatus.Cancelled]: {
     label: "Đã hủy",

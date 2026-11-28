@@ -22,6 +22,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { genderOptions } from "@/lib/auth/options";
 import { EmptyState, ErrorState, LoadingState } from "@/components/shared/data-state";
 import { SafeMarkdown } from "@/components/shared/safe-markdown";
+import { useToast } from "@/components/toast/toast-context";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,11 +76,16 @@ export function MedicalServiceBookingFlow() {
 
 function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
   const { session } = useAuth();
+  const { success, error: showError } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetParamName = type === "hospital" ? "hospital" : type === "doctor" ? "doctor" : "service";
   const targetParam = searchParams.get(targetParamName) || "";
   const hospitalParam = searchParams.get("hospital") || "";
+  const rebookUuid = searchParams.get("rebook") || "";
+  const prefillName = searchParams.get("patientName") || "";
+  const prefillGender = searchParams.get("gender") || "";
+  const prefillMedicalCode = searchParams.get("medicalCode") || "";
   const [contextAttempt, setContextAttempt] = useState(0);
   const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
   const [context, setContext] = useState<ContextState>({ status: "loading" });
@@ -88,15 +94,22 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
   });
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [patientName, setPatientName] = useState("");
-  const [gender, setGender] = useState<Gender | "">("");
-  const [medicalCode, setMedicalCode] = useState("");
-  const [note, setNote] = useState("");
+  const [patientName, setPatientName] = useState(prefillName);
+  const [gender, setGender] = useState<Gender | "">(
+    Object.values(Gender).includes(prefillGender as Gender)
+      ? (prefillGender as Gender)
+      : "",
+  );
+  const [medicalCode, setMedicalCode] = useState(prefillMedicalCode);
+  const [note, setNote] = useState(
+    rebookUuid ? `Đặt lịch tái khám từ lịch hẹn ${rebookUuid}.` : "",
+  );
   const [step, setStep] = useState<"form" | "review">("form");
-  const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitLock = useRef(false);
-  const automaticNote = useRef("");
+  const automaticNote = useRef(
+    rebookUuid ? `Đặt lịch tái khám từ lịch hẹn ${rebookUuid}.` : "",
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -277,25 +290,24 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
       : "";
 
   function continueToReview() {
-    setFormError("");
     if (!patientName.trim() || !gender || !medicalCode.trim()) {
-      setFormError("Vui lòng điền đầy đủ thông tin người khám.");
+      showError("Thiếu thông tin", "Vui lòng điền đầy đủ thông tin người khám.");
       return;
     }
     if (patientName.trim().length > 100) {
-      setFormError("Họ và tên tối đa 100 ký tự.");
+      showError("Thông tin chưa hợp lệ", "Họ và tên tối đa 100 ký tự.");
       return;
     }
     if (medicalCode.trim().length > 50) {
-      setFormError("Mã y tế tối đa 50 ký tự.");
+      showError("Thông tin chưa hợp lệ", "Mã y tế tối đa 50 ký tự.");
       return;
     }
     if (!date || !time) {
-      setFormError("Vui lòng chọn đầy đủ ngày và giờ khám.");
+      showError("Thiếu thông tin", "Vui lòng chọn đầy đủ ngày và giờ khám.");
       return;
     }
     if (!selectedHospital) {
-      setFormError("Vui lòng chọn cơ sở thực hiện dịch vụ.");
+      showError("Thiếu thông tin", "Vui lòng chọn cơ sở thực hiện dịch vụ.");
       return;
     }
     if (
@@ -303,11 +315,11 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
         (slot) => slot.time === time && slot.isAvailable,
       )
     ) {
-      setFormError("Thời gian đã chọn không còn khả dụng.");
+      showError("Khung giờ không khả dụng", "Thời gian đã chọn không còn khả dụng.");
       return;
     }
     if (note.trim().length > 500) {
-      setFormError("Ghi chú tối đa 500 ký tự.");
+      showError("Thông tin chưa hợp lệ", "Ghi chú tối đa 500 ký tự.");
       return;
     }
     setStep("review");
@@ -318,7 +330,6 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
     if (submitLock.current || !date || !time || !selectedHospital) return;
     submitLock.current = true;
     setIsSubmitting(true);
-    setFormError("");
     try {
       const common = {
         patientName: patientName.trim(),
@@ -330,21 +341,23 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
         hospitalUuid: selectedHospital.uuid,
       };
       await appointmentService.create({ ...common, type: "hospital" });
+      success("Đặt lịch thành công", "Yêu cầu đặt lịch khám đã được gửi.");
       router.replace("/tai-khoan/lich-hen");
     } catch (error) {
       if (
         error instanceof AppointmentServiceError &&
         error.code === "SLOT_CONFLICT"
       ) {
-        setFormError(error.message);
+        showError("Trùng khung giờ", error.message);
         setTime("");
         setStep("form");
         setAvailabilityAttempt((value) => value + 1);
       } else {
-        setFormError(
+        showError(
+          "Không thể đặt lịch",
           error instanceof AppointmentServiceError
             ? error.message
-            : "Không thể đặt lịch. Vui lòng thử lại.",
+            : "Vui lòng thử lại.",
         );
       }
     } finally {
@@ -397,15 +410,6 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
         </div>
 
         <section className="min-w-0 border border-t-4 border-t-primary bg-card p-5 sm:p-7">
-          {formError ? (
-            <p
-              role="alert"
-              className="mb-5 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
-            >
-              {formError}
-            </p>
-          ) : null}
-
           {step === "form" ? (
             <BookingForm
               patientName={patientName}
@@ -424,17 +428,14 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
                 params.set("hospital", value);
                 setDate("");
                 setTime("");
-                setFormError("");
                 router.replace(`/dat-lich/dich-vu?${params.toString()}`, { scroll: false });
               }}
               onDateChange={(value) => {
                 setDate(value);
                 setTime("");
-                setFormError("");
               }}
               onTimeChange={(value) => {
                 setTime(value);
-                setFormError("");
               }}
               onNoteChange={setNote}
               onPatientNameChange={setPatientName}
@@ -444,7 +445,7 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
                 setPatientName(currentSession.patientProfile.name);
                 setGender(currentSession.patientProfile.gender);
                 setMedicalCode(currentSession.patientProfile.medicalCode);
-                setFormError("");
+                success("Đã điền thông tin từ tài khoản");
               }}
               onRetryAvailability={() =>
                 setAvailabilityAttempt((value) => value + 1)
@@ -461,7 +462,6 @@ function SelectedTargetBookingFlow({ type }: { type: BookingType }) {
               note={note}
               isSubmitting={isSubmitting}
               onBack={() => {
-                setFormError("");
                 setStep("form");
               }}
               onConfirm={confirmAppointment}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CalendarClock, LoaderCircle } from "lucide-react";
+import { ArrowLeft, CalendarClock, CalendarPlus, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -14,6 +14,7 @@ import {
 } from "@/components/appointments/appointment-ui";
 import { AppointmentReviewSection } from "@/components/appointments/appointment-review-section";
 import { EmptyState, ErrorState, LoadingState } from "@/components/shared/data-state";
+import { useToast } from "@/components/toast/toast-context";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,7 +46,6 @@ export function AppointmentDetail({ uuid }: { uuid: string }) {
   const { session } = useAuth();
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<AsyncState<AppointmentPresentation>>({ status: "loading" });
-  const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
     if (!session) return;
@@ -90,8 +90,6 @@ export function AppointmentDetail({ uuid }: { uuid: string }) {
         <DetailContent
           item={state.data}
           accountUuid={session.account.uuid}
-          feedback={feedback}
-          onFeedback={setFeedback}
           onUpdate={(item) => setState({ status: "success", data: item })}
         />
       ) : null}
@@ -102,19 +100,23 @@ export function AppointmentDetail({ uuid }: { uuid: string }) {
 function DetailContent({
   item,
   accountUuid,
-  feedback,
-  onFeedback,
   onUpdate,
 }: {
   item: AppointmentPresentation;
   accountUuid: string;
-  feedback: string;
-  onFeedback: (value: string) => void;
   onUpdate: (item: AppointmentPresentation) => void;
 }) {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const appointment = item.appointment;
   const canChange = canChangeAppointment(item, currentTime);
+  const rebookParams = new URLSearchParams({
+    hospital: appointment.hospitalUuid,
+    rebook: appointment.uuid,
+    patientName: appointment.patientName,
+    gender: appointment.gender,
+    medicalCode: appointment.medicalCode,
+  });
+  const rebookHref = `/dat-lich/co-so-y-te?${rebookParams.toString()}`;
 
   useEffect(() => {
     const deadline = appointment.appointmentAt.getTime() - 86_400_000;
@@ -142,7 +144,6 @@ function DetailContent({
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Thời gian khám</p>
           <p className="mt-1 text-lg font-bold">{formatAppointmentDateTime(appointment.appointmentAt)}</p>
         </div>
-        {feedback ? <p role="status" className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{feedback}</p> : null}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
           <Link href={getPublicTargetHref(item)} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>
             Xem {getAppointmentTargetLabel(item.type).toLocaleLowerCase("vi-VN")}
@@ -150,11 +151,16 @@ function DetailContent({
           {item.type !== "hospital" ? (
             <Link href={`/co-so-y-te/${item.hospitalSlug}`} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>Xem cơ sở</Link>
           ) : null}
+          {appointment.status === "Done" ? (
+            <Link href={rebookHref} className={cn(buttonVariants(), "w-full sm:w-auto")}>
+              <CalendarPlus aria-hidden="true" />
+              Đặt lịch tái khám
+            </Link>
+          ) : null}
           {canChange ? (
             <AppointmentActions
               item={item}
               accountUuid={accountUuid}
-              onFeedback={onFeedback}
               onUpdate={onUpdate}
             />
           ) : null}
@@ -201,20 +207,18 @@ function DetailContent({
 function AppointmentActions({
   item,
   accountUuid,
-  onFeedback,
   onUpdate,
 }: {
   item: AppointmentPresentation;
   accountUuid: string;
-  onFeedback: (value: string) => void;
   onUpdate: (item: AppointmentPresentation) => void;
 }) {
+  const { success, error: showError } = useToast();
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [availability, setAvailability] = useState<AvailabilityState>({ status: "idle" });
-  const [actionError, setActionError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const actionLock = useRef(false);
 
@@ -263,17 +267,16 @@ function AppointmentActions({
     if (!date || !time || actionLock.current) return;
     actionLock.current = true;
     setIsSubmitting(true);
-    setActionError("");
     try {
       const response = await appointmentService.reschedule(item.appointment.uuid, {
         accountUuid: accountUuid,
         appointmentAt: toAppointmentIso(date, time),
       });
       onUpdate(response.data);
-      onFeedback("Đã đổi thời gian lịch hẹn thành công.");
+      success("Đổi lịch thành công", "Đã đổi thời gian lịch hẹn thành công.");
       setRescheduleOpen(false);
     } catch (error) {
-      setActionError(getActionError(error));
+      showError("Không thể đổi lịch", getActionError(error));
     } finally {
       actionLock.current = false;
       setIsSubmitting(false);
@@ -284,14 +287,13 @@ function AppointmentActions({
     if (actionLock.current) return;
     actionLock.current = true;
     setIsSubmitting(true);
-    setActionError("");
     try {
       const response = await appointmentService.cancel(item.appointment.uuid, accountUuid);
       onUpdate(response.data);
-      onFeedback("Đã hủy lịch hẹn thành công.");
+      success("Hủy lịch thành công", "Đã hủy lịch hẹn thành công.");
       setCancelOpen(false);
     } catch (error) {
-      setActionError(getActionError(error));
+      showError("Không thể hủy lịch", getActionError(error));
     } finally {
       actionLock.current = false;
       setIsSubmitting(false);
@@ -306,10 +308,10 @@ function AppointmentActions({
 
   return (
     <>
-      <Button type="button" className="w-full sm:w-auto" onClick={() => { setActionError(""); setRescheduleOpen(true); }}>
+      <Button type="button" className="w-full sm:w-auto" onClick={() => setRescheduleOpen(true)}>
         <CalendarClock aria-hidden="true" />Đổi lịch
       </Button>
-      <Button type="button" variant="destructive" className="w-full sm:w-auto" onClick={() => { setActionError(""); setCancelOpen(true); }}>Hủy lịch</Button>
+      <Button type="button" variant="destructive" className="w-full sm:w-auto" onClick={() => setCancelOpen(true)}>Hủy lịch</Button>
 
       <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
         <DialogContent>
@@ -320,7 +322,7 @@ function AppointmentActions({
           <div className="mt-5 space-y-5">
             <div className="space-y-2">
               <Label htmlFor="reschedule-date">Ngày khám mới</Label>
-              <Input id="reschedule-date" type="date" min={getVietnamToday()} max={addDays(getVietnamToday(), 14)} value={date} onChange={(event) => { setDate(event.target.value); setTime(""); setActionError(""); }} />
+              <Input id="reschedule-date" type="date" min={getVietnamToday()} max={addDays(getVietnamToday(), 14)} value={date} onChange={(event) => { setDate(event.target.value); setTime(""); }} />
             </div>
             {date && (availability.status === "idle" || availability.key !== date) ? <LoadingState label="Đang tải thời gian khả dụng" /> : null}
             {availability.status === "error" && availability.key === date ? <ErrorState message={availability.message} /> : null}
@@ -336,7 +338,6 @@ function AppointmentActions({
                 </div>
               ) : <EmptyState message="Ngày này chưa có thời gian phù hợp cách hiện tại ít nhất 24 giờ." />
             ) : null}
-            {actionError ? <p role="alert" className="text-sm text-destructive">{actionError}</p> : null}
           </div>
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>Đóng</DialogClose>
@@ -354,7 +355,6 @@ function AppointmentActions({
             <DialogDescription>Lịch sau khi hủy sẽ chuyển sang trạng thái kết thúc và không thể khôi phục.</DialogDescription>
           </DialogHeader>
           <p className="mt-5 rounded-lg bg-muted p-4 text-sm font-medium">{formatAppointmentDateTime(item.appointment.appointmentAt)} · {item.targetName}</p>
-          {actionError ? <p role="alert" className="mt-4 text-sm text-destructive">{actionError}</p> : null}
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>Giữ lịch</DialogClose>
             <Button type="button" variant="destructive" disabled={isSubmitting} onClick={cancel}>

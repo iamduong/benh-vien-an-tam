@@ -132,7 +132,6 @@ export function PatientDoctorDirectory() {
       .getAll(
         {
           accountUuid: session.account.uuid,
-          type: "doctor",
           status: AppointmentStatus.Approved,
           pageSize: 3,
         },
