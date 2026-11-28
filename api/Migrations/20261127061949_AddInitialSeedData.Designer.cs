@@ -12,8 +12,8 @@ using api.Lib;
 namespace api.Migrations
 {
     [DbContext(typeof(DBContext))]
-    [Migration("20261115022835_Init")]
-    partial class Init
+    [Migration("20261127061949_AddInitialSeedData")]
+    partial class AddInitialSeedData
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
